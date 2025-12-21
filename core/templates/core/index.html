@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+    <div class="mb-5 text-center">
+        <h1 class="display-5 fw-bold">Personal Control Center</h1>
+        <p class="text-muted">Centralized management of finances, investments, and knowledge.</p>
+    </div>
+
+    <div class="row g-4">
+        <!-- FINANCES CARD -->
+        <div class="col-md-4">
+            <div class="card card-rounded border-0 shadow-sm h-100 p-4 hover-lift d-flex flex-column justify-content-between">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="fs-2">💳</span>
+                    <span class="badge bg-success-soft text-success rounded-pill px-3 py-1">Active</span>
+                </div>
+                <div class="text-center">
+                    <h4 class="fw-bold mt-2">Finances</h4>
+                    <p class="text-muted small mb-3">Income control, expenses, and monthly budgets.</p>
+                    <hr>
+                    <div class="mb-3">
+                        <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.65rem;">Current Balance</small>
+                        <span class="h4 fw-bold">{{ balance|floatformat:2 }} €</span>
+                    </div>
+                    <a href="{% url 'summary' %}" class="btn btn-primary w-100 rounded-pill mt-2">Enter</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- INVESTMENTS CARD -->
+        <div class="col-md-4">
+            <div class="card card-rounded border-0 shadow-sm h-100 p-4 hover-lift d-flex flex-column justify-content-between opacity-75">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="fs-2">📈</span>
+                    <span class="badge bg-secondary text-white rounded-pill px-3 py-1">Coming Soon</span>
+                </div>
+                <div class="text-center">
+                    <h4 class="fw-bold mt-2">Investments</h4>
+                    <p class="text-muted small mb-3">Portfolio tracking, stocks, crypto, and dividends.</p>
+                    <hr>
+                    <div class="text-center py-3">
+                        <i class="bi bi-lock fs-2 text-muted"></i>
+                    </div>
+                    <button class="btn btn-outline-secondary w-100 rounded-pill mt-2" disabled>Configure</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- KNOWLEDGE CARD -->
+        <div class="col-md-4">
+            <div class="card card-rounded border-0 shadow-sm h-100 p-4 hover-lift d-flex flex-column justify-content-between opacity-75">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="fs-2">🧠</span>
+                    <span class="badge bg-secondary text-white rounded-pill px-3 py-1">In Development</span>
+                </div>
+                <div class="text-center">
+                    <h4 class="fw-bold mt-2">Knowledge</h4>
+                    <p class="text-muted small mb-3">Personal database, courses, notes, and reading.</p>
+                    <hr>
+                    <div class="text-center py-3 text-muted small">
+                        0 articles saved
+                    </div>
+                    <button class="btn btn-outline-secondary w-100 rounded-pill mt-2" disabled>Coming Soon</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-lift {
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .hover-lift:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 1.5rem 3rem rgba(0,0,0,.15)!important;
+    }
+    .bg-success-soft {
+        background-color: #e8f5e9;
+    }
+    .card-rounded {
+        border-radius: 1.5rem;
+    }
+    .card p {
+        line-height: 1.4;
+    }
+</style>
+{% endblock %}

@@ -25,9 +25,6 @@ class Category(models.Model):
     # Special flag to easily calculate "Expenses excluding Housing"
     is_housing = models.BooleanField(default=False)
 
-    # Special flag to mark essential categories
-    is_essential = models.BooleanField(default=False)
-
     class Meta:
         verbose_name_plural = "Categories"
 
@@ -60,12 +57,7 @@ class Category(models.Model):
             raise ValidationError({
                 'expense_type': "For income, the expense type must be 'Not Applicable'."
             })
-        
-        # 3. Nueva Validación: Essential solo para Fixed
-        if self.is_essential and self.expense_type != 'FIXED':
-            raise ValidationError({
-                'is_essential': "Only 'Fixed' expenses can be marked as 'Essential'."
-            })
+    
 
     def save(self, *args, **kwargs):
         # Forzamos la ejecución de clean() antes de guardar, 
@@ -85,6 +77,9 @@ class SubCategory(models.Model):
         related_name='subcategories'
     )
     name = models.CharField(max_length=100)
+    
+    # Special flag to mark essential categories
+    is_essential = models.BooleanField(default=False)
 
     class Meta:
         verbose_name_plural = "Subcategories"
@@ -98,8 +93,16 @@ class SubCategory(models.Model):
 
     def clean(self):
         super().clean()
+        # Validate: Essential only for Fixed
+        if self.is_essential and self.parent_category.expense_type != 'FIXED':
+            raise ValidationError({
+                'is_essential': (
+                    f"Cannot mark '{self.name}' as essential because its category "
+                    f"'{self.parent_category.name}' is not a Fixed Expense."
+                )
+            })
         if self.name and self.parent_category:
-            # 🛡️ Validamos unicidad dentro de la misma categoría padre
+            # Validate uniqueness within the same parent category
             exists = SubCategory.objects.filter(
                 parent_category=self.parent_category,
                 name__iexact=self.name.strip()
