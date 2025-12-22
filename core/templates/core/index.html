@@ -1,88 +1,203 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container py-5">
-    <div class="mb-5 text-center">
-        <h1 class="display-5 fw-bold">Personal Control Center</h1>
-        <p class="text-muted">Centralized management of finances, investments, and knowledge.</p>
-    </div>
 
-    <div class="row g-4">
-        <!-- FINANCES CARD -->
-        <div class="col-md-4">
-            <div class="card card-rounded border-0 shadow-sm h-100 p-4 hover-lift d-flex flex-column justify-content-between">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="fs-2">💳</span>
-                    <span class="badge bg-success-soft text-success rounded-pill px-3 py-1">Active</span>
-                </div>
-                <div class="text-center">
-                    <h4 class="fw-bold mt-2">Finances</h4>
-                    <p class="text-muted small mb-3">Income control, expenses, and monthly budgets.</p>
-                    <hr>
-                    <div class="mb-3">
-                        <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.65rem;">Current Balance</small>
-                        <span class="h4 fw-bold">{{ balance|floatformat:2 }} €</span>
-                    </div>
-                    <a href="{% url 'summary' %}" class="btn btn-primary w-100 rounded-pill mt-2">Enter</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- INVESTMENTS CARD -->
-        <div class="col-md-4">
-            <div class="card card-rounded border-0 shadow-sm h-100 p-4 hover-lift d-flex flex-column justify-content-between opacity-75">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="fs-2">📈</span>
-                    <span class="badge bg-secondary text-white rounded-pill px-3 py-1">Coming Soon</span>
-                </div>
-                <div class="text-center">
-                    <h4 class="fw-bold mt-2">Investments</h4>
-                    <p class="text-muted small mb-3">Portfolio tracking, stocks, crypto, and dividends.</p>
-                    <hr>
-                    <div class="text-center py-3">
-                        <i class="bi bi-lock fs-2 text-muted"></i>
-                    </div>
-                    <button class="btn btn-outline-secondary w-100 rounded-pill mt-2" disabled>Configure</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- KNOWLEDGE CARD -->
-        <div class="col-md-4">
-            <div class="card card-rounded border-0 shadow-sm h-100 p-4 hover-lift d-flex flex-column justify-content-between opacity-75">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="fs-2">🧠</span>
-                    <span class="badge bg-secondary text-white rounded-pill px-3 py-1">In Development</span>
-                </div>
-                <div class="text-center">
-                    <h4 class="fw-bold mt-2">Knowledge</h4>
-                    <p class="text-muted small mb-3">Personal database, courses, notes, and reading.</p>
-                    <hr>
-                    <div class="text-center py-3 text-muted small">
-                        0 articles saved
-                    </div>
-                    <button class="btn btn-outline-secondary w-100 rounded-pill mt-2" disabled>Coming Soon</button>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- HERO -->
+<div class="text-center py-4 mb-3">
+    <h1 class="fw-bold display-6 mb-2">Your Finances, Your Future</h1>
+    <p class="text-muted mb-0">
+        A clear overview of your money, investments, and goals
+    </p>
 </div>
 
+<!-- MAIN MODULES -->
+<div class="row g-4 mb-5">
+
+    <!-- INVESTMENTS -->
+    <div class="col-md-4">
+        <div class="action-card h-100">
+            <i class="bi bi-graph-up-arrow fs-2 text-success mb-2"></i>
+            <h6 class="fw-bold mb-2">Investments</h6>
+            <hr>
+            <a href="{% url 'investment_dashboard' %}" class="btn btn-dark rounded-pill px-4">
+                Enter
+            </a>
+        </div>
+    </div>
+
+    <!-- MONTHLY FINANCES -->
+    <div class="col-md-4">
+        <div class="action-card h-100">
+            <i class="bi bi-calendar-month fs-2 text-info mb-2"></i>
+            <h6 class="fw-bold mb-2">Monthly Finances</h6>
+            <hr>
+            <a href="{% url 'summary' %}" class="btn btn-dark rounded-pill px-4">
+                Enter
+            </a>
+        </div>
+    </div>
+
+    <!-- DASHBOARDS -->
+    <div class="col-md-4">
+        <div class="action-card h-100 bg-light disabled-card">
+            <span class="status-badge bg-warning-subtle text-warning">
+                In development
+            </span>
+            <i class="bi bi-bar-chart fs-2 text-primary mb-2"></i>
+            <h6 class="fw-bold mb-2 text-muted">Dashboards</h6>
+            <hr>
+            <button class="btn btn-outline-secondary rounded-pill px-4" disabled>
+                Coming soon
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<!-- NET WORTH + OBJECTIVES -->
+<div class="row g-4 mb-5">
+
+    <!-- NET WORTH -->
+    <div class="col-md-6">
+        <div class="section-card h-100">
+            <h6 class="fw-bold mb-2">Net Worth</h6>
+            <h2 class="fw-bold mb-4">26.000 €</h2>
+
+            <div class="chart-placeholder">
+                <span class="text-muted small">
+                    Net worth evolution (coming soon)
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- OBJECTIVES -->
+    <div class="col-md-6">
+        <div class="section-card h-100">
+            <h6 class="fw-bold mb-3">Objectives</h6>
+
+            <div class="progress rounded-pill mb-2" style="height: 22px;">
+                <div class="progress-bar bg-primary" style="width: 66%;"></div>
+            </div>
+
+            <div class="fw-bold">
+                20.000 € <span class="text-muted fw-normal">/ 30.000 €</span>
+            </div>
+            <small class="text-muted">Long-term savings goal</small>
+        </div>
+    </div>
+
+</div>
+
+<!-- QUICK ACTIONS -->
+<div class="row g-4 mb-5">
+
+    <div class="col-md-4">
+        <a href="/admin/finances/transaction/add/"
+           class="text-decoration-none text-dark">
+            <div class="action-card h-100">
+                <div class="plus-icon">+</div>
+                <div class="fw-bold">Add Expense / Income</div>
+                <small class="text-muted">Admin entry</small>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-4">
+        <a href="/admin/investments/transaction/add/"
+           class="text-decoration-none text-dark">
+            <div class="action-card h-100">
+                <div class="plus-icon">+</div>
+                <div class="fw-bold">Add Investment</div>
+                <small class="text-muted">Admin entry</small>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-4">
+        <div class="action-card h-100 bg-light disabled-card">
+            <div class="plus-icon">+</div>
+            <div class="fw-bold text-muted">TBD</div>
+            <small class="text-muted">Coming soon</small>
+        </div>
+    </div>
+
+</div>
+
+<!-- STYLES -->
 <style>
-    .hover-lift {
-        transition: transform 0.25s ease, box-shadow 0.25s ease;
-    }
-    .hover-lift:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 1.5rem 3rem rgba(0,0,0,.15)!important;
-    }
-    .bg-success-soft {
-        background-color: #e8f5e9;
-    }
-    .card-rounded {
-        border-radius: 1.5rem;
-    }
-    .card p {
-        line-height: 1.4;
-    }
+/* === Cards === */
+.action-card {
+    position: relative;
+    background: #ffffff;
+    border-radius: 1.5rem;
+    padding: 2rem;
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.08);
+    transition: transform .2s ease, box-shadow .2s ease;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.action-card:hover:not(.disabled-card) {
+    transform: translateY(-4px);
+    box-shadow: 0 .75rem 1.5rem rgba(0,0,0,.12);
+}
+
+.action-card hr {
+    width: 60%;
+    margin: 0.5rem auto;
+}
+
+/* === Disabled cards === */
+.disabled-card {
+    cursor: default;
+}
+
+/* === Status badge === */
+.status-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 0.65rem;
+    padding: 4px 10px;
+    border-radius: 999px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.08);
+}
+
+/* === Section cards === */
+.section-card {
+    background: #ffffff;
+    border-radius: 1.5rem;
+    padding: 2rem;
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.08);
+}
+
+/* === Icons === */
+.plus-icon {
+    font-size: 3rem;
+    font-weight: bold;
+    line-height: 1;
+    margin-bottom: .25rem;
+    color: #adb5bd;
+}
+
+/* === Chart placeholder === */
+.chart-placeholder {
+    height: 160px;
+    border-radius: 1rem;
+    background: #f1f3f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* === Subtle badges === */
+.bg-warning-subtle { background-color: #fff8e1 !important; }
+.bg-info-subtle { background-color: #e3f2fd !important; }
+.bg-secondary-subtle { background-color: #f8f9fa !important; }
 </style>
+
 {% endblock %}

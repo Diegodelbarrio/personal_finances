@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'knowledge',
     'users',
     'core',
+    'holdings',
 ]
 
 MIDDLEWARE = [
