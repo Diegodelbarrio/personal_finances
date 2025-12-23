@@ -1,0 +1,100 @@
+{% extends "account/auth_base.html" %}
+{% load i18n %}
+
+{% block title %}Create Account | FinOrbit{% endblock %}
+
+{% block auth_content %}
+<style>
+    /* Reset de espacios de la base para subir el contenido */
+    header { padding-top: 1rem !important; padding-bottom: 0.5rem !important; }
+    main { padding-top: 0 !important; margin-top: -15px; }
+    .auth-card { background: transparent !important; box-shadow: none !important; border: none !important; padding: 0 !important; }
+
+    /* Estética Premium Recuperada */
+    .bg-primary-gradient {
+        background: linear-gradient(to right, #2563eb, #3b82f6); 
+    }
+
+    .custom-input {
+        height: 38px;
+        border-radius: 0.75rem;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s;
+        font-size: 0.9rem;
+    }
+    
+    .custom-input:focus {
+        background-color: #fff;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        border-color: #2563eb;
+        outline: none;
+    }
+
+    .btn-auth {
+        border-radius: 0.75rem;
+        background: linear-gradient(to right, #2563eb, #3b82f6);;
+        border: none;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-auth:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    }
+
+    .shadow-premium {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
+
+<div class="row g-4 align-items-stretch justify-content-center mx-auto" style="max-width: 1050px;"> 
+
+    <div class="card border-0 shadow-premium rounded-4 p-2 p-md-3">
+        <div class="card-body">
+            <div class="text-center mb-3">
+                <h3 class="fw-bold mb-1 text-start">Create your account</h3>
+            </div>
+
+            <form method="POST" action="{% url 'account_signup' %}" class="signup-form">
+                {% csrf_token %}
+
+                {% for field in form %}
+                    <div class="mb-2">
+                        <label for="{{ field.id_for_label }}" class="form-label small fw-bold text-secondary mb-1">
+                            {{ field.label }}
+                        </label>
+                        <input 
+                            type="{{ field.field.widget.input_type }}" 
+                            name="{{ field.name }}" 
+                            id="{{ field.id_for_label }}" 
+                            class="form-control custom-input {% if field.errors %}is-invalid{% endif %}"
+                            placeholder="{{ field.label }}"
+                            {% if field.field.required %}required{% endif %}
+                        >
+
+                        {% for error in field.errors %}
+                            <div class="invalid-feedback" style="font-size: 0.7rem;">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <button type="submit" class="btn btn-primary btn-auth w-100 mt-3 py-2-5 fw-bold text-white shadow-sm">
+                    Sign Up Now
+                </button>
+            </form>
+
+            <div class="text-center mt-3 pt-2 border-top">
+                <p class="small text-muted mb-0">
+                    Already have an account?
+                    <a href="{% url 'account_login' %}" class="fw-bold text-primary text-decoration-none ms-1">
+                        Sign In
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

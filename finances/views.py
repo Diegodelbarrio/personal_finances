@@ -1,46 +1,46 @@
+import calendar
+from decimal import Decimal
 from django.shortcuts import render
 from django.db.models import Sum, Q
 from django.db.models.functions import ExtractYear, ExtractMonth
 from django.utils import timezone
 from calendar import month_name
 from .models import Transaction
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def summary(request):
-    # 1. Referencia de tiempo actual
-    now = timezone.now()
-    base_qs = Transaction.objects.select_related('subcategory__parent_category')
+    # 1. Filtro base de seguridad por usuario
+    base_qs = Transaction.objects.filter(user=request.user).select_related('subcategory__parent_category')
 
-    # 2. Años disponibles para el selector
+    now = timezone.now()
+
+    # 2. Años disponibles para el usuario
     years = base_qs.annotate(y=ExtractYear('date')).values_list('y', flat=True).distinct().order_by('-y')
     
     # 3. Selección de año
     sel_year = request.GET.get('year')
-    if sel_year:
-        sel_year = int(sel_year)
-    else:
-        sel_year = now.year
+    sel_year = int(sel_year) if sel_year else now.year
 
-    # 4. Meses disponibles para el año seleccionado
+    # 4. Meses disponibles para este usuario en este año
     months_qs = base_qs.filter(date__year=sel_year).annotate(m=ExtractMonth('date')).values_list('m', flat=True).distinct().order_by('m')
     months = [(m, month_name[m]) for m in months_qs]
     
     # 5. Selección de mes
     sel_month = request.GET.get('month')
-    if sel_month:
-        sel_month = int(sel_month)
-    else:
-        sel_month = now.month
+    sel_month = int(sel_month) if sel_month else now.month
 
-    # 6. Queryset filtrado por el periodo seleccionado
+    # 6. Datos del periodo seleccionado
     qs = base_qs.filter(date__year=sel_year, date__month=sel_month)
 
-    # 7. Agregación de métricas
+    # 7. Agregación de métricas para KPIs
     metrics = qs.aggregate(
         income=Sum('amount', filter=Q(subcategory__parent_category__transaction_type='INCOME')),
         expenses=Sum('amount', filter=Q(subcategory__parent_category__transaction_type='EXPENSE')),
         fixed=Sum('amount', filter=Q(subcategory__parent_category__expense_type='FIXED')),
         variable=Sum('amount', filter=Q(subcategory__parent_category__expense_type='VARIABLE')),
-        no_housing=Sum('amount', filter=Q(subcategory__parent_category__transaction_type='EXPENSE') & ~Q(subcategory__parent_category__name='Housing'))
+        no_housing=Sum('amount', filter=Q(subcategory__parent_category__transaction_type='EXPENSE') & 
+                                 Q(subcategory__parent_category__is_housing=False))
     )
 
     def clean(val): 
@@ -49,7 +49,7 @@ def summary(request):
     inc = clean(metrics['income'])
     exp = clean(metrics['expenses'])
 
-    # 8. Cálculo del ingreso del mes anterior
+    # 8. Cálculo de ingresos del mes anterior (para comparativas)
     if sel_month == 1:
         prev_month = 12
         prev_year = sel_year - 1
@@ -57,22 +57,34 @@ def summary(request):
         prev_month = sel_month - 1
         prev_year = sel_year
 
-    prev_metrics = base_qs.filter(
+    prev_income_data = base_qs.filter(
         date__year=prev_year,
         date__month=prev_month,
         subcategory__parent_category__transaction_type='INCOME'
     ).aggregate(total=Sum('amount'))
+    prev_income = clean(prev_income_data['total'])
 
-    prev_income = clean(prev_metrics['total'])
+    # 9. Lógica para el gráfico de distribución de gastos
+    expense_stats = qs.filter(
+        subcategory__parent_category__transaction_type='EXPENSE'
+    ).values(
+        'subcategory__parent_category__name'
+    ).annotate(
+        total=Sum('amount')
+    ).order_by('-total')
 
-    # 9. Contexto para el template
+    chart_labels = [item['subcategory__parent_category__name'] for item in expense_stats]
+    chart_data = [float(abs(item['total'] or 0)) for item in expense_stats]
+
     context = {
         'transactions': qs.order_by('-date'),
         'years': years,
         'months': months,
         'sel_year': sel_year,
         'sel_month': sel_month,
-        'prev_income': prev_income,  # <- pasado al template
+        'prev_income': prev_income,
+        'chart_labels': chart_labels,
+        'chart_data': chart_data,
         'kpis': [
             {'label': 'Net Savings', 'value': inc - exp, 'class': 'soft-primary'},
             {'label': 'Total Income', 'value': inc, 'class': 'soft-success'},

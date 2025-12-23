@@ -1,0 +1,92 @@
+{% extends "account/auth_base.html" %}
+
+{% block title %}Entrar | FinOrbit{% endblock %}
+
+{% block auth_content %}
+<style>
+    /* Tarjeta consistente con Sign Up */
+    .login-wrapper-card {
+        background: white;
+        border-radius: 1.25rem;
+        border: 1px solid #f1f5f9;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        padding: 2rem; /* Espacio interno equilibrado */
+        width: 100%;
+        max-width: 440px;
+        margin-top: -10px; /* Sube la tarjeta para reducir espacio con el logo */
+    }
+
+    .custom-input {
+        height: 38px;
+        border-radius: 0.75rem;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+
+    .custom-input:focus {
+        background-color: #fff;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        border-color: #2563eb;
+        outline: none;
+    }
+
+    .btn-auth-primary {
+        padding: 0.75rem;
+        border-radius: 0.75rem;
+        font-weight: 700;
+        background: linear-gradient(to right, #2563eb, #3b82f6);
+        border: none;
+        color: white;
+        transition: all 0.2s;
+    }
+
+    .btn-auth-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 15px rgba(37, 99, 235, 0.2);
+    }
+</style>
+
+<div class="row g-4 align-items-stretch justify-content-center mx-auto" style="max-width: 1050px;"> 
+    <div class="card border-0 shadow-premium rounded-4 p-2 p-md-3">
+        <div class="login-wrapper-card mx-auto">
+            <div class="mb-4">
+                <h3 class="fw-bold mb-1 text-start">Welcome back</h3>
+                <p class="text-secondary small mb-0">Accede a tu panel financiero.</p>
+            </div>
+
+            <form method="POST" action="{% url 'account_login' %}" class="login">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-uppercase opacity-75" style="font-size: 0.65rem; letter-spacing: 0.5px;">User Name</label>
+                    <input type="text" name="login" class="form-control custom-input" placeholder="Enter your username" required autofocus>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <label class="form-label small fw-bold text-uppercase opacity-75" style="font-size: 0.65rem; letter-spacing: 0.5px;">Password</label>
+                        <a href="{% url 'account_reset_password' %}" class="small text-primary text-decoration-none fw-bold" style="font-size: 0.7rem;">Forgot it?</a>
+                    </div>
+                    <input type="password" name="password" class="form-control custom-input" placeholder="••••••••" required>
+                </div>
+
+                <div class="form-check mb-4 small">
+                    <input type="checkbox" name="remember" class="form-check-input" id="rememberMe">
+                    <label class="form-check-label text-secondary" for="rememberMe" style="font-size: 0.75rem;">Keep me signed in</label>
+                </div>
+
+                <button class="btn btn-auth-primary w-100 mb-2" type="submit">
+                    Sign In
+                </button>
+            </form>
+
+            <div class="text-center mt-4 pt-3 border-top">
+                <span class="text-secondary small">New to FinOrbit?</span>
+                <a href="{% url 'account_signup' %}" class="text-primary small fw-bold text-decoration-none ms-1">Create account</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

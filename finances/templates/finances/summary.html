@@ -1,353 +1,455 @@
 {% extends "base.html" %}
+
 {% block content %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
-<div class="container py-5">
-
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-start mb-4 gap-3">
-    <div>
-        <h1 class="fw-bold mb-0">Financial Summary</h1>
-        <p class="text-muted small">Monthly tracking of income and expenses</p>
-    </div>
-
-    <div class="d-flex align-items-center gap-2">
-        
-        <div class="dropdown">
-            <button class="btn btn-sm btn-white border shadow-sm rounded-pill px-3 py-2 fw-bold dropdown-toggle d-flex align-items-center gap-2" 
-                    type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-calendar-event text-muted small"></i>
-                {{ sel_year }}
-            </button>
-            <ul class="dropdown-menu shadow-sm border-0 rounded-4" style="max-height: 300px; overflow-y: auto;">
-                {% for y in years %}
-                <li>
-                    <a class="dropdown-item fw-bold {% if y == sel_year %}active{% endif %}" 
-                       href="?year={{ y }}&month={{ sel_month }}">
-                       {{ y }}
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-
-        <div class="dropdown">
-            <button class="btn btn-sm btn-white border shadow-sm rounded-pill px-3 py-2 fw-bold dropdown-toggle d-flex align-items-center gap-2 text-capitalize" 
-                    type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-calendar3 text-muted small"></i>
-                {% for num, name in months %}
-                    {% if num == sel_month %}{{ name }}{% endif %}
-                {% endfor %}
-            </button>
-            <ul class="dropdown-menu shadow-sm border-0 rounded-4" style="max-height: 300px; overflow-y: auto;">
-                {% for num, name in months %}
-                <li>
-                    <a class="dropdown-item fw-bold text-capitalize {% if num == sel_month %}active{% endif %}" 
-                       href="?year={{ sel_year }}&month={{ num }}">
-                       {{ name }}
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-
-    </div>
-</div>
-
-<div class="row g-4 mb-5">
-    {% for kpi in kpis %}
-    <div class="col-6 col-md-4">
-        <div class="card card-rounded border-0 shadow-sm p-3 h-100
-            {% if kpi.label == 'Net Savings' %}
-                {% if kpi.value >= 0 %} bg-success text-white {% else %} bg-danger text-white {% endif %}
-            {% elif kpi.label == 'Total Income' %} soft-income
-            {% elif kpi.label == 'Total Expenses' %} soft-expenses
-            {% else %} bg-white {% endif %}
-        ">
-            <div class="d-flex flex-column 
-                {% if kpi.label == 'Net Savings' %} justify-content-between {% else %} justify-content-center gap-1 {% endif %} 
-                align-items-center h-100 text-center">
-                
-                <div>
-                    <small class="text-uppercase fw-bold letter-spacing opacity-75">
-                        {{ kpi.label }}
-                    </small>
-                    <h2 class="fw-bold mt-1 mb-0">
-                        {{ kpi.value|floatformat:2 }} €
-                    </h2>
-                </div>
-
-                {% if kpi.label == 'Net Savings' %}
-                <div class="mt-2">
-                    {% if kpi.value >= 600 %}
-                        <span class="badge bg-light text-success rounded-pill px-3">Excellent</span>
-                    {% elif kpi.value >= 300 %}
-                        <span class="badge bg-light text-primary rounded-pill px-3">Good</span>
-                    {% elif kpi.value >= 0 %}
-                        <span class="badge bg-light text-dark rounded-pill px-3">Stable</span>
-                    {% else %}
-                        <span class="badge bg-light text-danger rounded-pill px-3">Negative</span>
-                    {% endif %}
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-</div>
-
-<div class="card card-rounded border-0 shadow-sm overflow-visible">
-    <div class="card-header bg-white py-4 border-0 px-4 d-flex justify-content-between align-items-center">
-        <h5 class="fw-bold mb-0">Transactions</h5>
-
-        <div class="dropdown">
-            <button class="btn btn-sm btn-light border rounded-pill px-3 dropdown-toggle shadow-sm fw-bold"
-                    type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
-                <i class="bi bi-filter me-1"></i> Filter Categories
-            </button>
-
-            <div class="dropdown-menu dropdown-menu-end p-3 shadow-lg border-0 rounded-4"
-                 style="min-width:240px; max-height:400px; overflow-y:auto;">
-                <div class="d-grid mb-2">
-                    <button type="button" id="selectAllCats"
-                            class="btn btn-xs btn-dark rounded-pill py-1"
-                            style="font-size:0.75rem;">
-                        Toggle All
-                    </button>
-                </div>
-                <hr class="dropdown-divider">
-                <div id="checkboxContainer"></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="table-responsive px-2 pb-3" style="min-height: 300px;"> 
-        <table class="table align-middle mb-0 table-hover">
-            <thead>
-                <tr>
-                    <th class="ps-3 sortable" data-sort="date" style="cursor:pointer">
-                        Date <i class="bi bi-arrow-down-up ms-1 small opacity-50"></i>
-                    </th>
-                    <th>Description</th>
-                    <th class="sortable" data-sort="category" style="cursor:pointer">
-                        Category <i class="bi bi-arrow-down-up ms-1 small opacity-50"></i>
-                    </th>
-                    <th class="sortable" data-sort="subcategory" style="cursor:pointer">
-                        Subcategory <i class="bi bi-arrow-down-up ms-1 small opacity-50"></i>
-                    </th>
-                    <th class="text-end pe-3 sortable" data-sort="amount" style="cursor:pointer">
-                        Amount <i class="bi bi-arrow-down-up ms-1 small opacity-50"></i>
-                    </th>
-                </tr>
-            </thead>
-            <tbody id="tableBody">
-                {% for tx in transactions %}
-                <tr class="tx-row" data-cat="{{ tx.subcategory.parent_category.name }}">
-                    <td class="ps-3 tx-date" data-val="{{ tx.date|date:'Y-m-d' }}">
-                        {{ tx.date|date:"Y-m-d" }}
-                    </td>
-                    <td>{{ tx.description }}</td>
-                    <td class="tx-category">
-                        <span class="badge bg-light text-dark rounded-pill px-3">
-                            {{ tx.subcategory.parent_category.name }}
-                        </span>
-                    </td>
-                    <td class="tx-subcategory text-muted small">
-                        {{ tx.subcategory.name }}
-                    </td>
-                    <td class="text-end pe-3 tx-amount fw-bold" data-val="{{ tx.amount }}">
-                        <span class="{% if tx.amount > 0 %}text-success{% else %}text-dark{% endif %}">
-                            {{ tx.amount|floatformat:2 }} €
-                        </span>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-            <tfoot class="table-light border-top">
-                <tr>
-                    <td colspan="4" class="ps-4 fw-bold text-muted text-uppercase small letter-spacing">
-                        Visible Total
-                    </td>
-                    <td id="tableTotalAmount" class="text-end pe-4 fw-bold">
-                        0.00 €
-                    </td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
-
-</div>
-
-</div>
-
 <style>
-/* --- ESTILOS GENERALES --- */
-.card-rounded { border-radius: 1.5rem !important; }
-.letter-spacing { letter-spacing: 1px; font-size: 0.7rem; }
-
-/* Colores Pastel */
-.soft-income { background:#e8f5e9 !important; color:#2e7d32 !important; }
-.soft-expenses { background:#fce4ec !important; color:#c2185b !important; }
-
-/* --- BOTONES BLANCOS (Dropdown Trigger) --- */
-.btn-white {
-    background-color: #fff;
-    color: #333;
-    transition: all 0.2s ease;
-}
-.btn-white:hover {
-    background-color: #f8f9fa;
-    border-color: #dee2e6;
-    transform: translateY(-1px); /* Pequeño efecto de elevación */
-}
-
-/* --- ANIMACIÓN Y ESTILO DEL DROPDOWN --- */
-
-/* 1. Animación de entrada (Slide Down + Fade In) */
-@keyframes dropdown-animate {
-    from {
+/* Estado base (Cerrado): Sin transición para que desaparezca al instante */
+    .dropdown-menu {
+        display: block;
+        visibility: hidden;
         opacity: 0;
         transform: translateY(10px);
+        transition: none; 
+        border: none !important;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+        pointer-events: none;
     }
-    to {
+
+    /* Estado Abierto: Aquí es donde definimos la transición de aparición */
+    .dropdown-menu.show {
+        visibility: visible;
         opacity: 1;
         transform: translateY(0);
+        transition: all 0.3s ease-out; /* Solo transiciona cuando se añade la clase .show */
+        pointer-events: auto;
     }
-}
 
-.dropdown-menu.show {
-    animation: dropdown-animate 0.3s ease forwards;
-}
+    /* --- Paddings Diferenciados --- */
 
-/* 2. Estilo de los elementos de la lista */
-.dropdown-item {
-    font-size: 0.85rem; /* Texto más pequeño (antes era ~1rem) */
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    margin: 2px 0;
-    font-weight: 600; /* Mantiene la negrita pero más fino */
-    color: #555;
-    transition: all 0.2s;
-}
+    /* Menú de Categorías (Mantiene p-3/1rem) */
+    .dropdown-menu.dropdown-menu-end {
+        padding: 1rem !important; 
+    }
 
-/* 3. Hover y Active */
-.dropdown-item:hover {
-    background-color: #f0f2f5;
-    color: #000;
-}
+    /* Menús de Año y Mes (Padding menor) */
+    .dropdown-compact {
+        padding: 0.45rem !important; /* Padding ajustado y pequeño */
+        min-width: 110px !important;
+    }
 
-.dropdown-item:active, .dropdown-item.active {
-    background-color: #333; /* Un color oscuro elegante en vez de azul estándar */
-    color: white !important;
-}
+    .dropdown-compact .dropdown-item {
+        font-size: 0.75rem !important;
+        padding: 0.3rem 0.6rem !important;
+        border-radius: 0.4rem;
+        font-weight: 600;
+        color: #475569;
+    }
 
-/* 4. Scrollbar bonita para el menú (Chrome/Safari/Edge) */
-.dropdown-menu::-webkit-scrollbar {
-    width: 6px;
-}
-.dropdown-menu::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-.dropdown-menu::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 4px;
-}
-.dropdown-menu::-webkit-scrollbar-thumb:hover {
-    background: #aaa;
-}
+    .dropdown-item.active {
+        background-color: #1e293b !important;
+        color: white !important;
+    }
+
+
+    /* 2. Botones de activación superiores */
+    .btn-white { 
+        background-color: #fff; 
+        color: #333; 
+        border: 1px solid #e2e8f0 !important;
+        font-size: 0.8rem;
+    }
+
+    /* 3. Leyenda del Gráfico y Scrollbar */
+    #chartLegendWrapper {
+        max-height: 250px;
+        overflow-y: auto;
+        padding-right: 15px; 
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+    }
+
+    #chartLegendWrapper::-webkit-scrollbar { width: 5px; }
+    #chartLegendWrapper::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+
+    #chartLegend div.rounded-3 {
+        margin-bottom: 8px;
+        border: 1px solid #f1f5f9;
+        transition: all 0.2s ease;
+    }
+
+    /* Estilo base de la tarjeta de la leyenda */
+    #chartLegend div.rounded-3 {
+        margin-bottom: 8px;
+        border: 1px solid #f8fafc; /* Borde más suave */
+        background-color: #ffffff;
+        transition: all 0.2s ease-in-out;
+        cursor: default;
+    }
+
+    /* Efecto HOVER */
+    #chartLegend div.rounded-3:hover {
+        background-color: #f1f5f9 !important; /* Gris muy claro al pasar el ratón */
+        border-color: #e2e8f0 !important;
+        transform: translateX(4px); /* Se desplaza un poco a la derecha */
+        box-shadow: 0 4px 6px 1px rgba(0, 0, 0, 0.05);
+    }
+
+    /* 4. Estilos de Tarjetas y Tabla */
+    .card-rounded { border-radius: 1.5rem !important; overflow: visible !important; }
+    .table-responsive { overflow: visible !important; }
+    .soft-income { background:#e8f5e9 !important; color:#2e7d32 !important; }
+    .soft-expenses { background:#fce4ec !important; color:#c2185b !important; }
+    .pagination .page-link { border: none; border-radius: 8px !important; font-size: 0.75rem; font-weight: 600; }
+    /* Estilo para la tarjeta inactiva */
+    .card-disabled {
+        background-color: #f8fafc !important; /* Gris muy suave */
+        border: 2px dashed #cbd5e1 !important; /* Borde punteado gris claro */
+        transition: all 0.3s ease;
+    }
+
+    /* Icono y texto de la tarjeta inactiva */
+    .card-disabled .icon-box {
+        background: #ffffff;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        margin-bottom: 1rem;
+    }
 </style>
+
+<div class="container py-5">
+
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start mb-4 gap-3">
+        <div>
+            <h1 class="fw-bold mb-0">Financial Summary</h1>
+            <p class="text-muted small">Monthly tracking of income and expenses</p>
+        </div>
+
+<div class="d-flex align-items-center gap-2">
+    <div class="dropdown">
+        <button class="btn btn-sm btn-white shadow-sm rounded-pill px-3 py-2 fw-bold dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-calendar-event text-muted small"></i> {{ sel_year }}
+        </button>
+        <ul class="dropdown-menu dropdown-compact shadow-lg rounded-3 border-0">
+            {% for y in years %}
+            <li><a class="dropdown-item {% if y == sel_year %}active{% endif %}" href="?year={{ y }}&month={{ sel_month }}">{{ y }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="dropdown">
+        <button class="btn btn-sm btn-white shadow-sm rounded-pill px-3 py-2 fw-bold dropdown-toggle d-flex align-items-center gap-2 text-capitalize" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-calendar3 text-muted small"></i>
+            {% for num, name in months %}{% if num == sel_month %}{{ name }}{% endif %}{% endfor %}
+        </button>
+        <ul class="dropdown-menu dropdown-compact shadow-lg rounded-3 border-0">
+            {% for num, name in months %}
+            <li><a class="dropdown-item text-capitalize {% if num == sel_month %}active{% endif %}" href="?year={{ sel_year }}&month={{ num }}">{{ name }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        {% for kpi in kpis %}
+        <div class="col-6 col-md-4">
+            <div class="card card-rounded border-0 shadow-sm p-3 h-100 {% if kpi.label == 'Net Savings' %}{% if kpi.value >= 0 %} bg-success text-white {% else %} bg-danger text-white {% endif %}{% elif kpi.label == 'Total Income' %} soft-income {% elif kpi.label == 'Total Expenses' %} soft-expenses {% else %} bg-white {% endif %}">
+                <div class="d-flex flex-column justify-content-center align-items-center h-100 text-center">
+                    <small class="text-uppercase fw-bold opacity-75" style="font-size: 0.65rem; letter-spacing: 1px;">{{ kpi.label }}</small>
+                    <h2 class="fw-bold mt-1 mb-0">{{ kpi.value|floatformat:2 }} €</h2>
+                    
+                    {% if kpi.label == 'Net Savings' %}
+                    <div class="mt-2">
+                        <span class="badge bg-light {% if kpi.value >= 0 %}text-success{% else %}text-danger{% endif %} rounded-pill px-3 shadow-sm" style="font-size: 0.7rem;">
+                            {% if kpi.value >= 600 %}Excellent{% elif kpi.value >= 0 %}Stable{% else %}Negative{% endif %}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="card card-rounded border-0 shadow-sm mb-5">
+        <div class="card-header bg-white py-4 border-0 px-4 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0">Transactions</h5>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-light border rounded-pill px-3 dropdown-toggle shadow-sm fw-bold" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport">
+                    <i class="bi bi-filter me-1"></i> Categories
+                </button>
+                <div class="dropdown-menu dropdown-menu-end p-3 shadow-lg border-0 rounded-4" style="min-width:240px; max-height:400px; overflow-y:auto;">
+                    <div class="d-grid mb-2">
+                        <button type="button" id="selectAllCats" class="btn btn-xs btn-dark rounded-pill py-1" style="font-size:0.7rem;">Toggle All</button>
+                    </div>
+                    <hr class="dropdown-divider">
+                    <div id="checkboxContainer"></div>
+                </div>
+            </div>
+        </div>
+        <div class="table-responsive"> 
+            <table class="table align-middle mb-0 table-hover">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4 sortable" data-sort="date" style="cursor:pointer">Date <i class="bi bi-arrow-down-up ms-1 small opacity-50"></i></th>
+                        <th>Description</th>
+                        <th class="sortable" data-sort="category" style="cursor:pointer">Category</th>
+                        <th>Subcategory</th>
+                        <th class="text-end pe-4 sortable" data-sort="amount" style="cursor:pointer">Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    {% for tx in transactions %}
+                    <tr class="tx-row" data-cat="{{ tx.subcategory.parent_category.name }}">
+                        <td class="ps-4 tx-date" data-val="{{ tx.date|date:'Y-m-d' }}">{{ tx.date|date:"Y-m-d" }}</td>
+                        <td class="fw-medium">{{ tx.description }}</td>
+                        <td><span class="badge bg-light text-dark rounded-pill px-3">{{ tx.subcategory.parent_category.name }}</span></td>
+                        <td class="text-muted small">{{ tx.subcategory.name }}</td>
+                        <td class="text-end pe-4 tx-amount fw-bold" data-val="{{ tx.amount }}">
+                            <span class="{% if tx.amount > 0 %}text-success{% else %}text-dark{% endif %}">{{ tx.amount|floatformat:2 }} €</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer bg-white border-0 px-4 py-3 border-top">
+            <div class="row align-items-center">
+                <div class="col-md-4"><small class="text-muted" id="paginationInfo"></small></div>
+                <div class="col-md-4 d-flex justify-content-center my-2 my-md-0"><nav><ul class="pagination pagination-sm mb-0 gap-1" id="paginationControls"></ul></nav></div>
+                <div class="col-md-4 text-md-end"><span class="small text-muted fw-bold me-2">VISIBLE TOTAL:</span><span id="tableTotalAmount" class="h6 fw-bold">0.00 €</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+<div class="col-12 col-lg-6">
+    <div class="card card-rounded border-0 shadow-sm p-4 h-100">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="fw-bold mb-0">Expense Distribution</h5>
+            <div class="text-end">
+                <div class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Total Expenses</div>
+                <span id="chartTotalValue" class="h5 fw-bold text-dark mb-0">0.00 €</span>
+            </div>
+        </div>
+        <div class="row align-items-center">
+            <div class="col-sm-6">
+                <div style="position: relative; height: 250px;"><canvas id="expenseChart"></canvas></div>
+            </div>
+            <div class="col-sm-6">
+                <div id="chartLegendWrapper"><div id="chartLegend"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="col-12 col-lg-6">
+    <div class="card card-rounded shadow-sm p-4 h-100 d-flex align-items-center justify-content-center card-disabled">
+        <div class="text-center">
+            <div class="icon-box mx-auto">
+                <i class="bi bi-bar-chart text-muted opacity-50 fs-3"></i>
+            </div>
+            <h6 class="fw-bold text-muted mb-1">Advanced Analysis</h6>
+            <p class="text-muted mb-0 small opacity-75">Feature coming soon</p>
+            
+            <span class="badge rounded-pill mt-3 px-3 py-2" style="background: #e2e8f0; color: #64748b; font-size: 0.6rem; letter-spacing: 0.5px;">PLANNED</span>
+        </div>
+    </div>
+</div>
+    </div>
+</div>
+
+{{ chart_labels|json_script:"labels-data" }}
+{{ chart_data|json_script:"values-data" }}
+
 {% endblock %}
 
-
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // === 1. VARIABLES Y SELECTORES ===
     const rows = Array.from(document.querySelectorAll('.tx-row'));
     const tableBody = document.getElementById('tableBody');
     const checkboxContainer = document.getElementById('checkboxContainer');
     const totalDisplay = document.getElementById('tableTotalAmount');
-    const selectAllBtn = document.getElementById('selectAllCats');
-    let sortState = { key: null, asc: true };
+    const paginationControls = document.getElementById('paginationControls');
+    const paginationInfo = document.getElementById('paginationInfo');
+    
+    let currentPage = 1;
+    const rowsPerPage = 10;
+    let filteredRows = [...rows];
 
-    // 1. GENERATE CATEGORY CHECKBOXES
-    const categories = [...new Set(rows.map(r => r.dataset.cat.trim()))].sort();
-
-    checkboxContainer.innerHTML = '';
-    categories.forEach(cat => {
-        const div = document.createElement('div');
-        div.className = 'form-check mb-2';
-        div.innerHTML = `
-            <input class="form-check-input" type="checkbox" value="${cat}" checked>
-            <label class="form-check-label small">${cat}</label>
-        `;
-        div.querySelector('input').addEventListener('change', applyFilters);
-        checkboxContainer.appendChild(div);
-    });
-
-    // 2. FILTER LOGIC
-    function applyFilters() {
-        const active = [...checkboxContainer.querySelectorAll('input:checked')]
-                        .map(cb => cb.value);
-
-        rows.forEach(row => {
-            row.style.display = active.includes(row.dataset.cat.trim()) ? '' : 'none';
-        });
+    // === 2. LÓGICA DE LA TABLA (FILTROS Y PAGINACIÓN) ===
+    function updateTable() {
+        const total = filteredRows.length;
+        const pages = Math.ceil(total / rowsPerPage);
+        
+        if (currentPage > pages) currentPage = Math.max(1, pages);
+        
+        rows.forEach(r => r.style.display = 'none');
+        filteredRows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+                    .forEach(r => r.style.display = '');
+        
+        paginationInfo.innerText = `Showing ${total > 0 ? (currentPage-1)*rowsPerPage + 1 : 0} to ${Math.min(currentPage*rowsPerPage, total)} of ${total}`;
+        renderPagination(pages);
         calculateTotal();
     }
 
-    // 3. CALC TOTAL
+    function renderPagination(pages) {
+        paginationControls.innerHTML = '';
+        if (pages <= 1) return;
+        for (let i = 1; i <= pages; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+            li.onclick = (e) => { e.preventDefault(); currentPage = i; updateTable(); };
+            paginationControls.appendChild(li);
+        }
+    }
+
+    function applyFilters() {
+        const active = [...checkboxContainer.querySelectorAll('input:checked')].map(cb => cb.value);
+        filteredRows = rows.filter(r => active.includes(r.dataset.cat.trim()));
+        currentPage = 1;
+        updateTable();
+    }
+
     function calculateTotal() {
-        let total = 0;
-        rows.forEach(row => {
-            if (row.style.display !== 'none') {
-                total += parseFloat(row.querySelector('.tx-amount').dataset.val);
-            }
-        });
-
-        totalDisplay.innerText =
-            total.toLocaleString('de-DE', { minimumFractionDigits: 2 }) + ' €';
-
-        totalDisplay.className =
-            'text-end pe-4 fw-bold ' + (total < 0 ? 'text-dark' : 'text-success'); // Ajustado a tu preferencia de colores
+        let sum = filteredRows.reduce((acc, r) => acc + parseFloat(r.querySelector('.tx-amount').dataset.val), 0);
+        totalDisplay.innerText = sum.toLocaleString('de-DE', { minimumFractionDigits: 2 }) + ' €';
+        totalDisplay.className = sum < 0 ? 'h6 fw-bold text-danger mb-0' : 'h6 fw-bold text-success mb-0';
     }
 
-    selectAllBtn.addEventListener('click', () => {
-        const checkboxes = checkboxContainer.querySelectorAll('input');
-        const allChecked = [...checkboxes].every(cb => cb.checked);
-        checkboxes.forEach(cb => cb.checked = !allChecked);
+    // Generar checkboxes de categorías
+    const cats = [...new Set(rows.map(r => r.dataset.cat.trim()))].sort();
+    cats.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'form-check mb-2';
+        div.innerHTML = `<input class="form-check-input" type="checkbox" value="${c}" checked><label class="form-check-label small">${c}</label>`;
+        div.querySelector('input').onchange = applyFilters;
+        checkboxContainer.appendChild(div);
+    });
+
+    document.getElementById('selectAllCats').onclick = () => {
+        const cbs = checkboxContainer.querySelectorAll('input');
+        const all = [...cbs].every(c => c.checked);
+        cbs.forEach(c => c.checked = !all);
         applyFilters();
-    });
-    
-    // 4. SORTING LOGIC (Recuperada para que funcione la tabla)
-    function sortTable(key) {
-        sortState.asc = (sortState.key === key) ? !sortState.asc : true;
-        sortState.key = key;
+    };
 
-        rows.sort((a, b) => {
-            let v1, v2;
-            if (key === 'date') {
-                v1 = a.querySelector('.tx-date').dataset.val;
-                v2 = b.querySelector('.tx-date').dataset.val;
-            } else if (key === 'amount') {
-                v1 = parseFloat(a.querySelector('.tx-amount').dataset.val);
-                v2 = parseFloat(b.querySelector('.tx-amount').dataset.val);
-            } else {
-                v1 = a.querySelector(`.tx-${key}`).innerText.toLowerCase().trim();
-                v2 = b.querySelector(`.tx-${key}`).innerText.toLowerCase().trim();
+    // === 3. LÓGICA DEL GRÁFICO E INTERACTIVIDAD ===
+    const rawLabels = JSON.parse(document.getElementById('labels-data').textContent);
+    const rawDataValues = JSON.parse(document.getElementById('values-data').textContent);
+    
+    if (rawDataValues.length > 0) {
+        const palette = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796', '#5a5c69'];
+        
+        // Unificar y ordenar de mayor a menor
+        let combinedData = rawLabels.map((label, index) => ({
+            label: label,
+            value: rawDataValues[index]
+        })).sort((a, b) => b.value - a.value);
+
+        const sortedLabels = combinedData.map(d => d.label);
+        const sortedValues = combinedData.map(d => d.value);
+        const sortedColors = combinedData.map((_, i) => palette[i % palette.length]);
+        const totalExp = sortedValues.reduce((a, b) => a + b, 0);
+
+        document.getElementById('chartTotalValue').innerText = totalExp.toLocaleString('de-DE', { minimumFractionDigits: 2 }) + ' €';
+
+        // Crear Gráfico
+        const myChart = new Chart(document.getElementById('expenseChart'), {
+            type: 'doughnut',
+            data: { 
+                labels: sortedLabels, 
+                datasets: [{ 
+                    data: sortedValues, 
+                    backgroundColor: sortedColors, 
+                    cutout: '75%', 
+                    borderColor: '#fff', 
+                    borderWidth: 3 
+                }] 
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                onHover: (event, chartElement) => {
+                    const legendItems = document.querySelectorAll('#chartLegend > div');
+                    legendItems.forEach(el => {
+                        el.style.backgroundColor = 'transparent';
+                        el.style.transform = 'translateX(0)';
+                    });
+
+                    if (chartElement.length > 0) {
+                        const index = chartElement[0].index;
+                        const targetCard = legendItems[index];
+                        if (targetCard) {
+                            targetCard.style.backgroundColor = '#f1f5f9';
+                            targetCard.style.transform = 'translateX(4px)';
+                        }
+                    }
+                },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let val = context.raw.toLocaleString('de-DE', { minimumFractionDigits: 2 });
+                                return ` ${context.label}: ${val} €`;
+                            }
+                        }
+                    }
+                } 
             }
-            if (v1 < v2) return sortState.asc ? -1 : 1;
-            if (v1 > v2) return sortState.asc ? 1 : -1;
-            return 0;
         });
-        rows.forEach(row => tableBody.appendChild(row));
+
+        // Generar Leyenda Ordenada con interactividad
+        const legend = document.getElementById('chartLegend');
+        combinedData.forEach((item, i) => {
+            const percentage = ((item.value / totalExp) * 100).toFixed(1);
+            const card = document.createElement('div');
+            card.className = 'd-flex align-items-center p-2 rounded-3';
+            card.style.transition = 'all 0.2s ease';
+            card.style.cursor = 'pointer';
+            card.innerHTML = `
+                <div style="width:8px; height:8px; border-radius:50%; background:${sortedColors[i]}; flex-shrink:0;"></div>
+                <div class="ms-2 flex-grow-1 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold" style="font-size:0.8rem;">${item.label}</div>
+                        <div class="text-muted" style="font-size:0.65rem;">${item.value.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</div>
+                    </div>
+                    <div class="fw-bold" style="font-size:0.85rem;">${percentage}%</div>
+                </div>`;
+
+            // Resalte hacia el donut
+            card.onmouseenter = () => {
+                myChart.setActiveElements([{ datasetIndex: 0, index: i }]);
+                myChart.tooltip.setActiveElements([{ datasetIndex: 0, index: i }], { x: 0, y: 0 });
+                myChart.update();
+                card.style.backgroundColor = '#f1f5f9';
+                card.style.transform = 'translateX(5px)';
+            };
+
+            card.onmouseleave = () => {
+                myChart.setActiveElements([]);
+                myChart.tooltip.setActiveElements([], { x: 0, y: 0 });
+                myChart.update();
+                card.style.backgroundColor = 'transparent';
+                card.style.transform = 'translateX(0)';
+            };
+
+            legend.appendChild(card);
+        });
     }
 
-    document.querySelectorAll('.sortable').forEach(th => {
-        th.addEventListener('click', () => sortTable(th.dataset.sort));
-        th.style.cursor = 'pointer'; 
-    });
-
-    calculateTotal();
+    // Inicializar tabla
+    updateTable();
 });
 </script>
 {% endblock %}

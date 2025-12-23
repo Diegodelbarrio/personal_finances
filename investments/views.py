@@ -2,11 +2,14 @@ from django.shortcuts import render
 from django.db.models import Sum, Max
 import datetime
 from .models import Asset
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def investments_dashboard(request):
-    assets = Asset.objects.all()
+    # 1. FILTRO DE SEGURIDAD: Solo activos del usuario actual
+    assets = Asset.objects.filter(user=request.user)
+    
     portfolio_data = []
-
     global_invested = 0
     global_current_value = 0
     last_market_dates = []
@@ -14,6 +17,7 @@ def investments_dashboard(request):
     temp_list = []
 
     for asset in assets:
+        # Al venir de 'assets' ya filtrados, su history y transactions son privados
         last_market_record = asset.history.order_by('-date').first()
         last_market_date = last_market_record.date if last_market_record else None
 
@@ -40,14 +44,13 @@ def investments_dashboard(request):
         global_invested += invested
         global_current_value += current_value
 
-    # Asignar porcentajes de allocation
+    # Asignar porcentajes de allocation (basado solo en el portfolio del usuario)
     for item in temp_list:
         allocation_raw = (item['current_value'] / global_current_value * 100) if global_current_value > 0 else 0
         item['allocation_display'] = round(allocation_raw, 1)
         item['allocation_css'] = f"{round(allocation_raw, 0)}%"
         portfolio_data.append(item)
 
-    # Obtener la fecha más reciente de todos los activos
     last_market_date_global = max(last_market_dates) if last_market_dates else None
 
     context = {

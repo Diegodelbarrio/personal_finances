@@ -38,12 +38,20 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
+
+    # My apps
     'finances',
     'investments',
     'knowledge',
     'users',
     'core',
     'holdings',
+
+    # Allauth apps
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
 ]
 
 MIDDLEWARE = [
@@ -54,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -133,4 +142,38 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# ----------------------------------------------------------------------
+# CONFIGURACIÓN DE AUTENTICACIÓN Y USUARIOS
+# ----------------------------------------------------------------------
+
+# 1. Modelo de usuario personalizado
 AUTH_USER_MODEL = 'users.User'
+
+# 2. Configuración de Sitios (requerido por allauth)
+SITE_ID = 1
+
+# 3. Backends de Autenticación
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# 4. Configuración de django-allauth
+ACCOUNT_LOGIN_METHODS = {'email', 'username'}
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+
+# 5. Redirecciones
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
+# NOTA: He borrado ACCOUNT_SIGNUP_FIELDS por completo para eliminar el Warning
+SILENCED_SYSTEM_CHECKS = ['account.W001']
+
+ACCOUNT_SIGNUP_FIELDS = [
+    'username*',   # El asterisco indica que es obligatorio
+    'email',       # Sin asterisco es opcional (según tu preferencia)
+    'password1*',  # Primera contraseña (obligatoria)
+    'password2*',  # Repetir contraseña (obligatoria - sustituye al Enter Twice)
+]
+
+SITE_URL = "/home/"
