@@ -30,6 +30,12 @@ class AccountBalanceSnapshot(models.Model):
     account = models.ForeignKey(BankAccount, on_delete=models.CASCADE, related_name='balances')
     date = models.DateField(verbose_name="Snapshot Date")
     balance = models.DecimalField(max_digits=15, decimal_places=2, verbose_name="Balance")
+    interest_earned = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0.00,
+        verbose_name="Interest Earned (Month)"
+    )
 
     class Meta:
         unique_together = ('account', 'date')

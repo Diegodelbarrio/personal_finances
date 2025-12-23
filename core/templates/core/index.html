@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
 
-<!-- HERO -->
 <div class="text-center py-4 mb-3">
     <h1 class="fw-bold display-6 mb-2">Your Finances, Your Future</h1>
     <p class="text-muted mb-0">
@@ -9,10 +8,7 @@
     </p>
 </div>
 
-<!-- MAIN MODULES -->
 <div class="row g-4 mb-5">
-
-    <!-- INVESTMENTS -->
     <div class="col-md-4">
         <div class="action-card h-100">
             <i class="bi bi-graph-up-arrow fs-2 text-success mb-2"></i>
@@ -24,7 +20,6 @@
         </div>
     </div>
 
-    <!-- MONTHLY FINANCES -->
     <div class="col-md-4">
         <div class="action-card h-100">
             <i class="bi bi-calendar-month fs-2 text-info mb-2"></i>
@@ -36,7 +31,6 @@
         </div>
     </div>
 
-    <!-- DASHBOARDS -->
     <div class="col-md-4">
         <div class="action-card h-100 bg-light disabled-card">
             <span class="status-badge bg-warning-subtle text-warning">
@@ -50,52 +44,50 @@
             </button>
         </div>
     </div>
-
 </div>
 
-<!-- NET WORTH + OBJECTIVES -->
 <div class="row g-4 mb-5">
-
-    <!-- NET WORTH -->
     <div class="col-md-6">
         <div class="section-card h-100">
-            <h6 class="fw-bold mb-2">Net Worth</h6>
-            <h2 class="fw-bold mb-4">26.000 €</h2>
+            <h6 class="fw-bold mb-2 text-muted">Net Worth</h6>
+            <h2 class="fw-bold mb-4">{{ current_net_worth|floatformat:0 }} €</h2>
 
-            <div class="chart-placeholder">
-                <span class="text-muted small">
-                    Net worth evolution (coming soon)
-                </span>
+            <div style="height: 250px;">
+                <canvas id="netWorthChart"></canvas>
             </div>
         </div>
     </div>
 
-    <!-- OBJECTIVES -->
     <div class="col-md-6">
         <div class="section-card h-100">
-            <h6 class="fw-bold mb-3">Objectives</h6>
+            <h6 class="fw-bold mb-3 text-muted">Objectives</h6>
 
-            <div class="progress rounded-pill mb-2" style="height: 22px;">
-                <div class="progress-bar bg-primary" style="width: 66%;"></div>
+            <div class="mb-4">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="fw-bold">Savings Goal</span>
+                    <span class="text-primary fw-bold">66%</span>
+                </div>
+                <div class="progress rounded-pill mb-2" style="height: 12px;">
+                    <div class="progress-bar bg-primary" style="width: 66%;"></div>
+                </div>
+                <div class="fw-bold">
+                    20.000 € <span class="text-muted fw-normal">/ 30.000 €</span>
+                </div>
             </div>
 
-            <div class="fw-bold">
-                20.000 € <span class="text-muted fw-normal">/ 30.000 €</span>
+            <div class="p-3 bg-light rounded-4">
+                <small class="text-muted d-block mb-1">Status</small>
+                <span class="badge bg-success-subtle text-success rounded-pill">On track</span>
             </div>
-            <small class="text-muted">Long-term savings goal</small>
         </div>
     </div>
-
 </div>
 
-<!-- QUICK ACTIONS -->
 <div class="row g-4 mb-5">
-
     <div class="col-md-4">
-        <a href="/admin/finances/transaction/add/"
-           class="text-decoration-none text-dark">
-            <div class="action-card h-100">
-                <div class="plus-icon">+</div>
+        <a href="/admin/finances/transaction/add/" class="text-decoration-none text-dark">
+            <div class="action-card h-100 border">
+                <div class="plus-icon text-primary">+</div>
                 <div class="fw-bold">Add Expense / Income</div>
                 <small class="text-muted">Admin entry</small>
             </div>
@@ -103,10 +95,9 @@
     </div>
 
     <div class="col-md-4">
-        <a href="/admin/investments/transaction/add/"
-           class="text-decoration-none text-dark">
-            <div class="action-card h-100">
-                <div class="plus-icon">+</div>
+        <a href="/admin/investments/transaction/add/" class="text-decoration-none text-dark">
+            <div class="action-card h-100 border">
+                <div class="plus-icon text-success">+</div>
                 <div class="fw-bold">Add Investment</div>
                 <small class="text-muted">Admin entry</small>
             </div>
@@ -120,20 +111,21 @@
             <small class="text-muted">Coming soon</small>
         </div>
     </div>
-
 </div>
 
-<!-- STYLES -->
 <style>
-/* === Cards === */
-.action-card {
-    position: relative;
+.action-card,
+.section-card {
     background: #ffffff;
     border-radius: 1.5rem;
     padding: 2rem;
-    box-shadow: 0 .5rem 1rem rgba(0,0,0,.08);
-    transition: transform .2s ease, box-shadow .2s ease;
+    box-shadow: 0 .4rem .8rem rgba(0,0,0,.05);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0,0,0,0.03);
+}
 
+.action-card {
+    position: relative; /* 🔥 FIX badge positioning */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -142,62 +134,85 @@
 }
 
 .action-card:hover:not(.disabled-card) {
-    transform: translateY(-4px);
-    box-shadow: 0 .75rem 1.5rem rgba(0,0,0,.12);
+    transform: translateY(-5px);
+    box-shadow: 0 1rem 2rem rgba(0,0,0,.1);
 }
 
-.action-card hr {
-    width: 60%;
-    margin: 0.5rem auto;
-}
-
-/* === Disabled cards === */
-.disabled-card {
-    cursor: default;
-}
-
-/* === Status badge === */
 .status-badge {
     position: absolute;
-    top: 12px;
-    right: 12px;
-    font-size: 0.65rem;
-    padding: 4px 10px;
-    border-radius: 999px;
-    box-shadow: 0 2px 6px rgba(0,0,0,.08);
+    top: 15px;
+    right: 15px;
+    font-size: 0.7rem;
+    padding: 5px 12px;
+    border-radius: 50px;
 }
 
-/* === Section cards === */
-.section-card {
-    background: #ffffff;
-    border-radius: 1.5rem;
-    padding: 2rem;
-    box-shadow: 0 .5rem 1rem rgba(0,0,0,.08);
-}
-
-/* === Icons === */
 .plus-icon {
-    font-size: 3rem;
-    font-weight: bold;
-    line-height: 1;
-    margin-bottom: .25rem;
-    color: #adb5bd;
+    font-size: 2.5rem;
+    font-weight: 300;
+    margin-bottom: 0.5rem;
 }
 
-/* === Chart placeholder === */
-.chart-placeholder {
-    height: 160px;
-    border-radius: 1rem;
-    background: #f1f3f5;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* === Subtle badges === */
-.bg-warning-subtle { background-color: #fff8e1 !important; }
-.bg-info-subtle { background-color: #e3f2fd !important; }
-.bg-secondary-subtle { background-color: #f8f9fa !important; }
+.bg-warning-subtle { background-color: #fff3cd !important; }
+.bg-success-subtle { background-color: #d1e7dd !important; }
+.bg-light { background-color: #f8f9fa !important; }
 </style>
 
+{{ net_worth_history|json_script:"net-worth-data" }}
+
 {% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const ctx = document.getElementById('netWorthChart').getContext('2d');
+
+    const rawData = JSON.parse(
+        document.getElementById('net-worth-data').textContent
+    );
+
+    const labels = rawData.map(item => item.label);
+    const values = rawData.map(item => item.value);
+
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(13, 110, 253, 0.2)');
+    gradient.addColorStop(1, 'rgba(13, 110, 253, 0)');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                data: values,
+                fill: true,
+                backgroundColor: gradient,
+                borderColor: '#0d6efd',
+                borderWidth: 2,
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#0d6efd',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { grid: { display: false } },
+                y: {
+                    ticks: {
+                        callback: v => v.toLocaleString('es-ES') + ' €'
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock scripts %}

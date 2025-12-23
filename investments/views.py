@@ -56,7 +56,7 @@ def investments_dashboard(request):
         'global_current_value': global_current_value,
         'global_profit_loss': global_current_value - global_invested,
         'global_roi': ((global_current_value - global_invested) / global_invested * 100) if global_invested != 0 else 0,
-        'last_market_date': last_market_date_global,  # <-- NUEVO
+        'last_market_date': last_market_date_global, 
     }
 
     return render(request, 'investments/investment_dashboard.html', context)

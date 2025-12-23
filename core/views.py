@@ -1,17 +1,17 @@
 from django.shortcuts import render
-from finances.models import Transaction
-from django.db.models import Sum
+from holdings.views import get_net_worth_evolution
 
 def home(request):
-    # Datos de Finances
-    balance = Transaction.objects.aggregate(total=Sum('amount'))['total'] or 0
+    # Obtenemos el historial consolidado
+    net_worth_history = get_net_worth_evolution()
     
-    # Aquí irás sumando datos de otras apps según las crees
-    # Ej: investments_total = Investment.objects.all().total()
+    # El Net Worth actual es el último punto del gráfico
+    current_net_worth = net_worth_history[-1]['value'] if net_worth_history else 0
     
     context = {
-        'balance': balance,
-        # 'invest_total': 0,
-        # 'knowledge_count': 0,
+        'net_worth_history': net_worth_history,
+        'current_net_worth': current_net_worth,
     }
+    
+    # Asegúrate de que tu template en core se llame landing.html o cámbialo aquí
     return render(request, 'core/index.html', context)
