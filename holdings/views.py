@@ -6,10 +6,9 @@ from collections import defaultdict
 
 def get_net_worth_evolution(user):
     """
-    Calcula la evolución del patrimonio neto filtrando 
-    estrictamente por el usuario proporcionado.
+    Calcula la evolución del patrimonio neto desglosado por cash e inversiones.
     """
-    # 1. Cash por mes (Filtramos por account__user ya que Snapshot no tiene user directo)
+    # 1. Cash por mes
     cash_by_month = AccountBalanceSnapshot.objects.filter(
         account__user=user
     ).annotate(
@@ -18,7 +17,7 @@ def get_net_worth_evolution(user):
         total_cash=Sum('balance')
     ).order_by('month_trunc')
 
-    # 2. Inversiones por mes (Filtramos por asset__user)
+    # 2. Inversiones por mes
     inv_by_month = AssetHistory.objects.filter(
         asset__user=user
     ).annotate(
@@ -40,18 +39,20 @@ def get_net_worth_evolution(user):
         if m:
             consolidated[m]['inv'] = float(entry['total_inv'] or 0)
 
-    # 4. Generar lista final ordenada
+    # 4. Generar lista final ordenada con DESGLOSE
     history = []
     sorted_months = sorted(consolidated.keys())
     
     for m in sorted_months:
         cash = consolidated[m]['cash']
         inv = consolidated[m]['inv']
-        net_worth = cash + inv
         
         history.append({
+            'date': m,               
             'label': m.strftime('%b %y'), 
-            'value': net_worth
+            'savings': cash,         # <--- CLAVE NUEVA
+            'investments': inv,      # <--- CLAVE NUEVA
+            'value': cash + inv      # Mantenemos 'value' para el total
         })
 
     return history

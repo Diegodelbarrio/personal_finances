@@ -1,159 +1,40 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-
-<style>
-/* Estado base (Cerrado): Sin transición para que desaparezca al instante */
-    .dropdown-menu {
-        display: block;
-        visibility: hidden;
-        opacity: 0;
-        transform: translateY(10px);
-        transition: none; 
-        border: none !important;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
-        pointer-events: none;
-    }
-
-    /* Estado Abierto: Aquí es donde definimos la transición de aparición */
-    .dropdown-menu.show {
-        visibility: visible;
-        opacity: 1;
-        transform: translateY(0);
-        transition: all 0.3s ease-out; /* Solo transiciona cuando se añade la clase .show */
-        pointer-events: auto;
-    }
-
-    /* --- Paddings Diferenciados --- */
-
-    /* Menú de Categorías (Mantiene p-3/1rem) */
-    .dropdown-menu.dropdown-menu-end {
-        padding: 1rem !important; 
-    }
-
-    /* Menús de Año y Mes (Padding menor) */
-    .dropdown-compact {
-        padding: 0.45rem !important; /* Padding ajustado y pequeño */
-        min-width: 110px !important;
-    }
-
-    .dropdown-compact .dropdown-item {
-        font-size: 0.75rem !important;
-        padding: 0.3rem 0.6rem !important;
-        border-radius: 0.4rem;
-        font-weight: 600;
-        color: #475569;
-    }
-
-    .dropdown-item.active {
-        background-color: #1e293b !important;
-        color: white !important;
-    }
-
-
-    /* 2. Botones de activación superiores */
-    .btn-white { 
-        background-color: #fff; 
-        color: #333; 
-        border: 1px solid #e2e8f0 !important;
-        font-size: 0.8rem;
-    }
-
-    /* 3. Leyenda del Gráfico y Scrollbar */
-    #chartLegendWrapper {
-        max-height: 250px;
-        overflow-y: auto;
-        padding-right: 15px; 
-        scrollbar-width: thin;
-        scrollbar-color: #cbd5e1 transparent;
-    }
-
-    #chartLegendWrapper::-webkit-scrollbar { width: 5px; }
-    #chartLegendWrapper::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
-
-    #chartLegend div.rounded-3 {
-        margin-bottom: 8px;
-        border: 1px solid #f1f5f9;
-        transition: all 0.2s ease;
-    }
-
-    /* Estilo base de la tarjeta de la leyenda */
-    #chartLegend div.rounded-3 {
-        margin-bottom: 8px;
-        border: 1px solid #f8fafc; /* Borde más suave */
-        background-color: #ffffff;
-        transition: all 0.2s ease-in-out;
-        cursor: default;
-    }
-
-    /* Efecto HOVER */
-    #chartLegend div.rounded-3:hover {
-        background-color: #f1f5f9 !important; /* Gris muy claro al pasar el ratón */
-        border-color: #e2e8f0 !important;
-        transform: translateX(4px); /* Se desplaza un poco a la derecha */
-        box-shadow: 0 4px 6px 1px rgba(0, 0, 0, 0.05);
-    }
-
-    /* 4. Estilos de Tarjetas y Tabla */
-    .card-rounded { border-radius: 1.5rem !important; overflow: visible !important; }
-    .table-responsive { overflow: visible !important; }
-    .soft-income { background:#e8f5e9 !important; color:#2e7d32 !important; }
-    .soft-expenses { background:#fce4ec !important; color:#c2185b !important; }
-    .pagination .page-link { border: none; border-radius: 8px !important; font-size: 0.75rem; font-weight: 600; }
-    /* Estilo para la tarjeta inactiva */
-    .card-disabled {
-        background-color: #f8fafc !important; /* Gris muy suave */
-        border: 2px dashed #cbd5e1 !important; /* Borde punteado gris claro */
-        transition: all 0.3s ease;
-    }
-
-    /* Icono y texto de la tarjeta inactiva */
-    .card-disabled .icon-box {
-        background: #ffffff;
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-        margin-bottom: 1rem;
-    }
-</style>
+<link rel="stylesheet" href="{% static 'finances/css/summary.css' %}">
 
 <div class="container py-5">
 
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start mb-4 gap-3">
         <div>
-            <h1 class="fw-bold mb-0">Financial Summary</h1>
+            <h1 class="fw-bold mb-0">Financial Monthly Summary</h1>
             <p class="text-muted small">Monthly tracking of income and expenses</p>
         </div>
-
-<div class="d-flex align-items-center gap-2">
-    <div class="dropdown">
-        <button class="btn btn-sm btn-white shadow-sm rounded-pill px-3 py-2 fw-bold dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
-            <i class="bi bi-calendar-event text-muted small"></i> {{ sel_year }}
-        </button>
-        <ul class="dropdown-menu dropdown-compact shadow-lg rounded-3 border-0">
-            {% for y in years %}
-            <li><a class="dropdown-item {% if y == sel_year %}active{% endif %}" href="?year={{ y }}&month={{ sel_month }}">{{ y }}</a></li>
-            {% endfor %}
-        </ul>
-    </div>
-
-    <div class="dropdown">
-        <button class="btn btn-sm btn-white shadow-sm rounded-pill px-3 py-2 fw-bold dropdown-toggle d-flex align-items-center gap-2 text-capitalize" type="button" data-bs-toggle="dropdown">
-            <i class="bi bi-calendar3 text-muted small"></i>
-            {% for num, name in months %}{% if num == sel_month %}{{ name }}{% endif %}{% endfor %}
-        </button>
-        <ul class="dropdown-menu dropdown-compact shadow-lg rounded-3 border-0">
-            {% for num, name in months %}
-            <li><a class="dropdown-item text-capitalize {% if num == sel_month %}active{% endif %}" href="?year={{ sel_year }}&month={{ num }}">{{ name }}</a></li>
-            {% endfor %}
-        </ul>
-    </div>
-</div>
+        <div class="d-flex align-items-center gap-2">
+            <div class="dropdown">
+                <button class="btn btn-sm btn-white shadow-sm rounded-pill px-3 py-2 fw-bold dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-calendar-event text-muted small"></i> {{ sel_year }}
+                </button>
+                <ul class="dropdown-menu dropdown-compact shadow-lg rounded-3 border-0">
+                    {% for y in years %}
+                    <li><a class="dropdown-item {% if y == sel_year %}active{% endif %}" href="?year={{ y }}&month={{ sel_month }}">{{ y }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-white shadow-sm rounded-pill px-3 py-2 fw-bold dropdown-toggle d-flex align-items-center gap-2 text-capitalize" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-calendar3 text-muted small"></i>
+                    {% for num, name in months %}{% if num == sel_month %}{{ name }}{% endif %}{% endfor %}
+                </button>
+                <ul class="dropdown-menu dropdown-compact shadow-lg rounded-3 border-0">
+                    {% for num, name in months %}
+                    <li><a class="dropdown-item text-capitalize {% if num == sel_month %}active{% endif %}" href="?year={{ sel_year }}&month={{ num }}">{{ name }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
     </div>
 
     <div class="row g-4 mb-5">
@@ -161,9 +42,8 @@
         <div class="col-6 col-md-4">
             <div class="card card-rounded border-0 shadow-sm p-3 h-100 {% if kpi.label == 'Net Savings' %}{% if kpi.value >= 0 %} bg-success text-white {% else %} bg-danger text-white {% endif %}{% elif kpi.label == 'Total Income' %} soft-income {% elif kpi.label == 'Total Expenses' %} soft-expenses {% else %} bg-white {% endif %}">
                 <div class="d-flex flex-column justify-content-center align-items-center h-100 text-center">
-                    <small class="text-uppercase fw-bold opacity-75" style="font-size: 0.65rem; letter-spacing: 1px;">{{ kpi.label }}</small>
+                    <small class="text-uppercase fw-bold opacity-75 letter-spacing-1" style="font-size: 0.65rem;">{{ kpi.label }}</small>
                     <h2 class="fw-bold mt-1 mb-0">{{ kpi.value|floatformat:2 }} €</h2>
-                    
                     {% if kpi.label == 'Net Savings' %}
                     <div class="mt-2">
                         <span class="badge bg-light {% if kpi.value >= 0 %}text-success{% else %}text-danger{% endif %} rounded-pill px-3 shadow-sm" style="font-size: 0.7rem;">
@@ -180,8 +60,14 @@
     <div class="card card-rounded border-0 shadow-sm mb-5">
         <div class="card-header bg-white py-4 border-0 px-4 d-flex justify-content-between align-items-center">
             <h5 class="fw-bold mb-0">Transactions</h5>
+            <div class="d-flex gap-2">
+                <div class="input-group input-group-sm search-pill">
+                    <span class="input-group-text"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" id="tableSearch" class="form-control" placeholder="Search transactions...">
+                </div>
+            </div>
             <div class="dropdown">
-                <button class="btn btn-sm btn-light border rounded-pill px-3 dropdown-toggle shadow-sm fw-bold" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport">
+                <button class="btn btn-sm btn-light border rounded-pill px-3 dropdown-toggle shadow-sm fw-bold" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
                     <i class="bi bi-filter me-1"></i> Categories
                 </button>
                 <div class="dropdown-menu dropdown-menu-end p-3 shadow-lg border-0 rounded-4" style="min-width:240px; max-height:400px; overflow-y:auto;">
@@ -194,25 +80,35 @@
             </div>
         </div>
         <div class="table-responsive"> 
-            <table class="table align-middle mb-0 table-hover">
+            <table class="table align-middle mb-0 table-hover table-fixed">
                 <thead class="bg-light">
                     <tr>
-                        <th class="ps-4 sortable" data-sort="date" style="cursor:pointer">Date <i class="bi bi-arrow-down-up ms-1 small opacity-50"></i></th>
+                        <th class="ps-4 cursor-pointer sortable-header" data-sort="date">
+                            Date <i class="bi bi-arrow-down-up ms-1 small opacity-50"></i>
+                        </th>
                         <th>Description</th>
-                        <th class="sortable" data-sort="category" style="cursor:pointer">Category</th>
+                        <th class="cursor-pointer sortable-header" data-sort="category">
+                            Category <i class="bi bi-arrow-down-up ms-1 small opacity-50"></i>
+                        </th>
                         <th>Subcategory</th>
-                        <th class="text-end pe-4 sortable" data-sort="amount" style="cursor:pointer">Amount</th>
+                        <th class="text-end pe-4 cursor-pointer sortable-header" data-sort="amount">
+                            Amount <i class="bi bi-arrow-down-up ms-1 small opacity-50"></i>
+                        </th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
                     {% for tx in transactions %}
                     <tr class="tx-row" data-cat="{{ tx.subcategory.parent_category.name }}">
-                        <td class="ps-4 tx-date" data-val="{{ tx.date|date:'Y-m-d' }}">{{ tx.date|date:"Y-m-d" }}</td>
+                        <td class="ps-4 tx-date" data-val="{{ tx.date|date:'Y-m-d' }}">
+                            {{ tx.date|date:"Y-m-d" }}
+                        </td>
                         <td class="fw-medium">{{ tx.description }}</td>
                         <td><span class="badge bg-light text-dark rounded-pill px-3">{{ tx.subcategory.parent_category.name }}</span></td>
                         <td class="text-muted small">{{ tx.subcategory.name }}</td>
-                        <td class="text-end pe-4 tx-amount fw-bold" data-val="{{ tx.amount }}">
-                            <span class="{% if tx.amount > 0 %}text-success{% else %}text-dark{% endif %}">{{ tx.amount|floatformat:2 }} €</span>
+                        <td class="text-end pe-4 tx-amount fw-bold" data-val="{{ tx.amount|stringformat:'f' }}">
+                            <span class="{% if tx.amount > 0 %}text-success{% else %}text-dark{% endif %}">
+                                {{ tx.amount|floatformat:2 }} €
+                            </span>
                         </td>
                     </tr>
                     {% endfor %}
@@ -229,227 +125,115 @@
     </div>
 
     <div class="row g-4">
-<div class="col-12 col-lg-6">
-    <div class="card card-rounded border-0 shadow-sm p-4 h-100">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="fw-bold mb-0">Expense Distribution</h5>
-            <div class="text-end">
-                <div class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Total Expenses</div>
-                <span id="chartTotalValue" class="h5 fw-bold text-dark mb-0">0.00 €</span>
+        
+        <div class="col-12 col-lg-6">
+            <div class="card card-rounded border-0 shadow-sm p-4 h-100 bg-white">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0">Expense Distribution</h5>
+                </div>
+                <div class="row align-items-center">
+                    <div class="col-sm-6">
+                        <div style="position: relative; height: 250px;"><canvas id="expenseChart"></canvas></div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="legend-scroll-wrapper">
+                            <div id="expenseLegendContainer"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="row align-items-center">
-            <div class="col-sm-6">
-                <div style="position: relative; height: 250px;"><canvas id="expenseChart"></canvas></div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card card-rounded border-0 shadow-sm p-4 h-100 bg-white d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0">Savings Rule</h5>
+                    <i class="bi bi-pie-chart text-muted"></i>
+                </div>
+
+                <div class="row align-items-center flex-grow-1">
+                    <div class="col-sm-6">
+                        <div style="position: relative; height: 250px;">
+                            <canvas id="savingsRuleChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="legend-scroll-wrapper">
+                            <div id="savingsLegendContainer"></div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if is_incomplete %}
+                <div class="mt-4 p-3 rounded-4 warning-box" style="background-color: #fff8ec; border: 1px dashed #ffcc80;">
+                    <div class="d-flex align-items-start">
+                        <i class="bi bi-info-circle-fill text-warning me-2 mt-1"></i>
+                        <div class="small text-muted">
+                            <strong class="text-dark">Potential Missing Data:</strong> 
+                            Net savings are <span class="text-danger fw-bold">{{ savings_val|floatformat:2 }}€</span>.
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
-            <div class="col-sm-6">
-                <div id="chartLegendWrapper"><div id="chartLegend"></div></div>
+        </div>
+
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card card-rounded shadow-sm p-4 d-flex align-items-center justify-content-center card-disabled">
+                <div class="text-center">
+                    <div class="icon-box mx-auto">
+                        <i class="bi bi-receipt-cutoff text-muted opacity-50 fs-3"></i>
+                    </div>
+                    <h6 class="fw-bold text-muted mb-1">Tax Estimation</h6>
+                    <span class="badge rounded-pill mt-3 px-3 py-2" style="background: #e2e8f0; color: #64748b; font-size: 0.6rem; letter-spacing: 0.5px;">PLANNED</span>
+                </div>
             </div>
         </div>
     </div>
-</div>
-<div class="col-12 col-lg-6">
-    <div class="card card-rounded shadow-sm p-4 h-100 d-flex align-items-center justify-content-center card-disabled">
-        <div class="text-center">
-            <div class="icon-box mx-auto">
-                <i class="bi bi-bar-chart text-muted opacity-50 fs-3"></i>
-            </div>
-            <h6 class="fw-bold text-muted mb-1">Advanced Analysis</h6>
-            <p class="text-muted mb-0 small opacity-75">Feature coming soon</p>
-            
-            <span class="badge rounded-pill mt-3 px-3 py-2" style="background: #e2e8f0; color: #64748b; font-size: 0.6rem; letter-spacing: 0.5px;">PLANNED</span>
-        </div>
-    </div>
-</div>
-    </div>
+
 </div>
 
 {{ chart_labels|json_script:"labels-data" }}
 {{ chart_data|json_script:"values-data" }}
+{{ savings_rule_labels|json_script:"savings-labels" }}
+{{ savings_rule_data|json_script:"savings-data" }}
 
 {% endblock %}
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'finances/js/summary.js' %}"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // === 1. VARIABLES Y SELECTORES ===
-    const rows = Array.from(document.querySelectorAll('.tx-row'));
-    const tableBody = document.getElementById('tableBody');
-    const checkboxContainer = document.getElementById('checkboxContainer');
-    const totalDisplay = document.getElementById('tableTotalAmount');
-    const paginationControls = document.getElementById('paginationControls');
-    const paginationInfo = document.getElementById('paginationInfo');
-    
-    let currentPage = 1;
-    const rowsPerPage = 10;
-    let filteredRows = [...rows];
+    document.addEventListener('DOMContentLoaded', function () {
+        // 1. Inicializar Tabla
+        initTransactionTable();
 
-    // === 2. LÓGICA DE LA TABLA (FILTROS Y PAGINACIÓN) ===
-    function updateTable() {
-        const total = filteredRows.length;
-        const pages = Math.ceil(total / rowsPerPage);
-        
-        if (currentPage > pages) currentPage = Math.max(1, pages);
-        
-        rows.forEach(r => r.style.display = 'none');
-        filteredRows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
-                    .forEach(r => r.style.display = '');
-        
-        paginationInfo.innerText = `Showing ${total > 0 ? (currentPage-1)*rowsPerPage + 1 : 0} to ${Math.min(currentPage*rowsPerPage, total)} of ${total}`;
-        renderPagination(pages);
-        calculateTotal();
-    }
+        // 2. Obtener Datos
+        const expLabels = JSON.parse(document.getElementById('labels-data').textContent);
+        const expValues = JSON.parse(document.getElementById('values-data').textContent);
+        const savLabels = JSON.parse(document.getElementById('savings-labels').textContent);
+        const savValues = JSON.parse(document.getElementById('savings-data').textContent);
 
-    function renderPagination(pages) {
-        paginationControls.innerHTML = '';
-        if (pages <= 1) return;
-        for (let i = 1; i <= pages; i++) {
-            const li = document.createElement('li');
-            li.className = `page-item ${i === currentPage ? 'active' : ''}`;
-            li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
-            li.onclick = (e) => { e.preventDefault(); currentPage = i; updateTable(); };
-            paginationControls.appendChild(li);
-        }
-    }
+        // 3. Generar Gráfico 1 (Gastos)
+        createInteractiveDonut(
+            'expenseChart', 
+            'expenseLegendContainer', 
+            expLabels, 
+            expValues, 
+            ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796', '#5a5c69']
+        );
 
-    function applyFilters() {
-        const active = [...checkboxContainer.querySelectorAll('input:checked')].map(cb => cb.value);
-        filteredRows = rows.filter(r => active.includes(r.dataset.cat.trim()));
-        currentPage = 1;
-        updateTable();
-    }
-
-    function calculateTotal() {
-        let sum = filteredRows.reduce((acc, r) => acc + parseFloat(r.querySelector('.tx-amount').dataset.val), 0);
-        totalDisplay.innerText = sum.toLocaleString('de-DE', { minimumFractionDigits: 2 }) + ' €';
-        totalDisplay.className = sum < 0 ? 'h6 fw-bold text-danger mb-0' : 'h6 fw-bold text-success mb-0';
-    }
-
-    // Generar checkboxes de categorías
-    const cats = [...new Set(rows.map(r => r.dataset.cat.trim()))].sort();
-    cats.forEach(c => {
-        const div = document.createElement('div');
-        div.className = 'form-check mb-2';
-        div.innerHTML = `<input class="form-check-input" type="checkbox" value="${c}" checked><label class="form-check-label small">${c}</label>`;
-        div.querySelector('input').onchange = applyFilters;
-        checkboxContainer.appendChild(div);
+        // 4. Generar Gráfico 2 (Ahorro) - Ahora usa la misma función y estilo
+        createInteractiveDonut(
+            'savingsRuleChart', 
+            'savingsLegendContainer', 
+            savLabels, 
+            savValues, 
+            ['#10b981', '#6366f1', '#f59e0b'] // Colores específicos para ahorro
+        );
     });
-
-    document.getElementById('selectAllCats').onclick = () => {
-        const cbs = checkboxContainer.querySelectorAll('input');
-        const all = [...cbs].every(c => c.checked);
-        cbs.forEach(c => c.checked = !all);
-        applyFilters();
-    };
-
-    // === 3. LÓGICA DEL GRÁFICO E INTERACTIVIDAD ===
-    const rawLabels = JSON.parse(document.getElementById('labels-data').textContent);
-    const rawDataValues = JSON.parse(document.getElementById('values-data').textContent);
-    
-    if (rawDataValues.length > 0) {
-        const palette = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796', '#5a5c69'];
-        
-        // Unificar y ordenar de mayor a menor
-        let combinedData = rawLabels.map((label, index) => ({
-            label: label,
-            value: rawDataValues[index]
-        })).sort((a, b) => b.value - a.value);
-
-        const sortedLabels = combinedData.map(d => d.label);
-        const sortedValues = combinedData.map(d => d.value);
-        const sortedColors = combinedData.map((_, i) => palette[i % palette.length]);
-        const totalExp = sortedValues.reduce((a, b) => a + b, 0);
-
-        document.getElementById('chartTotalValue').innerText = totalExp.toLocaleString('de-DE', { minimumFractionDigits: 2 }) + ' €';
-
-        // Crear Gráfico
-        const myChart = new Chart(document.getElementById('expenseChart'), {
-            type: 'doughnut',
-            data: { 
-                labels: sortedLabels, 
-                datasets: [{ 
-                    data: sortedValues, 
-                    backgroundColor: sortedColors, 
-                    cutout: '75%', 
-                    borderColor: '#fff', 
-                    borderWidth: 3 
-                }] 
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false,
-                onHover: (event, chartElement) => {
-                    const legendItems = document.querySelectorAll('#chartLegend > div');
-                    legendItems.forEach(el => {
-                        el.style.backgroundColor = 'transparent';
-                        el.style.transform = 'translateX(0)';
-                    });
-
-                    if (chartElement.length > 0) {
-                        const index = chartElement[0].index;
-                        const targetCard = legendItems[index];
-                        if (targetCard) {
-                            targetCard.style.backgroundColor = '#f1f5f9';
-                            targetCard.style.transform = 'translateX(4px)';
-                        }
-                    }
-                },
-                plugins: { 
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let val = context.raw.toLocaleString('de-DE', { minimumFractionDigits: 2 });
-                                return ` ${context.label}: ${val} €`;
-                            }
-                        }
-                    }
-                } 
-            }
-        });
-
-        // Generar Leyenda Ordenada con interactividad
-        const legend = document.getElementById('chartLegend');
-        combinedData.forEach((item, i) => {
-            const percentage = ((item.value / totalExp) * 100).toFixed(1);
-            const card = document.createElement('div');
-            card.className = 'd-flex align-items-center p-2 rounded-3';
-            card.style.transition = 'all 0.2s ease';
-            card.style.cursor = 'pointer';
-            card.innerHTML = `
-                <div style="width:8px; height:8px; border-radius:50%; background:${sortedColors[i]}; flex-shrink:0;"></div>
-                <div class="ms-2 flex-grow-1 d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="fw-bold" style="font-size:0.8rem;">${item.label}</div>
-                        <div class="text-muted" style="font-size:0.65rem;">${item.value.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</div>
-                    </div>
-                    <div class="fw-bold" style="font-size:0.85rem;">${percentage}%</div>
-                </div>`;
-
-            // Resalte hacia el donut
-            card.onmouseenter = () => {
-                myChart.setActiveElements([{ datasetIndex: 0, index: i }]);
-                myChart.tooltip.setActiveElements([{ datasetIndex: 0, index: i }], { x: 0, y: 0 });
-                myChart.update();
-                card.style.backgroundColor = '#f1f5f9';
-                card.style.transform = 'translateX(5px)';
-            };
-
-            card.onmouseleave = () => {
-                myChart.setActiveElements([]);
-                myChart.tooltip.setActiveElements([], { x: 0, y: 0 });
-                myChart.update();
-                card.style.backgroundColor = 'transparent';
-                card.style.transform = 'translateX(0)';
-            };
-
-            legend.appendChild(card);
-        });
-    }
-
-    // Inicializar tabla
-    updateTable();
-});
 </script>
 {% endblock %}

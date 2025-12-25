@@ -13,7 +13,7 @@
         <div class="action-card h-100">
             <i class="bi bi-graph-up-arrow fs-2 text-success mb-2"></i>
             <h6 class="fw-bold mb-2">Investments</h6>
-            <hr>
+            <hr class="custom-divider">
             <a href="{% url 'investment_dashboard' %}" class="btn btn-dark rounded-pill px-4">
                 Enter
             </a>
@@ -24,7 +24,7 @@
         <div class="action-card h-100">
             <i class="bi bi-calendar-month fs-2 text-info mb-2"></i>
             <h6 class="fw-bold mb-2">Monthly Finances</h6>
-            <hr>
+            <hr class="custom-divider">
             <a href="{% url 'summary' %}" class="btn btn-dark rounded-pill px-4">
                 Enter
             </a>
@@ -38,7 +38,7 @@
             </span>
             <i class="bi bi-bar-chart fs-2 text-primary mb-2"></i>
             <h6 class="fw-bold mb-2 text-muted">Dashboards</h6>
-            <hr>
+            <hr class="custom-divider">
             <button class="btn btn-outline-secondary rounded-pill px-4" disabled>
                 Coming soon
             </button>
@@ -47,16 +47,34 @@
 </div>
 
 <div class="row g-4 mb-5">
-    <div class="col-md-6">
-        <div class="section-card h-100">
-            <h6 class="fw-bold mb-2 text-muted">Net Worth</h6>
-            <h2 class="fw-bold mb-4">{{ current_net_worth|floatformat:0 }} €</h2>
+<div class="col-md-6">
+    <div class="section-card h-100 p-4 position-relative">
+        
+        <div class="last-update-badge {% if is_stale %}date-stale{% endif %}">
+            <i class="bi {% if is_stale %}bi-exclamation-triangle-fill{% else %}bi-clock-history{% endif %} me-1"></i>
+            {% if last_market_date %}
+                {{ last_market_date|date:"d/m/Y" }}
+            {% else %}
+                --/--/--
+            {% endif %}
+        </div>
 
-            <div style="height: 250px;">
-                <canvas id="netWorthChart"></canvas>
-            </div>
+        <div class="d-flex justify-content-center align-items-baseline mb-4 mt-2">
+            <h6 class="fw-bold mb-0 text-muted text-uppercase letter-spacing me-3" style="font-size: 0.9rem;">
+                Net Worth
+            </h6>
+            
+            <span class="net-worth-badge">
+                <span class="amount">{{ current_net_worth|floatformat:0 }}</span>
+                <span class="currency">€</span>
+            </span>
+        </div>
+
+        <div style="height: 250px;">
+            <canvas id="netWorthChart"></canvas>
         </div>
     </div>
+</div>
 
     <div class="col-md-6">
         <div class="section-card h-100">
@@ -125,7 +143,7 @@
 }
 
 .action-card {
-    position: relative; /* 🔥 FIX badge positioning */
+    position: relative;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -153,9 +171,82 @@
     margin-bottom: 0.5rem;
 }
 
+.custom-divider {
+    width: 90%;         
+    border: 0;
+    border-top: 1px solid rgba(0,0,0,0.1); 
+    margin: 0.5rem 0.5;   
+    opacity: 1;            
+}
+
+/* Ajuste opcional para la tarjeta deshabilitada */
+.disabled-card {
+    border: 1px dashed #e2e8f0 !important; /* Efecto de "en construcción" */
+    background-color: #fbfcfd !important;
+}
+
 .bg-warning-subtle { background-color: #fff3cd !important; }
 .bg-success-subtle { background-color: #d1e7dd !important; }
 .bg-light { background-color: #f8f9fa !important; }
+
+.last-update-badge {
+    position: absolute;
+    top: 1.2rem;
+    right: 1.2rem;
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: #94a3b8;
+    background: #f8fafc;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    border: 1px solid #f1f5f9;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+/* Estilo cuando los datos son antiguos (más de 30 días) */
+.date-stale {
+    color: #dc3545; /* Rojo Bootstrap */
+    background: #fff5f5;
+    border-color: #feb2b2;
+}
+
+/* El "Span" o Píldora del número */
+.net-worth-badge {
+    display: inline-flex;
+    align-items: baseline;
+    background: #f8fafc; /* Gris muy tenue para que no sea 'cantoso' */
+    padding: 0.35rem 0.9rem;
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+}
+
+.net-worth-badge .amount {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1;
+    letter-spacing: -0.5px;
+}
+
+.net-worth-badge .currency {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #64748b; /* Gris para el símbolo, más discreto */
+    margin-left: 4px;
+    line-height: 1;
+}
+
+.letter-spacing {
+    letter-spacing: 1px;
+}
+
+/* Efecto hover suave en la tarjeta */
+.section-card:hover .net-worth-badge {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+    transition: all 0.3s ease;
+}
 </style>
 
 {{ net_worth_history|json_script:"net-worth-data" }}
@@ -167,47 +258,82 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const ctx = document.getElementById('netWorthChart').getContext('2d');
+    const rawData = JSON.parse(document.getElementById('net-worth-data').textContent);
 
-    const rawData = JSON.parse(
-        document.getElementById('net-worth-data').textContent
-    );
+    if (!rawData || rawData.length === 0) return;
 
     const labels = rawData.map(item => item.label);
-    const values = rawData.map(item => item.value);
-
-    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-    gradient.addColorStop(0, 'rgba(13, 110, 253, 0.2)');
-    gradient.addColorStop(1, 'rgba(13, 110, 253, 0)');
+    const savingsValues = rawData.map(item => item.savings);
+    const investmentValues = rawData.map(item => item.investments);
 
     new Chart(ctx, {
         type: 'line',
         data: {
             labels,
-            datasets: [{
-                data: values,
-                fill: true,
-                backgroundColor: gradient,
-                borderColor: '#0d6efd',
-                borderWidth: 2,
-                tension: 0.4,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#0d6efd',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2
-            }]
+            datasets: [
+                {
+                    label: ' Investments',
+                    data: investmentValues,
+                    fill: true,
+                    backgroundColor: 'rgba(25, 135, 84, 0.3)', // Verde transparente
+                    borderColor: '#198754',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                },
+                {
+                    label: ' Savings & Cash',
+                    data: savingsValues,
+                    fill: true,
+                    backgroundColor: 'rgba(13, 110, 253, 0.3)', // Azul transparente
+                    borderColor: '#0d6efd',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
             plugins: {
-                legend: { display: false }
+                legend: {
+                    display: true,
+                    position: 'top',
+                    align: 'end',
+                    labels: {
+                        boxWidth: 8,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        font: { size: 11, weight: 'bold' }
+                    }
+                },
+                tooltip: {
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            return ` ${context.dataset.label}: ${context.parsed.y.toLocaleString('de-DE')} €`;
+                        },
+                        footer: function(tooltipItems) {
+                            let sum = 0;
+                            tooltipItems.forEach(i => sum += i.parsed.y);
+                            return 'TOTAL: ' + sum.toLocaleString('de-DE') + ' €';
+                        }
+                    }
+                }
             },
             scales: {
                 x: { grid: { display: false } },
                 y: {
+                    stacked: true, // Esto hace que las áreas se sumen visualmente
                     ticks: {
-                        callback: v => v.toLocaleString('es-ES') + ' €'
+                        callback: v => v.toLocaleString('de-DE') + ' €'
                     }
                 }
             }

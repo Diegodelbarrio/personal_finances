@@ -49,6 +49,12 @@ def summary(request):
     inc = clean(metrics['income'])
     exp = clean(metrics['expenses'])
 
+    # Lógica de aviso: ahorros negativos e ingresos bajos (posibles datos faltantes)
+    savings = inc - exp
+    is_incomplete = False
+    if savings < 0 and inc < 2000:
+        is_incomplete = True
+
     # 8. Cálculo de ingresos del mes anterior (para comparativas)
     if sel_month == 1:
         prev_month = 12
@@ -76,6 +82,15 @@ def summary(request):
     chart_labels = [item['subcategory__parent_category__name'] for item in expense_stats]
     chart_data = [float(abs(item['total'] or 0)) for item in expense_stats]
 
+    # 10. Datos para la gráfica de Regla de Ahorro (Savings Rule)
+    # Calculamos los 3 pilares
+    fixed_val = clean(metrics['fixed'])
+    variable_val = clean(metrics['variable'])
+    savings_val = max(0, float(inc - exp)) # Solo si hay capacidad de ahorro
+
+    savings_rule_labels = ['Savings', 'Fixed Expenses', 'Variable Expenses']
+    savings_rule_data = [savings_val, float(fixed_val), float(variable_val)]
+
     context = {
         'transactions': qs.order_by('-date'),
         'years': years,
@@ -85,6 +100,10 @@ def summary(request):
         'prev_income': prev_income,
         'chart_labels': chart_labels,
         'chart_data': chart_data,
+        'savings_rule_labels': savings_rule_labels,
+        'savings_rule_data': savings_rule_data,
+        'is_incomplete': is_incomplete,
+        'savings_val': savings, # Lo pasamos para usarlo en el mensaje
         'kpis': [
             {'label': 'Net Savings', 'value': inc - exp, 'class': 'soft-primary'},
             {'label': 'Total Income', 'value': inc, 'class': 'soft-success'},

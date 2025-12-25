@@ -1,0 +1,105 @@
+/* --- UTILIDADES --- */
+.letter-spacing-1 { letter-spacing: 1px; }
+.cursor-pointer { cursor: pointer; }
+
+/* --- DROPDOWNS --- */
+.dropdown-menu {
+    display: block; visibility: hidden; opacity: 0;
+    transform: translateY(10px); transition: none;
+    border: none !important; box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+    pointer-events: none;
+}
+.dropdown-menu.show {
+    visibility: visible; opacity: 1; transform: translateY(0);
+    transition: all 0.3s ease-out; pointer-events: auto;
+}
+.dropdown-menu.dropdown-menu-end { padding: 1rem !important; }
+
+/* Dropdowns Compactos (Año/Mes) */
+.dropdown-compact { padding: 0.45rem !important; min-width: 110px !important; }
+.dropdown-compact .dropdown-item {
+    font-size: 0.75rem !important; padding: 0.3rem 0.6rem !important;
+    border-radius: 0.4rem; font-weight: 600; color: #475569;
+}
+.dropdown-item.active { background-color: #1e293b !important; color: white !important; }
+.btn-white { 
+    background-color: #fff; color: #333; 
+    border: 1px solid #e2e8f0 !important; font-size: 0.8rem; 
+}
+
+/* --- TARJETAS Y KPI --- */
+.card-rounded { border-radius: 1.5rem !important; overflow: visible !important; }
+.card-disabled {
+    background-color: #f8fafc !important; border: 2px dashed #cbd5e1 !important;
+    transition: all 0.3s ease;
+}
+.card-disabled .icon-box {
+    background: #ffffff; width: 60px; height: 60px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 1rem;
+}
+.soft-income { background:#e8f5e9 !important; color:#2e7d32 !important; }
+.soft-expenses { background:#fce4ec !important; color:#c2185b !important; }
+
+/* --- TABLAS (ESTRUCTURA FIJA) --- */
+.table-fixed {
+    table-layout: fixed !important;
+    width: 100% !important;
+}
+
+/* Evita que el texto largo mueva las columnas */
+.table-fixed td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Permitir que la descripción sea legible si es muy larga (opcional) */
+.table-fixed td.tx-desc {
+    white-space: normal;
+    word-break: break-word;
+    font-size: 0.85rem;
+}
+
+.table-responsive { overflow: visible !important; }
+.pagination .page-link { border: none; border-radius: 8px !important; font-size: 0.75rem; font-weight: 600; }
+
+/* --- BUSCADOR ESTILO PILL --- */
+.search-pill {
+    border-radius: 50rem !important;
+    background: #ffffff;
+    border: 1px solid #e2e8f0 !important;
+    transition: all 0.2s ease;
+    overflow: hidden;
+}
+.search-pill:focus-within {
+    border-color: #1e293b !important;
+    box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.1);
+}
+.search-pill .form-control {
+    border: none !important;
+    box-shadow: none !important;
+}
+.search-pill .input-group-text {
+    border: none !important;
+    background: transparent !important;
+}
+
+/* --- COMPONENTE GRÁFICO --- */
+.legend-scroll-wrapper {
+    max-height: 250px; overflow-y: auto; padding-right: 15px; 
+    scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;
+}
+.legend-scroll-wrapper::-webkit-scrollbar { width: 5px; }
+.legend-scroll-wrapper::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+
+.legend-card {
+    margin-bottom: 8px; border: 1px solid #f8fafc;
+    background-color: #ffffff; transition: all 0.2s ease-in-out;
+    cursor: default; padding: 0.5rem; display: flex; align-items: center;
+    border-radius: 0.5rem;
+}
+.legend-card:hover {
+    background-color: #f1f5f9 !important; border-color: #e2e8f0 !important;
+    transform: translateX(4px); box-shadow: 0 4px 6px 1px rgba(0, 0, 0, 0.05);
+}

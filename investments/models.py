@@ -54,8 +54,8 @@ class Transaction(models.Model):
 
     date = models.DateField(default=timezone.now, verbose_name="Date")
     action = models.CharField(max_length=4, choices=ACTION_CHOICES, default='BUY')
-    shares = models.DecimalField(max_digits=20, decimal_places=8, verbose_name="Shares")
-    price_per_share = models.DecimalField(max_digits=20, decimal_places=6, verbose_name="Price per Share")
+    shares = models.DecimalField(max_digits=20, decimal_places=8, verbose_name="Shares", blank=True, null=True)
+    price_per_share = models.DecimalField(max_digits=20, decimal_places=6, verbose_name="Price per Share", blank=True, null=True)
     amount = models.DecimalField(max_digits=20, decimal_places=2, verbose_name="Total (€) Invested")
     notes = models.TextField(blank=True, null=True, verbose_name="Comments")
 
