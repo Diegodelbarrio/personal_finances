@@ -56,7 +56,6 @@ def get_performance_history(user):
 
 
 def get_allocation_chart(chart_assets):
-    # ORDENAR de mayor a menor valor actual
     sorted_assets = sorted(
         chart_assets,
         key=lambda x: x["current_value"],

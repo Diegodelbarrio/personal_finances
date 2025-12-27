@@ -1,0 +1,19 @@
+/* Específico para el desglose de activos */
+#allocationLegend {
+    max-height: 290px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+.table-asset-row:hover {
+    background-color: rgba(13, 110, 253, 0.02);
+}
+
+/* Estilos de la tabla de DataTables */
+#portfolioTable thead th {
+    border: none;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    color: #999;
+    padding-bottom: 15px;
+}

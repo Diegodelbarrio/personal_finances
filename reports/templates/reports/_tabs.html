@@ -1,0 +1,22 @@
+<ul class="nav nav-pills custom-tabs mb-4 p-0 rounded-pill border bg-white d-inline-flex">
+    <li class="nav-item">
+        <a class="nav-link rounded-pill px-4 {% if active_tab == 'finance' %}active{% endif %}"
+           href="{% url 'reports:report_finance' %}?year={{ selected_year }}">
+            Finances
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link rounded-pill px-4 {% if active_tab == 'investments' %}active{% endif %}"
+           href="{% url 'reports:report_investments' %}?year={{ selected_year }}">
+            Investments
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link rounded-pill px-4 {% if active_tab == 'holdings' %}active{% endif %}"
+           href="{% url 'reports:report_holdings' %}?year={{ selected_year }}">
+            Bank Accounts
+        </a>
+    </li>
+</ul>

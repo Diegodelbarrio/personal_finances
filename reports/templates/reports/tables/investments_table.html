@@ -1,0 +1,78 @@
+<thead>
+<tr>
+    <th class="ps-4">Month</th>
+    <th class="text-end">Invested</th>
+    <th class="text-end highlight-col">Market Value</th>
+    <th class="text-end">Contribution</th>
+    <th class="text-end">Profit / Loss</th>
+    <th class="text-center">ROI</th>
+</tr>
+</thead>
+
+<tbody>
+{% for m in report.monthly_data %}
+<tr class="investment-row">
+    <td class="ps-4 fw-semibold">
+        {{ m.date_obj|date:"F" }}
+    </td>
+
+    <td class="text-end num-align text-muted">
+        {{ m.invested|floatformat:2 }} €
+    </td>
+
+    <td class="text-end num-align fw-bold">
+        {{ m.market_value|floatformat:2 }} €
+    </td>
+
+    <td class="text-end num-align">
+        {% if m.contributions > 0 %}
+            <span class="value-pill value-pill-primary">
+                +{{ m.contributions|floatformat:2 }} €
+            </span>
+        {% else %}
+            <span class="text-muted">—</span>
+        {% endif %}
+    </td>
+
+    <td class="text-end num-align fw-bold {% if m.profit_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+        {{ m.profit_loss|floatformat:2 }} €
+    </td>
+
+    <td class="text-center">
+        <span class="badge-roi {% if m.roi >= 0 %}roi-up{% else %}roi-down{% endif %}">
+            {{ m.roi|floatformat:2 }}%
+        </span>
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+
+<tfoot>
+<tr class="finance-total-row">
+    <td class="ps-4 small text-uppercase fw-bold">
+        Year End {{ report.year }}
+    </td>
+
+    <td class="text-end num-align text-muted fw-semibold">
+        {{ report.annual_stats.final_invested|floatformat:2 }} €
+    </td>
+
+    <td class="text-end num-align fw-bold">
+        {{ report.annual_stats.final_market_value|floatformat:2 }} €
+    </td>
+
+    <td class="text-end num-align fw-semibold text-primary">
+        +{{ report.annual_stats.total_contributions|floatformat:2 }} €
+    </td>
+
+    <td class="text-end num-align fw-bold {% if report.annual_stats.total_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+        {{ report.annual_stats.total_profit|floatformat:2 }} €
+    </td>
+
+    <td class="text-center">
+        <span class="badge bg-white text-dark fw-bold px-3">
+            {{ report.annual_stats.annual_roi|floatformat:2 }}%
+        </span>
+    </td>
+</tr>
+</tfoot>

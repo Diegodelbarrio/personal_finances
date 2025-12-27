@@ -1,0 +1,80 @@
+<thead>
+    <tr>
+        <th class="ps-4">Month</th>
+        <th class="text-end">Income</th>
+        <th class="text-end">Fixed Exp.</th>
+        <th class="text-end">Var. Exp.</th>
+        <th class="text-end">Net Savings</th>
+        <th class="text-center">Savings %</th>
+    </tr>
+</thead>
+
+<tbody>
+{% for m in report.monthly_data %}
+<tr>
+    <td class="ps-4 fw-semibold text-dark">
+        {{ m.date_obj|date:"F" }}
+    </td>
+
+    <td class="num-align text-income fw-bold">
+        {{ m.income|floatformat:2 }} €
+    </td>
+
+    <td class="num-align text-muted small">
+        {{ m.fixed|floatformat:2 }} €
+    </td>
+
+    <td class="num-align text-muted small">
+        {{ m.variable|floatformat:2 }} €
+    </td>
+
+    <td class="num-align fw-bold {% if m.savings >= 0 %}text-success{% else %}text-danger{% endif %}">
+        {{ m.savings|floatformat:2 }} €
+    </td>
+
+    <td class="text-center">
+        {% with rate=m.savings_rate %}
+            {% with rate_text=rate|floatformat:1|add:" %" %}
+                {% if rate >= 30 %}
+                    {% include "reports/components/badge_value.html" with value=rate_text class="badge-roi roi-up" %}
+                {% elif rate >= 20 %}
+                    <span class="badge bg-warning text-dark px-3">{{ rate_text }}</span>
+                {% else %}
+                    {% include "reports/components/badge_value.html" with value=rate_text class="badge-roi roi-down" %}
+                {% endif %}
+            {% endwith %}
+        {% endwith %}
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+
+<tfoot>
+    <tr class="finance-total-row">
+        <td class="ps-4 fw-bold text-uppercase small">
+            Annual Summary
+        </td>
+
+        <td class="num-align">
+            {{ report.annual_stats.income|floatformat:2 }} €
+        </td>
+
+        <td class="num-align">
+            {{ report.annual_stats.fixed_total|floatformat:2 }} €
+        </td>
+
+        <td class="num-align">
+            {{ report.annual_stats.variable_total|floatformat:2 }} €
+        </td>
+
+        <td class="num-align fw-bold">
+            {{ report.annual_stats.savings|floatformat:2 }} €
+        </td>
+
+        <td class="text-center">
+            <span class="badge bg-white text-dark fw-bold px-3">
+                {{ report.annual_stats.avg_savings_rate|floatformat:1 }} %
+            </span>
+        </td>
+    </tr>
+</tfoot>

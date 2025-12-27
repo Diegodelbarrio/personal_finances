@@ -1,0 +1,27 @@
+{% extends "reports/_layout.html" %}
+
+{% block report_title %}
+Investments · Annual Performance
+{% endblock %}
+
+{% block report_content %}
+
+{% include "reports/components/report_table.html" with hover=True table_template="reports/tables/investments_table.html" %}
+
+<div class="row g-4 mt-2">
+    <div class="col-12 col-lg-6">
+        {% include "components/coming_soon_card.html" with title="Advanced Analytics" text="Coming Soon: AI-driven projections and dividend tracking." icon="bi-rocket-takeoff" %}
+    </div>
+
+    <div class="col-12 col-lg-6">
+        {% include "components/coming_soon_card.html" with title="Advanced Analytics" text="Coming Soon: AI-driven projections and dividend tracking." icon="bi-rocket-takeoff" %}
+    </div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-12"> {% include "components/coming_soon_card.html" with title="Tax Estimation" text="Planned" icon="bi-receipt-cutoff" %}
+    </div>
+</div>
+
+
+{% endblock %}

@@ -1,145 +1,103 @@
 /**
- * Crea un gráfico de Donut con leyenda interactiva lateral.
- * @param {string} canvasId - ID del elemento canvas
- * @param {string} legendId - ID del contenedor div para la leyenda
- * @param {Array} labels - Array de etiquetas
- * @param {Array} values - Array de valores numéricos
- * @param {Array} colors - Array de colores hexadecimales
+ * Finances Summary Module
  */
-function createInteractiveDonut(canvasId, legendId, labels, values, colors) {
-    const ctx = document.getElementById(canvasId);
-    const legendContainer = document.getElementById(legendId);
-    
-    if (!ctx || !legendContainer || !values || values.length === 0) return;
+const SummaryModule = {
+    // Variables de estado de la tabla
+    tableState: {
+        rows: [],
+        filteredRows: [],
+        currentPage: 1,
+        rowsPerPage: 10,
+        sortState: { column: null, ascending: true }
+    },
 
-    // 1. Preparar datos (Ordenar de mayor a menor para consistencia visual)
-    let chartData = labels.map((label, i) => ({
-        label: label,
-        value: values[i],
-        color: colors[i % colors.length]
-    })).sort((a, b) => b.value - a.value);
+    init: function() {
+        // 1. Inicializar Gráficos
+        this.setupCharts();
 
-    const sortedLabels = chartData.map(d => d.label);
-    const sortedValues = chartData.map(d => d.value);
-    const sortedColors = chartData.map(d => d.color);
-    const total = sortedValues.reduce((a, b) => a + b, 0);
+        // 2. Inicializar la tabla
+        this.initTransactionTable();
+    },
 
-    // 2. Crear Gráfico Chart.js
-    const chart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: sortedLabels,
-            datasets: [{
-                data: sortedValues,
-                backgroundColor: sortedColors,
-                cutout: '50%',
-                borderColor: '#fff',
-                borderWidth: 3
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false }, // Ocultar leyenda nativa
-            tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            let label = context.label || '';
-                            let value = context.raw || 0;
-                            // Formatea el número y añade el símbolo €
-                            return ` ${value.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €`;
-                        }
-                    }
-                },
-            },
-            onHover: (event, chartElement) => {
-                // Resetear estilos de todos los items de leyenda
-                const legendItems = legendContainer.querySelectorAll('.legend-card');
-                legendItems.forEach(el => { 
-                    el.style.backgroundColor = ''; 
-                    el.style.transform = ''; 
-                });
-                
-                // Si el ratón está sobre un segmento del gráfico, resaltar la leyenda correspondiente
-                if (chartElement.length > 0) {
-                    const index = chartElement[0].index;
-                    const targetCard = legendItems[index];
-                    if (targetCard) {
-                        targetCard.style.backgroundColor = '#f1f5f9';
-                        targetCard.style.transform = 'translateX(4px)';
-                    }
-                }
-            }
+    setupCharts: function() {
+        const expLabels = this.getData('labels-data');
+        const expValues = this.getData('values-data');
+        const savLabels = this.getData('savings-labels');
+        const savValues = this.getData('savings-data');
+
+        if (expLabels && expValues) {
+            ChartFactory.createInteractiveDonut('expenseChart', 'expenseLegendContainer', expLabels, expValues);
         }
-    });
 
-    // 3. Generar HTML de la Leyenda Personalizada
-    legendContainer.innerHTML = '';
-    chartData.forEach((item, i) => {
-        const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
-        
-        // Crear tarjeta
-        const card = document.createElement('div');
-        card.className = 'legend-card'; // Clase CSS reutilizable
-        card.innerHTML = `
-            <div style="width:8px; height:8px; border-radius:50%; background:${item.color}; flex-shrink:0;"></div>
-            <div class="ms-2 flex-grow-1 d-flex justify-content-between align-items-center">
-                <div>
-                    <div class="fw-bold" style="font-size:0.8rem;">${item.label}</div>
-                    <div class="text-muted" style="font-size:0.65rem;">${item.value.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</div>
-                </div>
-                <div class="fw-bold" style="font-size:0.85rem;">${percentage}%</div>
-            </div>`;
+        if (savLabels && savValues) {
+            ChartFactory.createInteractiveDonut(
+                'savingsRuleChart', 
+                'savingsLegendContainer', 
+                savLabels, 
+                savValues, 
+                ['#10b981', '#6366f1', '#f59e0b']
+            );
+        }
+    },
 
-        // Eventos de ratón para interactuar con el gráfico
-        card.onmouseenter = () => {
-            chart.setActiveElements([{ datasetIndex: 0, index: i }]);
-            chart.tooltip.setActiveElements([{ datasetIndex: 0, index: i }], { x: 0, y: 0 });
-            chart.update();
-        };
-        card.onmouseleave = () => {
-            chart.setActiveElements([]);
-            chart.update();
-        };
+    initTransactionTable: function() {
+        const tableBody = document.getElementById('tableBody');
+        if (!tableBody) return;
 
-        legendContainer.appendChild(card);
-    });
-}
+        // Configuración inicial del estado
+        this.tableState.rows = Array.from(document.querySelectorAll('.tx-row'));
+        this.tableState.filteredRows = [...this.tableState.rows];
 
-/**
- * Inicializa la lógica de la tabla de transacciones (Filtros y Paginación)
- */
-/**
- * Inicializa la lógica de la tabla de transacciones (Filtros, Paginación y Sorting)
- */
-function initTransactionTable() {
-    const tableBody = document.getElementById('tableBody');
-    if (!tableBody) return;
+        // Referencias a elementos del DOM
+        const checkboxContainer = document.getElementById('checkboxContainer');
+        const toggleBtn = document.getElementById('selectAllCats');
+        const searchInput = document.getElementById('tableSearch');
 
-    // Guardamos las filas originales
-    const rows = Array.from(document.querySelectorAll('.tx-row'));
-    const checkboxContainer = document.getElementById('checkboxContainer');
-    const totalDisplay = document.getElementById('tableTotalAmount');
-    const paginationControls = document.getElementById('paginationControls');
-    const paginationInfo = document.getElementById('paginationInfo');
-    
-    let currentPage = 1;
-    const rowsPerPage = 10;
-    let filteredRows = [...rows];
-    let sortState = { column: null, ascending: true };
+        // --- EVENTOS DE ORDENACIÓN ---
+        document.querySelectorAll('.sortable-header').forEach(header => {
+            header.onclick = () => this.sortTable(header.getAttribute('data-sort'));
+        });
 
-    // --- LÓGICA DE ORDENACIÓN ---
-    function sortTable(column) {
-        if (sortState.column === column) {
-            sortState.ascending = !sortState.ascending;
+        // --- GENERAR FILTROS DE CATEGORÍA ---
+        const cats = [...new Set(this.tableState.rows.map(r => r.dataset.cat.trim()))].sort();
+        cats.forEach(c => {
+            const div = document.createElement('div');
+            div.className = 'form-check mb-2';
+            div.innerHTML = `
+                <input class="form-check-input" type="checkbox" value="${c}" checked id="cat-${c}">
+                <label class="form-check-label small ms-2" for="cat-${c}">${c}</label>`;
+            div.querySelector('input').onchange = () => this.applyFilters();
+            checkboxContainer.appendChild(div);
+        });
+
+        if (toggleBtn) {
+            toggleBtn.onclick = () => {
+                const cbs = checkboxContainer.querySelectorAll('input');
+                const anyUnchecked = [...cbs].some(c => !c.checked);
+                cbs.forEach(c => c.checked = anyUnchecked);
+                this.applyFilters();
+            };
+        }
+
+        // --- BUSCADOR ---
+        if (searchInput) {
+            searchInput.oninput = () => this.applyFilters();
+        }
+
+        this.updateTable();
+    },
+
+    sortTable: function(column) {
+        const state = this.tableState;
+        if (state.sortState.column === column) {
+            state.sortState.ascending = !state.sortState.ascending;
         } else {
-            sortState.column = column;
-            sortState.ascending = true;
+            state.sortState.column = column;
+            state.sortState.ascending = true;
         }
 
-        filteredRows.sort((a, b) => {
+        state.filteredRows.sort((a, b) => {
             let valA, valB;
-
             if (column === 'date') {
                 valA = new Date(a.querySelector('.tx-date').dataset.val).getTime();
                 valB = new Date(b.querySelector('.tx-date').dataset.val).getTime();
@@ -149,123 +107,102 @@ function initTransactionTable() {
             } else {
                 valA = a.dataset.cat.toLowerCase();
                 valB = b.dataset.cat.toLowerCase();
-                return sortState.ascending ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                return state.sortState.ascending ? valA.localeCompare(valB) : valB.localeCompare(valA);
             }
-
-            return sortState.ascending ? valA - valB : valB - valA;
+            return state.sortState.ascending ? valA - valB : valB - valA;
         });
 
-        updateSortIcons(column);
-        currentPage = 1;
-        updateTable();
-    }
+        this.updateSortIcons(column);
+        state.currentPage = 1;
+        this.updateTable();
+    },
 
-    // --- ACTUALIZACIÓN DE LA VISTA (CORREGIDO) ---
-    function updateTable() {
-        const total = filteredRows.length;
-        const pages = Math.ceil(total / rowsPerPage);
+    updateTable: function() {
+        const state = this.tableState;
+        const tableBody = document.getElementById('tableBody');
+        const total = state.filteredRows.length;
+        const pages = Math.ceil(total / state.rowsPerPage);
         
-        // 1. Ocultar todas las filas primero
-        rows.forEach(r => r.style.display = 'none');
+        const start = (state.currentPage - 1) * state.rowsPerPage;
+        const end = start + state.rowsPerPage;
+        const pageRows = state.filteredRows.slice(start, end);
 
-        // 2. Obtener las filas de la página actual
-        const start = (currentPage - 1) * rowsPerPage;
-        const end = start + rowsPerPage;
-        const pageRows = filteredRows.slice(start, end);
-
-        // 3. LIMPIAR Y RE-INSERTAR (Esto es lo que garantiza el orden visual)
         tableBody.innerHTML = ''; 
         pageRows.forEach(r => {
-            r.style.display = ''; // Asegurarse de que sea visible
-            tableBody.appendChild(r); // Re-insertar en el nuevo orden
+            r.style.display = ''; 
+            tableBody.appendChild(r);
         });
         
-        // Actualizar información de paginación
-        paginationInfo.innerText = `Showing ${total > 0 ? start + 1 : 0} to ${Math.min(end, total)} of ${total}`;
+        document.getElementById('paginationInfo').innerText = 
+            `Showing ${total > 0 ? start + 1 : 0} to ${Math.min(end, total)} of ${total}`;
         
-        // Renderizar controles de paginación
-        renderPagination(pages);
-        
-        // Calcular Total Visible
-        updateTotalSum();
-    }
+        this.renderPagination(pages);
+        this.updateTotalSum();
+    },
 
-    function renderPagination(pages) {
-        paginationControls.innerHTML = '';
+    renderPagination: function(pages) {
+        const container = document.getElementById('paginationControls');
+        container.innerHTML = '';
         if (pages <= 1) return;
 
         for (let i = 1; i <= pages; i++) {
             const li = document.createElement('li');
-            li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+            li.className = `page-item ${i === this.tableState.currentPage ? 'active' : ''}`;
             li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
             li.onclick = (e) => { 
                 e.preventDefault(); 
-                currentPage = i; 
-                updateTable(); 
+                this.tableState.currentPage = i; 
+                this.updateTable(); 
             };
-            paginationControls.appendChild(li);
+            container.appendChild(li);
         }
-    }
+    },
 
-    function updateTotalSum() {
-        let sum = filteredRows.reduce((acc, r) => acc + parseFloat(r.querySelector('.tx-amount').dataset.val), 0);
-        totalDisplay.innerText = sum.toLocaleString('de-DE', { minimumFractionDigits: 2 }) + ' €';
+    updateTotalSum: function() {
+        const totalDisplay = document.getElementById('tableTotalAmount');
+        let sum = this.tableState.filteredRows.reduce((acc, r) => 
+            acc + parseFloat(r.querySelector('.tx-amount').dataset.val), 0
+        );
+        
+        // Uso del formateador global
+        totalDisplay.innerText = FinancialFormatter.currency(sum);
         totalDisplay.className = sum < 0 ? 'h6 fw-bold text-danger mb-0' : 'h6 fw-bold text-success mb-0';
-    }
+    },
 
-    function updateSortIcons(activeColumn) {
+    updateSortIcons: function(activeColumn) {
         document.querySelectorAll('.sortable-header i').forEach(icon => {
             icon.className = 'bi bi-arrow-down-up ms-1 small opacity-50';
         });
         const activeHeader = document.querySelector(`.sortable-header[data-sort="${activeColumn}"] i`);
         if (activeHeader) {
-            activeHeader.className = sortState.ascending ? 'bi bi-sort-up ms-1' : 'bi bi-sort-down ms-1';
+            activeHeader.className = this.tableState.sortState.ascending ? 'bi bi-sort-up ms-1' : 'bi bi-sort-down ms-1';
             activeHeader.classList.remove('opacity-50');
         }
-    }
+    },
 
-    // --- FILTROS ---
-    function applyFilters() {
-        const active = [...checkboxContainer.querySelectorAll('input:checked')].map(cb => cb.value);
-        filteredRows = rows.filter(r => active.includes(r.dataset.cat.trim()));
+    applyFilters: function() {
+        const state = this.tableState;
+        const searchInput = document.getElementById('tableSearch');
+        const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+        const activeCats = [...document.querySelectorAll('#checkboxContainer input:checked')].map(cb => cb.value);
+
+        state.filteredRows = state.rows.filter(r => {
+            const matchesCat = activeCats.includes(r.dataset.cat.trim());
+            const matchesSearch = r.innerText.toLowerCase().includes(searchTerm);
+            return matchesCat && matchesSearch;
+        });
         
-        if (sortState.column) {
-            const currentColumn = sortState.column;
-            sortState.column = null; // Reset para forzar la misma dirección
-            sortTable(currentColumn);
-        } else {
-            currentPage = 1;
-            updateTable();
-        }
+        state.currentPage = 1;
+        this.updateTable();
+    },
+
+    getData: function(id) {
+        const el = document.getElementById(id);
+        return el ? JSON.parse(el.textContent) : null;
     }
+};
 
-    // --- INICIALIZACIÓN DE EVENTOS ---
-    document.querySelectorAll('.sortable-header').forEach(header => {
-        header.onclick = function() {
-            sortTable(this.getAttribute('data-sort'));
-        };
-    });
-
-    // Generar checkboxes de categorías
-    const cats = [...new Set(rows.map(r => r.dataset.cat.trim()))].sort();
-    cats.forEach(c => {
-        const div = document.createElement('div');
-        div.className = 'form-check mb-2';
-        div.innerHTML = `<input class="form-check-input" type="checkbox" value="${c}" checked><label class="form-check-label small ms-2">${c}</label>`;
-        div.querySelector('input').onchange = applyFilters;
-        checkboxContainer.appendChild(div);
-    });
-
-    const toggleBtn = document.getElementById('selectAllCats');
-    if(toggleBtn) {
-        toggleBtn.onclick = () => {
-            const cbs = checkboxContainer.querySelectorAll('input');
-            const all = [...cbs].every(c => c.checked);
-            cbs.forEach(c => c.checked = !all);
-            applyFilters();
-        };
-    }
-
-    // Carga inicial
-    updateTable();
-}
+// Inicialización
+$(document).ready(function() {
+    SummaryModule.init();
+});

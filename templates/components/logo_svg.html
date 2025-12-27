@@ -1,0 +1,43 @@
+<svg viewBox="0 0 550 150" xmlns="http://www.w3.org/2000/svg" style="height: 100%; width: auto; overflow: visible;">
+    <defs>
+        <linearGradient id="gradienteGlobal" x1="0" y1="0" x2="550" y2="0" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" style="stop-color:#FFFFFF; stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#BDE0FF; stop-opacity:1" />
+        </linearGradient>
+
+        <radialGradient id="gradienteSatelite" cx="50%" cy="50%" r="50%" fx="30%" fy="30%">
+            <stop offset="0%" style="stop-color:#FFFFFF; stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#8ecae6; stop-opacity:1" />
+        </radialGradient>
+
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+            <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        
+        <style>
+            .logo-type { 
+                font-family: 'Inter', 'Montserrat', sans-serif; 
+                font-weight: 900; 
+                font-size: 90px; 
+                letter-spacing: -3px;
+            }
+        </style>
+    </defs>
+
+    <g transform="translate(45, 105)">
+        <text x="0" y="0" class="logo-type" fill="url(#gradienteGlobal)">Fin</text>
+        
+        <circle cx="178" cy="-30" r="36" fill="none" stroke="url(#gradienteGlobal)" stroke-width="4" />
+
+        <g filter="url(#glow)">
+            <circle cx="208" cy="-52" r="17" fill="url(#gradienteSatelite)" />
+            <text x="208" y="-45" font-family="Arial" font-weight="900" font-size="22" fill="#0b1c2d" text-anchor="middle">$</text>
+        </g>
+
+        <text x="228" y="0" class="logo-type" fill="url(#gradienteGlobal)">rbit</text>
+    </g>
+</svg>

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{% static 'reports/css/reports.css' %}?v={% now 'U' %}" >
+{% endblock extra_head %}
+
+{% block content %}
+<div class="container-fluid py-5 px-lg-5">
+    {# Header del Reporte: Título y Selector de Año #}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item small text-uppercase fw-bold"><a class="text-decoration-none text-muted">Analytics</a></li>
+                    <li class="breadcrumb-item small text-uppercase fw-bold active" aria-current="page">Reports</li>
+                </ol>
+            </nav>
+            <h1 class="h2 fw-extrabold text-dark mb-0">{{ page_title }}</h1>
+        </div>
+
+        <div class="dropdown">
+            <button class="btn btn-sm btn-white shadow-sm rounded-pill px-3 py-2 fw-bold dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-calendar-event text-muted small"></i> {{ selected_year }}
+            </button>
+            <ul class="dropdown-menu dropdown-compact shadow-lg rounded-3 border-0">
+                {% for y in years %}
+                <li><a class="dropdown-item {% if y == selected_year %}active{% endif %}" href="?year={{ y }}">{{ y }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    {# Menú de navegación de reportes (Tabs) #}
+    <div class="mb-2">
+        {% include "reports/_tabs.html" %}
+    </div>
+
+    <!-- Contenedor dinámico de los reportes (Finance, Investments, etc.) -->
+    <div class="report-render-area">
+        {% block report_content %}{% endblock %}
+    </div>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+    <script src="{% static 'reports/js/finance_report.js' %}"></script>
+    <script src="{% static 'reports/js/holdings_report.js' %}"></script>
+{% endblock scripts %}

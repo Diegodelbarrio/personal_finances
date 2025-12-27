@@ -1,0 +1,19 @@
+<div class="card card-rounded border-0 shadow-sm p-4 h-100 {{ color_class|default:'bg-white' }}">
+    <div class="d-flex flex-column h-100">
+        <small class="text-uppercase {% if 'text-white' in color_class %}opacity-75{% else %}text-muted{% endif %} fw-bold letter-spacing">
+            {{ label }}
+        </small>
+        
+        <h2 class="fw-bold mt-2 mb-0 {% if 'text-white' in color_class %}text-white{% endif %}">
+            {{ value|floatformat:2 }}€
+        </h2>
+
+        {% if sub_value is not None %}
+        <div class="mt-auto pt-3">
+            <span class="badge rounded-pill px-3 py-2 {% if sub_value >= 0 %}bg-success{% else %}bg-danger{% endif %}">
+                {% if sub_value >= 0 %}+{% endif %}{{ sub_value|floatformat:2 }}{{ sub_unit|default:'%' }}
+            </span>
+        </div>
+        {% endif %}
+    </div>
+</div>

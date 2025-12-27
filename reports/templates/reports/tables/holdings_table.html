@@ -1,0 +1,32 @@
+<thead>
+            <tr>
+                <th class="ps-4 holdings-col-account">Account</th>
+                {% for month_date in report.monthly_data.month_names %}
+                    <th class="text-end holdings-col-month">{{ month_date|date:"M"|upper }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in report.monthly_data.matrix %}
+            <tr>
+                <td class="ps-4 fw-bold text-dark holdings-col-account">
+                    {{ row.account_name }}
+                </td>
+                {% for balance in row.balances %}
+                    <td class="num-align holdings-col-month">
+                        {{ balance|floatformat:0 }} €
+                    </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr class="holdings-total-row">
+                <td class="ps-4 fw-bold text-uppercase small holdings-col-account">
+                    Total Portfolio
+                </td>
+                {% for total in report.monthly_data.monthly_totals %}
+                    <td class="num-align fw-bold">{{ total|floatformat:0 }} €</td>
+                {% endfor %}
+            </tr>
+        </tfoot>

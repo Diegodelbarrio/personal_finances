@@ -1,0 +1,288 @@
+/* ROOT: Definición de la paleta financiera y espaciados */
+:root {
+    --fin-primary: #0d6efd;
+    --fin-success: #198754;
+    --fin-danger: #dc3545;
+    --fin-warning: #ffc107;
+    --fin-gray-soft: #f1f5f9;
+    --fin-text-muted: #64748b;
+    --fin-radius: 1.5rem;
+    --brand-primary: #0d6efd;
+    --brand-dark: #0b1c2d;
+    --bg-soft: #f8f9fb;
+    --navbar-height: 50px;
+}
+
+body {
+    /* background-color: #f8fafc; */
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: #1e293b;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-soft);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Componentes de Tarjetas Reutilizables */
+.card-rounded { 
+    border-radius: var(--fin-radius); 
+}
+
+.icon-shape { 
+    width: 40px; 
+    height: 40px; 
+    font-size: 1.2rem; 
+    min-width: 40px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+}
+
+/* Estado Vacío / Próximamente (Dashed Card) */
+.card-dashed {
+    border: 2px dashed #cbd5e1 !important;
+    background-color: var(--fin-gray-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+/* Utilidades de Badges Financieros */
+.bg-success-subtle { background-color: #e8f5e9 !important; color: var(--fin-success) !important; }
+.bg-danger-subtle { background-color: #ffebee !important; color: var(--fin-danger) !important; }
+.bg-primary-subtle { background-color: #e0e7ff !important; color: var(--fin-primary) !important; }
+
+/* Estilos Globales para DataTables */
+.table thead th {
+    border: none;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    color: var(--fin-text-muted);
+    padding-bottom: 15px;
+}
+
+.dataTables_filter input {
+    border-radius: 50px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 15px;
+    font-size: 0.85rem;
+    width: 250px;
+    outline: none;
+}
+
+
+/* --- NAVBAR CRISTALIZADA --- */
+.navbar {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1030;
+    height: var(--navbar-height);
+    background: rgba(11, 28, 45, 0.8); /* tono cristal inicial */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.navbar.scrolled {
+    background: rgba(11, 28, 45, 0.8); 
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.nav-link {
+    font-size: 0.9rem;
+    font-weight: 500;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.nav-link:hover {
+    opacity: 1;
+}
+
+.nav-link {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7) !important; /* Blanco semitransparente */
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    transition: color 0.2s ease;
+    
+    /* Reset de Bootstrap para evitar el cuadro azul */
+    background: none !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    text-decoration: none;
+}
+
+/* Estado activo o hover del enlace */
+.nav-link:hover, 
+.nav-link.active {
+    color: #ffffff !important; /* Blanco puro al pasar el ratón */
+}
+
+/* El icono dentro del enlace */
+.nav-link i {
+    font-size: 1.1rem;
+    /* El margen 'me-1' o 'me-2' del HTML da el espacio al texto */
+}
+
+.user-pill {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: background 0.2s;
+    height: 32px; /* Un poco más de altura para que el texto respire */
+    
+    /* CONTROL DE ANCHO */
+    min-width: 180px;  /* Evita que se encoja mucho con nombres cortos */
+    max-width: 180px;  /* Evita que se estire demasiado con nombres largos */
+    
+    /* ALINEACIÓN Y TRUNCADO */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    border-radius: 50px;
+    white-space: nowrap;
+}
+
+/* Aplicar el truncado al texto dentro de la pill */
+.user-pill span, .user-pill strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.user-pill:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.user-pill:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* --- ESTRUCTURA PRINCIPAL --- */
+main {
+    flex-grow: 1;
+    padding-top: calc(var(--navbar-height));
+    padding-bottom: 2rem;
+}
+
+footer {
+    background-color: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    /* padding: 2rem 0; */
+}
+
+footer small {
+    font-size: 0.8rem;
+    color: #7f7f7f;
+}
+
+/* --- COMPONENTES GLOBALES REUTILIZABLES --- */
+.letter-spacing { letter-spacing: 1px; font-size: 0.7rem; }
+
+/* Estilo para el Dropdown del Usuario */
+.dropdown-menu {
+    border-radius: 1rem;
+    padding: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.brand-logo {
+    font-size: 1.7rem;
+    letter-spacing: -0.05em;
+    background: linear-gradient(to right, #ffffff, #e1ecff);
+    -webkit-background-clip: text; 
+    background-clip: text;         
+    -webkit-text-fill-color: transparent;
+    text-decoration: none;
+}
+
+
+/* Efectos para la leyenda interactiva */
+.legend-card {
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    margin-bottom: 1px; border: 1px solid #f8fafc;
+    background-color: #ffffff; transition: all 0.2s ease-in-out;
+    cursor: default; padding: 0.5rem; display: flex; align-items: center;
+    border-radius: 0.5rem;
+}
+
+.legend-card:hover, .legend-card.active {
+    background-color: #f1f5f9;
+    /* transform: translateX(5px); */
+    border-color: rgba(0,0,0,0.05);
+}
+
+.legend-scroll-wrapper {
+    max-height: 250px; overflow-y: auto; padding-right: 10px; 
+    scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;
+}
+.legend-scroll-wrapper::-webkit-scrollbar { width: 5px; }
+.legend-scroll-wrapper::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+
+.legend-card:hover {
+    background-color: #f1f5f9 !important; border-color: #e2e8f0 !important;
+    /* transform: translateX(0px); box-shadow: 0 4px 6px 1px rgba(0, 0, 0, 0.05); */
+}
+
+
+/* Estilo para el Badge de última actualización */
+.last-update-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 15px!important; 
+    background-color: #f1f5f9; 
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+/* Estado cuando la fecha es antigua (Stale) */
+.last-update-badge.date-stale {
+    background-color: #fff1f2;
+    color: #e11d48;
+    border-color: #fecdd3;
+}
+
+/* Icono dentro del badge */
+.last-update-badge i {
+    font-size: 0.85rem;
+}
+
+/* Espaciado y estilo de los items del dropdown */
+.dropdown-item {
+    padding-left: 1.25rem;
+    padding-right: 1.5rem;
+    font-weight: 500;
+    color: #475569;
+    transition: all 0.3s ease;
+}
+
+/* Efecto al pasar el ratón por cada opción */
+.dropdown-item:hover {
+    background-color: #f1f5f9;
+    transform: translateX(2px); /* Pequeño desplazamiento a la derecha */
+}
+
+/* Tamaño fijo para los iconos para que el texto esté alineado */
+.dropdown-item i {
+    width: 20px;
+    font-size: 1.1rem;
+}

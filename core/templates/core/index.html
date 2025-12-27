@@ -31,7 +31,7 @@
         </div>
     </div>
 
-    <div class="col-md-4">
+    <!-- <div class="col-md-4">
         <div class="action-card h-100 bg-light disabled-card">
             <span class="status-badge bg-warning-subtle text-warning">
                 In development
@@ -42,6 +42,16 @@
             <button class="btn btn-outline-secondary rounded-pill px-4" disabled>
                 Coming soon
             </button>
+        </div>
+    </div> -->
+    <div class="col-md-4">
+        <div class="action-card h-100">
+            <i class="bi bi-bank fs-2 text-primary mb-2"></i>
+            <h6 class="fw-bold mb-2">Anual Reports</h6>
+            <hr class="custom-divider">
+            <a href="{% url 'reports:report_finance' %}" class="btn btn-dark rounded-pill px-4">
+                Enter
+            </a>
         </div>
     </div>
 </div>
@@ -77,7 +87,7 @@
 </div>
 
     <div class="col-md-6">
-        <div class="section-card h-100">
+        <!-- <div class="section-card h-100">
             <h6 class="fw-bold mb-3 text-muted">Objectives</h6>
 
             <div class="mb-4">
@@ -97,7 +107,9 @@
                 <small class="text-muted d-block mb-1">Status</small>
                 <span class="badge bg-success-subtle text-success rounded-pill">On track</span>
             </div>
-        </div>
+        </div> -->
+        {% include "components/coming_soon_card.html" with title="Objectives" text="Coming Soon" icon="bi-list-check" %}    
+
     </div>
 </div>
 
@@ -122,12 +134,16 @@
         </a>
     </div>
 
-    <div class="col-md-4">
+    <!-- <div class="col-md-4">
         <div class="action-card h-100 bg-light disabled-card">
             <div class="plus-icon">+</div>
             <div class="fw-bold text-muted">TBD</div>
             <small class="text-muted">Coming soon</small>
         </div>
+    </div> -->
+
+    <div class="col-md-4">
+        {% include "components/coming_soon_card.html" with title="TBD" text="Planned" %}    
     </div>
 </div>
 

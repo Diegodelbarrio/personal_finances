@@ -1,0 +1,351 @@
+/* ===========================
+   Variables de Marca
+   =========================== */
+:root {
+    --fin-slate-950: #020617;
+    --fin-slate-900: #0f172a;
+    --fin-slate-600: #475569;
+    --fin-slate-400: #94a3b8;
+    --fin-blue: #2563eb;
+    --fin-green-bg: #dcfce7;
+    --fin-green-text: #15803d;
+    --fin-red-bg: #fee2e2;
+    --fin-red-text: #b91c1c;
+    --fin-border: #e2e8f0;
+}
+
+/* ===========================
+   Core Layout & Typography
+   =========================== */
+.num-align {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    text-align: right; /* Forzamos alineación derecha para moneda */
+}
+
+/* Forzar que la tabla respete los anchos asignados */
+.report-table {
+    table-layout: fixed !important; /* CLAVE: Las columnas no se mueven por el contenido */
+    width: 100% !important;
+    min-width: 900px; /* Evita el colapso en pantallas medianas antes del scroll lateral */
+}
+
+/* Definición de anchos fijos por columna para Finanzas */
+.report-table th:nth-child(1), 
+.report-table td:nth-child(1) { width: 15%; } /* Mes */
+
+.report-table th:nth-child(2), 
+.report-table td:nth-child(2),
+.report-table th:nth-child(3), 
+.report-table td:nth-child(3),
+.report-table th:nth-child(4), 
+.report-table td:nth-child(4),
+.report-table th:nth-child(5), 
+.report-table td:nth-child(5) { width: 17.5%; } /* Columnas de dinero */
+
+.report-table th:nth-child(6), 
+.report-table td:nth-child(6) { width: 15%; } /* Porcentaje */
+
+/* Asegurar que el contenido no rompa la fila si es muy largo */
+.report-table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: var(--fin-slate-900) !important;
+}
+
+/* ===========================
+   Containers & Tables
+   =========================== */
+.report-table-container {
+    background: #ffffff;
+    border: 1px solid var(--fin-border);
+    border-radius: 14px; /* Un poco más sutil */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.report-table thead th {
+    background: #f8fafc;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--fin-slate-600);
+    padding: 1rem;
+    border-bottom: 1px solid var(--fin-border);
+}
+
+.report-table tbody td {
+    padding: 0.7rem;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    color: var(--fin-slate-900) !important; /* Fix para invisibilidad */
+}
+
+/* Hover refinado */
+.report-table tbody tr:hover {
+    background-color: #f1f5f9 !important;
+    transition: background-color 0.15s ease-in-out;
+}
+
+/* ===========================
+   Pills, Badges & KPIs
+   =========================== */
+.badge-roi {
+    display: inline-block !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    padding: 0.35rem 0.75rem !important;
+    border-radius: 999px !important;
+    line-height: 1 !important;
+    border: none !important;
+}
+
+.roi-up {
+    background-color: var(--fin-green-bg) !important;
+    color: var(--fin-green-text) !important;
+}
+
+.roi-down {
+    background-color: var(--fin-red-bg) !important;
+    color: var(--fin-red-text) !important;
+}
+
+/* Warning de Bootstrap corregido para visibilidad */
+.badge.bg-warning {
+    background-color: #fef9c3 !important;
+    color: #854d0e !important;
+    border: 1px solid #fde047 !important;
+}
+
+/* Metric Cards */
+/* Colores dinámicos para las Metric Cards */
+.border-start-success { border-left-color: var(--fin-green-text) !important; }
+.border-start-danger { border-left-color: var(--fin-red-text) !important; }
+.border-start-primary { border-left-color: var(--fin-blue) !important; }
+.border-start-info { border-left-color: #0dcaf0 !important; }
+
+/* Ajuste para que los num-align no se peguen al borde */
+.report-table .num-align {
+    padding-right: 1.5rem !important;
+}
+.metric-card-premium {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1.25rem;
+    border: 1px solid var(--fin-border);
+    border-left: 5px solid;
+    transition: transform 0.2s ease;
+}
+
+.metric-card-premium:hover {
+    transform: translateY(-2px);
+}
+
+.metric-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--fin-slate-600);
+    margin-bottom: 0.25rem;
+}
+
+.metric-value {
+    font-weight: 800;
+    font-size: 1.5rem;
+    color: var(--fin-slate-900);
+}
+
+/* Selector robusto para asegurar que el footer siempre sea oscuro */
+/* ===========================
+   Footers & Totals (Reforzado)
+   =========================== */
+
+/* Selector de alta especificidad para el footer de finanzas */
+.report-table tfoot .finance-total-row td {
+    background-color: var(--fin-slate-950) !important; /* El color casi negro */
+    color: #ffffff !important;
+    padding: 1.25rem 1rem !important;
+    border: none !important;
+    vertical-align: middle;
+}
+
+/* Forzamos que los números dentro del footer también sean blancos */
+.report-table tfoot .finance-total-row .num-align,
+.report-table tfoot .finance-total-row .text-white-50 {
+    color: #ffffff !important;
+}
+
+/* El texto secundario (Fixed/Var) un poco más apagado para jerarquía */
+.report-table tfoot .finance-total-row .text-white-50 {
+    opacity: 0.6;
+}
+
+/* Forzar un ancho mínimo para que los meses no se aplasten */
+.holdings-col-month {
+    min-width: 100px !important;
+    width: 100px !important;
+    text-align: right !important;
+    background-color: #ffffff !important;
+
+}
+
+/* Asegurar que el contenedor de la tabla permita el desplazamiento */
+.table-responsive {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 14px; /* Para que el scroll no corte las esquinas redondeadas */
+}
+
+/* Fix para la columna sticky en Holdings para que no "baile" */
+.holdings-col-account {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background-color: #ffffff !important;
+    min-width: 200px !important; /* Más ancho para nombres de bancos largos */
+    box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1); /* Sombra para separar del scroll */
+}
+
+/* El footer también necesita ser sticky en la primera celda */
+.holdings-total-row td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background-color: var(--fin-slate-950) !important;
+    
+}
+
+
+/* --- Estabilidad de Holdings --- */
+
+.report-table-holdings {
+    /* Evita que el navegador colapse las columnas a su antojo */
+    table-layout: fixed !important;
+    width: auto !important; 
+    min-width: 100%;
+}
+
+.holdings-col-account {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 10 !important;
+    
+    /* CAMBIO CLAVE: En lugar de un ancho fijo, usamos el máximo del contenido */
+    width: max-content !important;
+    min-width: 150px !important; /* Un mínimo para que no se vea vacía */
+    
+    /* Evitamos que el texto haga saltos de línea o use puntos suspensivos */
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+
+    background-color: #ffffff !important;
+    border-right: 2px solid var(--fin-border) !important;
+    padding-right: 2rem !important; /* Espacio extra para que no pegue con los números */
+}
+
+/* Ajuste para que la tabla no intente comprimir las celdas */
+.report-table-holdings {
+    table-layout: auto !important; /* Cambiamos de fixed a auto para permitir expansión */
+    width: 100%;
+}
+
+/* Forzar que las columnas de meses no se estrujen */
+.holdings-col-month {
+    width: 100px !important;
+    min-width: 100px !important;
+}
+
+/* Ajuste para que el footer oscuro también respete la columna fija */
+.holdings-total-row td:first-child {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 11 !important;
+    width: 180px !important;
+    min-width: 180px !important;
+    color: #ffffff !important;
+
+}
+
+/* Estilo para la fila de totales en Holdings */
+.holdings-total-row td {
+    background-color: var(--fin-slate-950) !important; /* Azul casi negro */
+    color: #ffffff !important; /* Texto blanco puro */
+    padding: 1.25rem 1rem !important;
+    border: none !important;
+}
+
+/* Forzar que la columna fija del footer también sea oscura */
+.holdings-total-row .holdings-col-account {
+    background-color: var(--fin-slate-950) !important;
+    z-index: 11; /* Por encima de las celdas que hacen scroll */
+}
+
+/* Asegurar que los números en el footer sean blancos */
+.holdings-total-row .num-align {
+    color: #ffffff !important;
+}
+
+/* Animación de entrada para la pestaña activa al cargar la página */
+@keyframes slideIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.custom-tabs .nav-link.active {
+    animation: slideIn 0.2s ease-out;
+    background-color: #5d87ff;
+    color: white;
+}
+
+/* Mejora visual de los tabs de la imagen */
+.custom-tabs {
+    background-color: #ffffff;
+}
+
+.custom-tabs .nav-link {
+    font-size: 0.95rem;
+}
+
+/* --- ESTILOS PARA CUSTOM TABS (Pills de Reporte) --- */
+.custom-tabs {
+    padding: 4px !important;
+    background-color: #ffffff;
+    border: 1px solid var(--fin-slate-200) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Sobrescribimos el estilo global de .nav-link solo dentro de .custom-tabs */
+.custom-tabs .nav-link {
+    color: var(--fin-text-muted) !important; /* Texto gris para los no activos */
+    background-color: transparent !important;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    border: none !important;
+}
+
+/* Estado al pasar el ratón (Hover) */
+.custom-tabs .nav-link:hover:not(.active) {
+    color: var(--fin-primary) !important;
+    background-color: var(--fin-gray-soft) !important;
+}
+
+/* Estado ACTIVO (El tab seleccionado) */
+.custom-tabs .nav-link.active {
+    color: #ffffff !important; /* Texto blanco */
+    background-color: var(--fin-primary) !important; /* Fondo azul/indigo */
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25); /* Sombra suave del color principal */
+}
