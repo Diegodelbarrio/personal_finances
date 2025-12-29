@@ -119,9 +119,9 @@ body {
     transition: color 0.2s ease;
     
     /* Reset de Bootstrap para evitar el cuadro azul */
-    background: none !important;
+    /* background: none !important;
     border: none !important;
-    outline: none !important;
+    outline: none !important; */
     box-shadow: none !important;
     text-decoration: none;
 }
@@ -277,7 +277,6 @@ footer small {
 
 /* Efecto al pasar el ratón por cada opción */
 .dropdown-item:hover {
-    background-color: #f1f5f9;
     transform: translateX(2px); /* Pequeño desplazamiento a la derecha */
 }
 
@@ -285,4 +284,248 @@ footer small {
 .dropdown-item i {
     width: 20px;
     font-size: 1.1rem;
+}
+
+
+
+/* --- RESPONSIVE NAVBAR FIXES --- */
+
+/* Ajuste general de altura para que el contenido no se oculte */
+@media (max-width: 991.98px) {
+    .navbar {
+        height: auto !important; /* Permitimos que crezca si el menú se abre */
+        min-height: var(--navbar-height);
+        padding-top: 5px;
+        padding-bottom: 5px;
+        background: rgba(11, 28, 45, 0.98) !important; /* Más opaco en móvil para lectura */
+    }
+
+    .navbar-collapse {
+        max-height: 85vh;
+        overflow-y: auto;
+        padding-bottom: 10px;
+    }
+
+    .nav-link {
+        padding: 0.8rem 1rem !important; 
+        font-size: 1rem !important;
+    }
+
+    /* En móvil, quitamos el ancho fijo a la pill de usuario para que se adapte */
+    .user-pill {
+        min-width: 100% !important;
+        max-width: 100% !important;
+        justify-content: flex-start !important;
+        height: 45px !important;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Los dropdowns en móvil se ven mejor sin sombra flotante */
+    .dropdown-menu {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        margin-top: 10px;
+    }
+    
+    .dropdown-item {
+        color: rgba(255, 255, 255, 0.8) !important;
+    }
+}
+
+/* Escritorio: Forzamos el color gris de Bootstrap */
+@media (min-width: 992px) {
+    .text-lg-muted {
+        color: var(--fin-text-muted) !important;
+    }
+}
+
+/* Móvil: Ajustes de legibilidad para el texto de usuario */
+@media (max-width: 991.98px) {
+    .dropdown-item-text {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        font-size: 0.85rem; /* Un pelín más grande en móvil para facilitar lectura */
+    }
+}
+/* Animación suave para la apertura del menú */
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mejora de visibilidad de los iconos en el dropdown de móvil */
+.dropdown-item i {
+    opacity: 0.9;
+}
+
+
+/* Color del nombre de usuario */
+.user-name-text {
+    color: #ffffff; /* Blanco por defecto (Móvil/Collapsed) */
+}
+
+@media (min-width: 992px) {
+    /* En escritorio, el fondo del dropdown es blanco, 
+       así que el texto debe ser oscuro */
+    .user-name-text {
+        color: #1e293b !important; /* Gris muy oscuro/Azul marino */
+    }
+    
+    .text-lg-muted {
+        color: var(--fin-text-muted) !important;
+        opacity: 1 !important; /* Quitamos la opacidad en escritorio para que se vea el gris */
+    }
+}
+
+/* --- AJUSTES DROPDOWN EN MÓVIL (COLLAPSED) --- */
+@media (max-width: 991.98px) {
+    /* Eliminamos el fondo en el hover de los items del dropdown */
+    .dropdown-item:hover, 
+    .dropdown-item:active, 
+    .dropdown-item:focus {
+        background-color: transparent !important; /* Sin cambio de fondo */
+        color: #ffffff !important; /* Texto blanco puro para resaltar el hover */
+        transform: translateX(5px); /* Un ligero movimiento para dar feedback visual */
+    }
+
+    /* Opcional: Si quieres que el texto no se mueva, quita el transform anterior */
+    
+    /* Aseguramos que el contenedor del dropdown no tenga fondo blanco */
+    .dropdown-menu {
+        /* background: transparent !important; */
+        /* border: none !important; */
+        /* box-shadow: none !important; */
+        padding-left: 1rem; /* Indentamos un poco para dar jerarquía */
+    }
+}
+
+/* --- AJUSTE EN ESCRITORIO (Se mantiene igual) --- */
+@media (min-width: 992px) {
+    .dropdown-item:hover {
+        background-color: #f1f5f9; /* Mantiene el gris suave en escritorio */
+        transform: translateX(2px);
+    }
+}
+
+/* ==========================================================================
+   SISTEMA DE DROPDOWNS DIFERENCIADOS
+   ========================================================================== */
+
+/* --- 1. ESTILOS COMUNES (Escritorio y móvil fondo claro) --- */
+.dropdown-menu {
+    border-radius: 1rem;
+    padding: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border: none;
+    background-color: #ffffff; /* Fondo blanco por defecto */
+}
+
+.dropdown-item {
+    padding: 0.5rem 1.25rem;
+    font-weight: 500;
+    color: #475569; /* Gris oscuro para fondos claros */
+    transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background-color: #f1f5f9;
+    color: var(--fin-primary);
+    transform: translateX(2px);
+}
+
+/* --- 2. DROPDOWNS ESPECÍFICOS DE NAVBAR (Modo Cristal/Oscuro en Collapse) --- */
+@media (max-width: 991.98px) {
+    
+    /* Solo afectamos a los dropdowns que están dentro de la navbar colapsada */
+    .navbar-collapse .dropdown-menu {
+        background: rgba(255, 255, 255, 0.05) !important; /* Fondo casi transparente */
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        box-shadow: none !important;
+        margin-top: 0;
+        padding-left: 1rem;
+    }
+
+    .navbar-collapse .dropdown-item {
+        color: rgba(255, 255, 255, 0.8) !important; /* Texto blanco suave */
+    }
+
+    .navbar-collapse .dropdown-item:hover {
+        background-color: transparent !important; /* Sin fondo en hover móvil navbar */
+        color: #ffffff !important;
+        transform: translateX(5px);
+    }
+
+    /* El texto "Signed in as" y "Analytics" dentro de la navbar */
+    .navbar-collapse .text-white.text-lg-muted {
+        color: #ffffff !important;
+        opacity: 0.7;
+    }
+    
+    .navbar-collapse .user-name-text {
+        color: #ffffff !important;
+    }
+}
+
+/* --- 3. DROPDOWNS DE CONTENIDO (Se mantienen claros siempre) --- */
+/* Esto asegura que el selector de año no se vuelva oscuro en móvil */
+main .dropdown-menu {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+}
+
+
+/* ==========================================================================
+   DROPDOWNS DE CONTENIDO (Fondo Claro)
+   ========================================================================== */
+
+/* 1. Item normal (Gris oscuro) */
+main .dropdown-item {
+    color: #475569 !important;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+/* 2. Item en Hover (No activo) */
+/* Solo aplica el fondo gris y letra gris si NO tiene la clase active */
+main .dropdown-item:hover:not(.active) {
+    background-color: #f1f5f9 !important;
+    color: #1e293b !important;
+    transform: translateX(3px);
+}
+
+/* 3. Item Activo (Seleccionado) */
+main .dropdown-item.active {
+    background-color: var(--fin-primary) !important;
+    color: #ffffff !important; /* Letras blancas siempre en activo */
+}
+
+/* 4. Item Activo cuando se le hace Hover */
+/* Evitamos que las letras se vuelvan grises al pasar el ratón por el seleccionado */
+main .dropdown-item.active:hover {
+    background-color: #0b5ed7 !important; /* Un azul un poco más intenso */
+    color: #ffffff !important; /* Forzamos blanco para que no cambie a gris */
+    transform: none; /* Opcional: quitamos el desplazamiento si está seleccionado */
+}
+
+/* 5. Iconos dentro de dropdowns claros */
+main .dropdown-item i {
+    color: var(--fin-text-muted);
+}
+main .dropdown-item.active i {
+    color: rgba(255, 255, 255, 0.8); /* Icono casi blanco si está activo */
+}
+
+/* --- 4. EXCEPCIÓN ESCRITORIO PARA NAVBAR --- */
+@media (min-width: 992px) {
+    /* Cuando la navbar NO está colapsada, sus dropdowns vuelven a ser claros */
+    .navbar .dropdown-menu {
+        background-color: #ffffff !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .navbar .dropdown-item {
+        color: #475569 !important;
+    }
 }

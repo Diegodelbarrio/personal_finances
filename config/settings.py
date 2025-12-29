@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'core',
     'holdings',
     'reports',
+    'settings',
 
     # Allauth apps
     'allauth',

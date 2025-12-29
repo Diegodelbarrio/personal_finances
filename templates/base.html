@@ -20,70 +20,62 @@
         <a href="{% url 'home' %}" class="d-flex align-items-center text-decoration-none" style="height: 45px;">
             {% include "components/logo_svg.html" %}
         </a>
-        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+
+        <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
+
         <div class="collapse navbar-collapse" id="mainNavbar">
-            <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
-                <!-- <li class="nav-item">
-                    <a ><i class="bi bi-speedometer2 me-1"></i> Dashboards</a>
-                </li> -->
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-1 gap-lg-2 py-3 py-lg-0">
+                
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'investment_dashboard' %}"><i class="bi bi-graph-up-arrow me-1"></i> Investments</a>
+                    <a class="nav-link" href="{% url 'investment_dashboard' %}">
+                        <i class="bi bi-graph-up-arrow me-2 me-lg-1"></i> 
+                        <span>Investments</span>
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'summary' %}"><i class="bi bi-calendar-month me-1"></i> Monthly Finances</a>
+                    <a class="nav-link" href="{% url 'summary' %}">
+                        <i class="bi bi-calendar-month me-2 me-lg-1"></i> 
+                        <span>Monthly Finances</span>
+                    </a>
                 </li>
+
                 <li class="nav-item dropdown dropdown-hover">
-                    <a class="nav-link dropdown-toggle d-flex align-items-center" 
-                    href="{% url 'reports:report_finance' %}" 
-                    id="reportsDropdown" 
-                    role="button" 
-                    aria-haspopup="true" 
-                    aria-expanded="false">
-                        <i class="bi bi-file-earmark-text me-2"></i> 
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-file-earmark-text me-2 me-lg-1"></i> 
                         <span>Reports</span>
                     </a>
-                    
-                    <ul class="dropdown-menu border-0 shadow-lg" aria-labelledby="reportsDropdown">
-                        <li class="px-2 py-1 small text-uppercase fw-bold text-muted letter-spacing">Analytics</li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center py-2" href="{% url 'reports:report_finance' %}">
-                                <i class="bi bi-bank me-2 text-primary"></i> 
-                                <span>Finances</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center py-2" href="{% url 'reports:report_investments' %}">
-                                <i class="bi bi-graph-up-arrow me-2 text-success"></i> 
-                                <span>Investments</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center py-2" href="{% url 'reports:report_holdings' %}">
-                                <i class="bi bi-wallet2 me-2 text-info"></i> 
-                                <span>Bank Accounts</span>
-                            </a>
-                        </li>
+                    <ul class="dropdown-menu border-0 shadow-lg animate-fade-in" aria-labelledby="reportsDropdown">
+                        <li class="px-3 py-1 small text-uppercase fw-bold text-white text-lg-muted letter-spacing opacity-75"> Analytics </li>                        
+                        <li><a class="dropdown-item py-2" href="{% url 'reports:report_finance' %}"><i class="bi bi-bank me-2 text-primary"></i> Finances</a></li>
+                        <li><a class="dropdown-item py-2" href="{% url 'reports:report_investments' %}"><i class="bi bi-graph-up-arrow me-2 text-success"></i> Investments</a></li>
+                        <li><a class="dropdown-item py-2" href="{% url 'reports:report_holdings' %}"><i class="bi bi-wallet2 me-2 text-info"></i> Bank Accounts</a></li>
                     </ul>
                 </li>
 
-                <li class="nav-item dropdown ms-lg-3">
+                <li class="d-lg-none my-2 border-top border-white border-opacity-10"></li>
+
+                <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 user-pill rounded-pill px-3" 
                        href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-person-circle"></i>
-                        <span>{{ user.username|capfirst }}</span>
+                        <span class="d-inline">{{ user.username|capfirst }}</span>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2" aria-labelledby="userDropdown">
-                        <li><span class="dropdown-item-text small text-muted">Signed in as <strong>{{ user.username|capfirst }}</strong></span></li>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-lg-2" aria-labelledby="userDropdown">
+                        <li>
+                            <span class="dropdown-item-text small text-white text-lg-muted opacity-75">
+                                Signed in as <strong class="user-name-text">{{ user.username|capfirst }}</strong>
+                            </span>
+                        </li>                        
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="/admin/"><i class="bi bi-person me-2"></i>Profile</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Settings</a></li>
+                        <li><a class="dropdown-item" href="{% url 'settings:settings_home' %}"><i class="bi bi-gear me-2"></i>Settings</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <form action="{% url 'account_logout' %}" method="post" class="px-3 py-1">
+                        <li class="px-3">
+                            <form action="{% url 'account_logout' %}" method="post">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-outline-danger w-100 rounded-pill">
+                                <button type="submit" class="btn btn-sm btn-outline-danger w-100 rounded-pill py-2">
                                     <i class="bi bi-box-arrow-right me-2"></i>Sign Out
                                 </button>
                             </form>

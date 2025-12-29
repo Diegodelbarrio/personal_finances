@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load static %}
+{% load l10n %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5 px-lg-5">
+    <div class="mb-4">
+        <h3 class="fw-bold text-dark">Custom Settings</h3>
+        <p class="text-muted">Manage your financial goals and preferences.</p>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12 mb-0">
+            <div class="card card-rounded shadow-sm border-0">
+                <div class="card-body p-4 mb-0">
+                    <h5 class="mb-3 text-primary fw-bold">Setting Objectives</h5>
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Net Worth Objective</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0">€</span>
+                                    {{ form.net_worth_target }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Annual Savings Target</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0">€</span>
+                                    {{ form.annual_savings_target }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Deadline</label>
+                                {{ form.target_date }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Main Currency</label>
+                                {{ form.main_currency }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Emergency Fund (Months)</label>
+                                {{ form.emergency_fund_months }}
+                                {% for error in form.emergency_fund_months.errors %}
+                                    <div class="text-danger small mt-1 fw-bold">
+                                        <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-center border-top pt-4">
+                            <button type="submit" class="btn btn-primary px-5 rounded-pill shadow-sm">
+                                Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- <div class="col-lg-4"> -->
+            <!-- <div class="card card-rounded bg-dark text-white border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h6 class="text-white-50 small text-uppercase fw-bold">Net Worth Progress</h6>
+                    <h2 class="fw-bold my-3">{{ stats.nw_progress|floatformat:1 }}%</h2>
+                    
+                    <div class="progress mb-3" style="height: 8px; background: rgba(255,255,255,0.1); --progress: {{ stats.nw_progress|unlocalize }}%;">
+                        <div class="progress-bar bg-primary shadow-sm" role="progressbar"></div>
+                    </div>
+                    
+                    <p class="small text-white-50 mb-0">Target: {{ form.instance.net_worth_target }} €</p>
+                </div>
+            </div> -->
+
+            <!-- {% if stats.days_left is not None %}
+            <div class="card card-rounded border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center p-4">
+                    <div class="icon-shape bg-warning-subtle text-warning rounded-circle me-3">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0 fw-bold">{{ stats.days_left }} days</h5>
+                        <small class="text-muted">Remaining to reach your target</small>
+                    </div>
+                </div>
+            </div> -->
+            <!-- {% endif %} -->
+        <!-- </div> -->
+    </div>
+</div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    {% if messages %}
+        {% for message in messages %}
+            {% if "settings" in message.tags %}
+                <div class="toast align-items-center text-white 
+                    {% if 'success' in message.tags %}bg-success
+                    {% elif 'info' in message.tags %}bg-info
+                    {% else %}bg-danger{% endif %} border-0 shadow-lg" role="alert">
+                    <div class="d-flex p-2">
+                        <div class="toast-body">
+                            <i class="bi 
+                                {% if 'success' in message.tags %}bi-check-circle
+                                {% elif 'info' in message.tags %}bi-info-circle
+                                {% else %}bi-exclamation-triangle{% endif %} me-2"></i>
+                            {{ message }}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white m-auto me-2" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/settings.js' %}"></script>
+{% endblock %}

@@ -3,22 +3,22 @@ from . import queries, metrics
 
 def get_summary_page_data(user, year, month):
     """
-    Orquestador que recolecta toda la información necesaria para la página de resumen.
+    Orchestrator that collects all the necessary information for the summary page
     """
     base_qs = queries.get_base_transaction_qs(user)
     period_qs = base_qs.filter(date__year=year, date__month=month)
     
-    # Datos de navegación
+    # Search data
     years = queries.get_available_years(user)
     months_idx = queries.get_available_months_for_year(user, year)
     months_list = [(m, month_name[m]) for m in months_idx]
     
-    # Cálculos
+    # Calculations
     stats = metrics.get_period_metrics(period_qs)
     prev_income = metrics.get_previous_month_income(base_qs, year, month)
     exp_chart = metrics.get_expense_distribution_chart(period_qs)
     
-    # Estructura de KPIs (Lógica de presentación movida aquí)
+    # KPI structure (Presentation logic moved here)
     kpis = [
         {'label': 'Net Savings', 'value': stats["savings"], 'class': 'soft-primary'},
         {'label': 'Total Income', 'value': stats["income"], 'class': 'soft-success'},

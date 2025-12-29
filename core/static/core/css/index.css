@@ -1,0 +1,126 @@
+.action-card,
+.section-card {
+    background: #ffffff;
+    border-radius: 1.5rem;
+    padding: 2rem;
+    box-shadow: 0 .4rem .8rem rgba(0,0,0,.05);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0,0,0,0.03);
+}
+
+.action-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.action-card:hover:not(.disabled-card) {
+    transform: translateY(-5px);
+    box-shadow: 0 1rem 2rem rgba(0,0,0,.1);
+}
+
+.status-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 0.7rem;
+    padding: 5px 12px;
+    border-radius: 50px;
+}
+
+.plus-icon {
+    font-size: 2.5rem;
+    font-weight: 300;
+    margin-bottom: 0.5rem;
+}
+
+.custom-divider {
+    width: 90%;         
+    border: 0;
+    border-top: 1px solid rgba(0,0,0,0.1); 
+    margin: 0.5rem 0.5;   
+    opacity: 1;            
+}
+
+/* Ajuste opcional para la tarjeta deshabilitada */
+.disabled-card {
+    border: 1px dashed #e2e8f0 !important; /* Efecto de "en construcción" */
+    background-color: #fbfcfd !important;
+}
+
+.bg-warning-subtle { background-color: #fff3cd !important; }
+.bg-success-subtle { background-color: #d1e7dd !important; }
+.bg-light { background-color: #f8f9fa !important; }
+
+.last-update-badge {
+    position: absolute;
+    top: 1.2rem;
+    right: 1.2rem;
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: #94a3b8;
+    background: #f8fafc;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    border: 1px solid #f1f5f9;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+}
+
+/* Estilo cuando los datos son antiguos (más de 30 días) */
+.date-stale {
+    color: #dc3545; /* Rojo Bootstrap */
+    background: #fff5f5;
+    border-color: #feb2b2;
+}
+
+/* El "Span" o Píldora del número */
+.net-worth-badge {
+    display: inline-flex;
+    align-items: baseline;
+    background: #f8fafc; /* Gris muy tenue para que no sea 'cantoso' */
+    padding: 0.35rem 0.9rem;
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+}
+
+.net-worth-badge .amount {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1;
+    letter-spacing: -0.5px;
+}
+
+.net-worth-badge .currency {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #64748b; /* Gris para el símbolo, más discreto */
+    margin-left: 4px;
+    line-height: 1;
+}
+
+.letter-spacing {
+    letter-spacing: 1px;
+}
+
+/* Efecto hover suave en la tarjeta */
+.section-card:hover .net-worth-badge {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+    transition: all 0.3s ease;
+}
+
+.progress-bar {
+    /* Empezamos desde cero para que el movimiento sea visible */
+    width: 0; 
+    
+    /* Transición de 1.2 segundos con un frenado suave al final */
+    transition: width 0.3s ease-out;
+    
+    /* Evita que la barra parpadee en algunos navegadores */
+    will-change: width;
+}

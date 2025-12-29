@@ -1,0 +1,5 @@
+.progress-bar {
+    /* Usamos la variable --progress y damos un valor por defecto del 0% */
+    width: var(--progress, 0%);
+    transition: width 1s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
