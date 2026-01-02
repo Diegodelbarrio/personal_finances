@@ -51,30 +51,23 @@
 
 <tfoot>
     <tr class="finance-total-row">
-        <td class="ps-4 fw-bold text-uppercase small">
-            Annual Summary
-        </td>
-
-        <td class="num-align">
-            {{ report.annual_stats.income|floatformat:2 }} €
-        </td>
-
-        <td class="num-align">
-            {{ report.annual_stats.fixed_total|floatformat:2 }} €
-        </td>
-
-        <td class="num-align">
-            {{ report.annual_stats.variable_total|floatformat:2 }} €
-        </td>
-
-        <td class="num-align fw-bold">
-            {{ report.annual_stats.savings|floatformat:2 }} €
-        </td>
-
+        <td class="ps-4 fw-bold text-uppercase small">Annual Total</td>
+        <td class="num-align">{{ report.annual_stats.income|floatformat:2 }} €</td>
+        <td class="num-align">{{ report.annual_stats.fixed_total|floatformat:2 }} €</td>
+        <td class="num-align">{{ report.annual_stats.variable_total|floatformat:2 }} €</td>
+        <td class="num-align fw-bold">{{ report.annual_stats.savings|floatformat:2 }} €</td>
         <td class="text-center">
             <span class="badge bg-white text-dark fw-bold px-3">
                 {{ report.annual_stats.avg_savings_rate|floatformat:1 }} %
             </span>
         </td>
+    </tr>
+    <tr class="finance-total-row">
+        <td class="ps-4 text-muted small italic">Monthly Avg. ({{ report.active_months }} m)</td>
+        <td class="num-align text-muted small">{{ report.annual_stats.avg_income|floatformat:2 }} €</td>
+        <td class="num-align text-muted small">{{ report.annual_stats.avg_fixed|floatformat:2 }} €</td>
+        <td class="num-align text-muted small">{{ report.annual_stats.avg_variable|floatformat:2 }} €</td>
+        <td class="num-align text-muted small">{{ report.annual_stats.avg_savings|floatformat:2 }} €</td>
+        <td></td>
     </tr>
 </tfoot>

@@ -1,8 +1,25 @@
-<div class="col">
-    <div class="report-card metric-card-premium border-start-{{ color }}">
-        <span class="metric-label">{{ label }}</span>
-        <h3 class="metric-value num-align mt-1 mb-0 text-dark">
-            {{ value }}
-        </h3>
+<div class="card card-rounded border-0 shadow-sm p-4 h-100 bg-white">
+    <div class="d-flex align-items-center mb-3">
+        <div class="icon-shape bg-{{ color|default:'secondary' }}-soft text-{{ color|default:'secondary' }} rounded-circle me-3">
+            <i class="bi {{ icon|default:'bi-cash' }}"></i>
+        </div>
+        <span class="text-muted small fw-bold text-uppercase tracking-wider">{{ label }}</span>
     </div>
+
+    <div class="mb-3">
+        <h2 class="fw-bold mb-0 text-{{ color|default:'dark' }}">
+            {% if prefix %}{{ prefix }}{% endif %}{{ value }}{% if suffix %}{{ suffix }}{% endif %}
+        </h2>
+    </div>
+
+    {% if subtitle %}
+    <div class="pt-2 border-top border-light-subtle">
+        <div class="d-inline-flex align-items-center bg-light px-2 py-1 rounded">
+            <i class="bi bi-calculator text-{{ color|default:'secondary' }} me-2 small"></i>
+            <span class="text-secondary small fw-medium">
+                <span class="text-dark">{{ subtitle }}</span>
+            </span>
+        </div>
+    </div>
+    {% endif %}
 </div>

@@ -25,8 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         labels,
                         datasets: [
                             {
-                                label: ' Investments',
-                                data: investmentValues,
+                                label: ' Savings & Cash',
+                                data: savingsValues,
                                 fill: true,
                                 backgroundColor: 'rgba(25, 135, 84, 0.15)',
                                 borderColor: '#198754',
@@ -36,8 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 pointHoverRadius: 6,
                             },
                             {
-                                label: ' Savings & Cash',
-                                data: savingsValues,
+                                label: ' Investments',
+                                data: investmentValues,
                                 fill: true,
                                 backgroundColor: 'rgba(13, 110, 253, 0.15)',
                                 borderColor: '#0d6efd',
@@ -95,17 +95,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 2. BARRAS DE PROGRESO (Efecto Carga) ---
-    const progressBars = document.querySelectorAll('.progress-bar');
+    const progressBars = document.querySelectorAll('.js-progress'); // Usamos tu nueva clase
     progressBars.forEach(bar => {
-        // Obtenemos el valor de la variable --progress del padre
-        const targetWidth = bar.parentElement.style.getPropertyValue('--progress');
+        // Leemos el valor del atributo data-value que viene de Django
+        const targetValue = bar.getAttribute('data-value');
         
-        if (targetWidth) {
-            // Un pequeño delay de 100ms asegura que el navegador renderice 
-            // la barra en 0% antes de iniciar la transición al valor real.
+        if (targetValue) {
+            // Mantenemos el timeout para que se vea la animación al cargar
             setTimeout(() => {
-                bar.style.width = targetWidth;
-            }, 100); 
+                bar.style.width = targetValue + '%';
+            }, 150); 
         }
     });
 

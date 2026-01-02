@@ -6,22 +6,86 @@ Investments · Annual Performance
 
 {% block report_content %}
 
-{% include "reports/components/report_table.html" with hover=True table_template="reports/tables/investments_table.html" %}
+<div class="row g-4 gx-xl-3 mb-5 row-cols-1 row-cols-md-2 row-cols-xl-4">
+    <div class="col">{% include "reports/components/metric_card.html" with label="Current Market Value" value=report.annual_stats.final_market_value|floatformat:2 suffix=" €" color="primary" icon="bi-wallet2" %}</div>
+    <div class="col">{% include "reports/components/metric_card.html" with label="New Contributions" value=report.annual_stats.total_contributions|floatformat:2 suffix=" €" color="info" icon="bi-cash-coin" %}</div>
+    <div class="col">{% include "reports/components/metric_card.html" with label="Yearly Profit" value=report.annual_stats.total_profit_abs|floatformat:2 suffix=" €" prefix=report.annual_stats.profit_prefix color=report.annual_stats.profit_status icon=report.annual_stats.profit_icon %}</div>
+    <div class="col">{% include "reports/components/metric_card.html" with label="Annual ROI" value=report.annual_stats.annual_roi_abs|floatformat:2 suffix=" %" prefix=report.annual_stats.roi_prefix color=report.annual_stats.roi_status icon=report.annual_stats.roi_icon %}</div>
+</div>
+
+<div class="mb-5">
+    {% include "reports/components/report_table.html" with hover=True table_template="reports/tables/investments_table.html" %}
+</div>
+
+<div class="mb-5">
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div class="d-flex align-items-center">
+        <div class="d-flex align-items-center justify-content-center bg-white rounded-circle shadow-sm me-3" style="width: 54px; height: 54px;">
+            <i class="bi bi-bar-chart-line-fill text-primary fs-3"></i>
+        </div>
+        
+        <div>
+            <h4 class="fw-extrabold m-0 text-dark" style="letter-spacing: -0.01em;">
+                Asset Performance Breakdown
+            </h4>
+            <p class="text-muted m-0" style="font-size: 0.9rem; font-weight: 500;">
+                Monthly P&L and ROI analysis per asset
+            </p>
+        </div>
+    </div>
+</div>
+
+    <div class="report-table-container">
+        <div class="table-responsive">
+            <table class="report-table performance-grid">
+                <thead>
+                    <tr>
+                        <th class="asset-col">Asset</th>
+                        {% for m_date in report.month_names %}
+                            <th class="month-col">{{ m_date|date:"M"|upper }}</th>
+                        {% endfor %}
+                        <th class="total-col">TOTAL YTD</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for asset in report.detailed_assets %}
+                    <tr>
+                        <td class="asset-col">
+                            <div class="fw-bold text-dark text-truncate">{{ asset.name }}</div>
+                        </td>
+                        {% for m in asset.monthly_data %}
+                            <td class="month-col num-align">
+                                <div class="{% if m.profit > 0 %}text-success{% elif m.profit < 0 %}text-danger{% else %}text-muted{% endif %} fw-semibold">
+                                    {{ m.profit|floatformat:2 }}
+                                </div>
+                                <div class="roi-sub {% if m.roi > 0 %}text-success{% elif m.roi < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                    {{ m.roi|floatformat:2 }}%
+                                </div>
+                            </td>
+                        {% endfor %}
+                        <td class="total-col num-align">
+                            <div class="fw-bold {% if asset.annual_profit > 0 %}text-success{% elif asset.annual_profit < 0 %}text-danger{% endif %}">
+                                {{ asset.annual_profit|floatformat:2 }}€
+                            </div>
+                            <div class="fw-bold small {% if asset.annual_roi > 0 %}text-success{% elif asset.annual_roi < 0 %}text-danger{% endif %}">
+                                {{ asset.annual_roi|floatformat:2 }}%
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
 <div class="row g-4 mt-2">
     <div class="col-12 col-lg-6">
-        {% include "components/coming_soon_card.html" with title="Advanced Analytics" text="Coming Soon: AI-driven projections and dividend tracking." icon="bi-rocket-takeoff" %}
+        {% include "components/coming_soon_card.html" with title="Diversification" text="Coming Soon: Asset allocation by geography and sector." icon="bi-pie-chart" %}
     </div>
-
     <div class="col-12 col-lg-6">
         {% include "components/coming_soon_card.html" with title="Advanced Analytics" text="Coming Soon: AI-driven projections and dividend tracking." icon="bi-rocket-takeoff" %}
     </div>
 </div>
-
-<div class="row g-4 mt-1">
-    <div class="col-12"> {% include "components/coming_soon_card.html" with title="Tax Estimation" text="Planned" icon="bi-receipt-cutoff" %}
-    </div>
-</div>
-
 
 {% endblock %}

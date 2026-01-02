@@ -124,3 +124,64 @@
     /* Evita que la barra parpadee en algunos navegadores */
     will-change: width;
 }
+
+
+/* Tipografía y Números */
+.display-amount {
+    font-size: 2.8rem;
+    letter-spacing: -1.5px;
+    font-variant-numeric: tabular-nums;
+}
+
+.currency-symbol {
+    font-size: 1.5rem;
+    color: #adb5bd;
+    font-weight: 500;
+}
+
+/* Badges de Estado */
+.status-badge {
+    font-size: 0.75rem;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.status-updated {
+    background-color: #f0fdf4; /* Verde suave */
+    color: #15803d;
+    border-color: #dcfce7;
+}
+
+.status-stale {
+    background-color: #fff1f2; /* Rojo suave */
+    color: #e11d48;
+    border-color: #ffe4e6;
+    animation: pulse-border 2s infinite;
+}
+
+/* Animación para datos obsoletos */
+@keyframes pulse-border {
+    0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); }
+    70% { box-shadow: 0 0 0 6px rgba(225, 29, 72, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
+}
+
+/* Mejora de la Tarjeta */
+.section-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* .section-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.06) !important;
+} */
+
+.chart-container {
+    position: relative;
+}
+

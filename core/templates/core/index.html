@@ -62,34 +62,40 @@
 </div>
 
 <div class="row g-4 mb-5">
-<div class="col-md-6">
-    <div class="section-card h-100 p-4 position-relative">
-        
-        <div class="last-update-badge {% if is_stale %}date-stale{% endif %}">
-            <i class="bi {% if is_stale %}bi-exclamation-triangle-fill{% else %}bi-clock-history{% endif %} me-1"></i>
-            {% if last_market_date %}
-                {{ last_market_date|date:"d/m/Y" }}
-            {% else %}
-                --/--/--
-            {% endif %}
-        </div>
-
-        <div class="d-flex justify-content-center align-items-baseline mb-4 mt-2">
-            <h6 class="fw-bold mb-0 text-muted text-uppercase letter-spacing me-3" style="font-size: 0.9rem;">
-                Net Worth
-            </h6>
+    <div class="col-md-6">
+        <div class="section-card h-100 p-4 position-relative border-0 shadow-sm" style="border-radius: 1.25rem; background: #ffffff;">
             
-            <span class="net-worth-badge">
-                <span class="amount">{{ current_net_worth|floatformat:0 }}</span>
-                <span class="currency">€</span>
-            </span>
-        </div>
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <h6 class="fw-bold text-muted text-uppercase mb-1" style="font-size: 0.75rem; letter-spacing: 0.1rem;">
+                        Global Net Worth
+                    </h6>
+                    <div class="d-flex align-items-baseline">
+                        <h1 class="fw-bold mb-0 text-dark display-amount">
+                            {{ current_net_worth|floatformat:0 }}<span class="ms-1 currency-symbol">€</span>
+                        </h1>
+                    </div>
+                </div>
+                
+                <div class="status-badge {% if is_stale %}status-stale{% else %}status-updated{% endif %}" 
+                     title="{% if is_stale %}Los datos necesitan actualizarse{% else %}Datos al día{% endif %}">
+                    <i class="bi {% if is_stale %}bi-exclamation-circle{% else %}bi-check-circle{% endif %} me-1"></i>
+                    {% if last_market_date %}{{ last_market_date|date:"d/m/Y" }}{% else %}--/--/--{% endif %}
+                </div>
+            </div>
 
-        <div style="height: 250px;">
-            <canvas id="netWorthChart"></canvas>
+            <div class="mb-4">
+                <span class="badge bg-light text-secondary border-0 fw-medium px-2 py-1" style="font-size: 0.75rem;">
+                    <i class="bi bi-graph-up me-1"></i> Total Assets Evolution
+                </span>
+            </div>
+
+            <div class="chart-container" style="height: 280px; width: 100%;">
+                <canvas id="netWorthChart"></canvas>
+            </div>
         </div>
     </div>
-</div>
+
 
     <div class="col-md-6 mb-0">
         {% if stats.settings.net_worth_target > 0 or stats.settings.annual_savings_target > 0 %}

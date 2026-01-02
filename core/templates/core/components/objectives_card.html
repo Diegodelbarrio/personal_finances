@@ -1,6 +1,7 @@
 {% load l10n %}
 <div class="card card-rounded border-0 shadow-sm h-100">
-    <div class="card-body p-4">
+    <div class="card-body p-4 d-flex flex-column justify-content-between">
+        
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h5 class="fw-bold mb-0 text-dark">
                 <i class="bi bi-rocket-takeoff me-2 text-primary"></i>Financial Goals
@@ -16,12 +17,14 @@
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="text-muted small fw-bold text-uppercase ls-1">Net Worth Progress</span>
                 <span class="display-6 fw-bold text-primary" style="font-size: 1.8rem;">
-                    {{ stats.nw_progress|floatformat:1 }}<small style="font-size: 1rem;">%</small>
+                    {{ stats.nw_progress|floatformat:1 }}%
                 </span>
             </div>
             
-            <div class="progress mb-2" style="height: 10px; background-color: #f0f2f5; --progress: {{ stats.nw_progress|unlocalize }}%;">
-                <div class="progress-bar bg-primary rounded-pill shadow-sm" role="progressbar"></div>
+            <div class="progress mb-2" style="height: 10px; background-color: #f0f2f5;">
+                <div class="progress-bar bg-primary rounded-pill shadow-sm js-progress" 
+                     role="progressbar" 
+                     data-value="{{ stats.nw_progress|floatformat:0 }}"></div>
             </div>
 
             <div class="d-flex justify-content-between">
@@ -34,12 +37,14 @@
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="text-muted small fw-bold text-uppercase ls-1">Annual Savings Progress</span>
                 <span class="display-6 fw-bold text-success" style="font-size: 1.8rem;">
-                    {{ stats.sav_progress|floatformat:1 }}<small style="font-size: 1rem;">%</small>
+                    {{ stats.sav_progress|floatformat:1 }}%
                 </span>
             </div>
             
-            <div class="progress mb-2" style="height: 10px; background-color: #f0f2f5; --progress: {{ stats.sav_progress|unlocalize }}%;">
-                <div class="progress-bar bg-success rounded-pill shadow-sm" role="progressbar"></div>
+            <div class="progress mb-2" style="height: 10px; background-color: #f0f2f5;">
+                <div class="progress-bar bg-success rounded-pill shadow-sm js-progress" 
+                     role="progressbar" 
+                     data-value="{{ stats.sav_progress|floatformat:0 }}"></div>
             </div>
 
             <div class="d-flex justify-content-between">
@@ -49,9 +54,18 @@
         </div>
     </div>
 
-    <div class="card-footer bg-transparent border-0 pt-0 pb-4 px-4 mx-auto text-center" style="width: 60%;">
-        <a href="{% url 'settings:settings_home' %}" class="btn btn-light btn-sm w-100 rounded-pill text-muted fw-bold border-0 py-2">
-            Update Targets <i class="bi bi-pencil-square ms-1"></i>
-        </a>
+    <div class="card-footer bg-transparent border-0 pt-0 pb-4 px-4 text-center">
+        <div class="mx-auto" style="width: 60%;">
+            <a href="{% url 'settings:settings_home' %}" class="btn btn-light btn-sm w-100 rounded-pill text-muted fw-bold border-0 py-2">
+                Update Targets <i class="bi bi-pencil-square ms-1"></i>
+            </a>
+        </div>
     </div>
 </div>
+
+<script>
+    document.querySelectorAll('.js-progress').forEach(function(bar) {
+        const value = bar.getAttribute('data-value');
+        bar.style.width = value + '%';
+    });
+</script>

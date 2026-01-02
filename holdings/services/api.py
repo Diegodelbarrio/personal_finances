@@ -23,11 +23,10 @@ def get_current_value(user):
 
     return total, dates
 
-
-# holdings/services/api.py
 from calendar import monthrange
 from datetime import date
 from ..models import BankAccount, AccountBalanceSnapshot
+from django.utils import timezone
 
 def _get_last_day_of_month(year, month):
     _, last_day = monthrange(year, month)
@@ -35,31 +34,52 @@ def _get_last_day_of_month(year, month):
 
 def get_annual_balance_evolution(user, year):
     accounts = BankAccount.objects.filter(user=user)
-    months = range(1, 13)
+    now = timezone.now().date()
     
-    # 1. Estructura para la tabla: Una fila por cuenta
+    # 1. Buscamos cuándo empezó el usuario para no mostrar meses vacíos al inicio del histórico
+    first_snapshot = AccountBalanceSnapshot.objects.filter(
+        account__user=user
+    ).order_by('date').first()
+    
+    # 2. Definir el rango de meses (Start / End)
+    if not first_snapshot or year < first_snapshot.date.year or year > now.year:
+        # Si el año consultado es previo a su historia o es futuro total
+        months_range = []
+    else:
+        # Mes de inicio: si es el primer año, empezamos en su primer mes. Si no, en Enero (1).
+        start_month = first_snapshot.date.month if year == first_snapshot.date.year else 1
+        
+        # Mes de fin: si es el año actual, llegamos hasta hoy. Si es pasado, hasta Diciembre (12).
+        end_month = now.month if year == now.year else 12
+        
+        months_range = range(start_month, end_month + 1)
+
+    # 3. Construcción de la Matrix
     matrix = []
     for acc in accounts:
         row = {'account_name': acc.name, 'balances': []}
-        for month in months:
+        for month in months_range:
             cutoff = _get_last_day_of_month(year, month)
+            
+            # Buscamos el último balance dentro del año actual para evitar arrastres de años previos
             snapshot = AccountBalanceSnapshot.objects.filter(
                 account=acc,
-                date__lte=cutoff
+                date__lte=cutoff,
+                date__year=year  # Restringe la búsqueda al año del reporte
             ).order_by('-date').first()
             
             balance = float(snapshot.balance) if snapshot else 0.0
             row['balances'].append(balance)
         matrix.append(row)
 
-    # 2. Totales mensuales (Fila inferior de la tabla)
+    # 4. Totales mensuales (solo para los meses calculados)
     monthly_totals = []
-    for month_idx in range(12): # 0 a 11
-        total_month = sum(row['balances'][month_idx] for row in matrix)
+    for i in range(len(months_range)):
+        total_month = sum(row['balances'][i] for row in matrix)
         monthly_totals.append(total_month)
 
     return {
         "matrix": matrix,
         "monthly_totals": monthly_totals,
-        "month_names": [date(year, m, 1) for m in months]
+        "month_names": [date(year, m, 1) for m in months_range]
     }
