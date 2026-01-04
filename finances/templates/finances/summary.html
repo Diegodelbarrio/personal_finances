@@ -4,8 +4,7 @@
 {% block content %}
 <link rel="stylesheet" href="{% static 'finances/css/summary.css' %}">
 
-<div class="container py-5 ">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start mb-4 gap-3">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start mb-4 gap-3">
         <div>
             <h1 class="fw-bold mb-0">Financial Monthly Summary</h1>
             <p class="text-muted small">Monthly tracking of income and expenses</p>
@@ -183,7 +182,6 @@
         </div>
     </div>
 
-</div>
 
 {{ chart_labels|json_script:"labels-data" }}
 {{ chart_data|json_script:"values-data" }}

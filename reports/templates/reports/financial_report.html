@@ -31,6 +31,94 @@
 <!-- FINANCE TABLE -->
 {% include "reports/components/report_table.html" with hover=True table_template="reports/tables/finance_table.html" %}
 
+<div class="d-flex align-items-center justify-content-between mb-2 mt-5">
+    <div class="d-flex align-items-center">
+        <div class="d-flex align-items-center justify-content-center bg-white rounded-circle shadow-sm me-3" style="width: 54px; height: 54px; border: 1px solid rgba(0,0,0,0.05);">
+            <i class="bi bi-pie-chart-fill text-primary fs-3"></i>
+        </div>
+        
+        <div>
+            <h4 class="fw-extrabold m-0 text-dark" style="letter-spacing: -0.02em; font-family: 'Inter', sans-serif;">
+                Annual Expense Breakdown
+            </h4>
+            <p class="text-muted m-0" style="font-size: 0.85rem; font-weight: 500;">
+                Monthly distribution and category insights for the calendar year
+            </p>
+        </div>
+    </div>
+
+    <div class="badge bg-light text-dark border px-3 py-2 rounded-pill">
+        <span class="text-muted fw-normal"> Year:</span> {{ selected_year }}
+    </div>
+</div>
+
+    <div class="report-table-container mt-4">
+        <div class="table-responsive">
+            <table class="report-table performance-grid">
+                <thead>
+                    <tr>
+                        <th class="asset-col">Category</th>
+                        {% for m_date in report.month_names %}
+                            <th class="month-col">{{ m_date|date:"M"|upper }}</th>
+                        {% endfor %}
+                        <th class="total-col">TOTAL YTD</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for category in report.detailed_categories %}
+                    <tr>
+                        <td class="asset-col">
+                            <div class="fw-bold text-dark">{{ category.name }}</div>
+                        </td>
+                        {% for val in category.monthly_data %}
+                            <td class="month-col num-align">
+                                <div class="{% if val > 0 %}text-dark{% else %}text-muted opacity-50{% endif %} ">
+                                    {% if val > 0 %}{{ val|floatformat:0 }}€{% else %}-{% endif %}
+                                </div>
+                            </td>
+                        {% endfor %}
+                        <td class="total-col num-align">
+                            <div class="fw-bold text-primary">
+                                {{ category.total_ytd|floatformat:2 }}€
+                            </div>
+                            
+                            <div class="roi-sub text-muted fw-bold">
+                                Avg: {{ category.monthly_avg|floatformat:2 }}€/m
+                            </div>
+                            <div class="roi-sub text-muted small opacity-75">
+                                {{ category.weight|floatformat:1 }}% of total
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td class="asset-col">
+                            <div class="fw-extrabold text-uppercase small">Total Monthly</div>
+                        </td>
+                        {% for m in report.monthly_data %}
+                            <td class="month-col num-align">
+                                <div class="fw-bold text-dark">{{ m.expenses|floatformat:0 }}€</div>
+                                <div class="roi-sub text-transparent"></div>
+                            </td>
+                        {% endfor %}
+                        <td class="total-col num-align">
+                            <div class="fw-bold text-danger" style="font-size: 1.1rem;">
+                                {{ report.annual_stats.expenses|floatformat:2 }}€
+                            </div>
+                            <div class="roi-sub text-dark fw-bold">
+                                Avg: {{ report.annual_stats.avg_expenses|floatformat:2 }}€/m
+                            </div>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+
 <div class="row g-4 mt-2">
         <div class="col-12 col-lg-6">
             <div class="card card-rounded border-0 shadow-sm p-4 h-100 bg-white d-flex flex-column">

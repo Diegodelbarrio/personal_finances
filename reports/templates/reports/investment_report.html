@@ -14,26 +14,26 @@ Investments · Annual Performance
 </div>
 
 <div class="mb-5">
-    {% include "reports/components/report_table.html" with hover=True table_template="reports/tables/investments_table.html" %}
+{% include "reports/components/report_table.html" with hover=True extra_classes="performance-grid" table_template="reports/tables/investments_table.html" %}
 </div>
 
 <div class="mb-5">
-<div class="d-flex align-items-center justify-content-between mb-4">
-    <div class="d-flex align-items-center">
-        <div class="d-flex align-items-center justify-content-center bg-white rounded-circle shadow-sm me-3" style="width: 54px; height: 54px;">
-            <i class="bi bi-bar-chart-line-fill text-primary fs-3"></i>
-        </div>
-        
-        <div>
-            <h4 class="fw-extrabold m-0 text-dark" style="letter-spacing: -0.01em;">
-                Asset Performance Breakdown
-            </h4>
-            <p class="text-muted m-0" style="font-size: 0.9rem; font-weight: 500;">
-                Monthly P&L and ROI analysis per asset
-            </p>
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center">
+            <div class="d-flex align-items-center justify-content-center bg-white rounded-circle shadow-sm me-3" style="width: 54px; height: 54px;">
+                <i class="bi bi-bar-chart-line-fill text-primary fs-3"></i>
+            </div>
+            
+            <div>
+                <h4 class="fw-extrabold m-0 text-dark" style="letter-spacing: -0.01em;">
+                    Asset Performance Breakdown
+                </h4>
+                <p class="text-muted m-0" style="font-size: 0.9rem; font-weight: 500;">
+                    Monthly P&L and ROI analysis per asset
+                </p>
+            </div>
         </div>
     </div>
-</div>
 
     <div class="report-table-container">
         <div class="table-responsive">
@@ -51,7 +51,7 @@ Investments · Annual Performance
                     {% for asset in report.detailed_assets %}
                     <tr>
                         <td class="asset-col">
-                            <div class="fw-bold text-dark text-truncate">{{ asset.name }}</div>
+                            <div class="fw-bold text-dark">{{ asset.name }}</div>
                         </td>
                         {% for m in asset.monthly_data %}
                             <td class="month-col num-align">
@@ -65,10 +65,10 @@ Investments · Annual Performance
                         {% endfor %}
                         <td class="total-col num-align">
                             <div class="fw-bold {% if asset.annual_profit > 0 %}text-success{% elif asset.annual_profit < 0 %}text-danger{% endif %}">
-                                {{ asset.annual_profit|floatformat:2 }}€
+                                {{ asset.annual_profit|floatformat:2 }} €
                             </div>
                             <div class="fw-bold small {% if asset.annual_roi > 0 %}text-success{% elif asset.annual_roi < 0 %}text-danger{% endif %}">
-                                {{ asset.annual_roi|floatformat:2 }}%
+                                {{ asset.annual_roi|floatformat:2 }} %
                             </div>
                         </td>
                     </tr>

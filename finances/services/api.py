@@ -10,8 +10,8 @@ from . import queries, metrics
 
 def get_annual_cashflow_summary(user, year):
     """
-    Devuelve el desglose de ingresos, gastos y ahorro mes a mes,
-    ajustando el rango de meses según la actividad real y proyecciones.
+    Returns a breakdown of income, expenditure, and savings month by month,
+    adjusting the range of months according to actual activity and projections.
     """
     now = timezone.now().date()
     base_qs = queries.get_base_transaction_qs(user)
@@ -55,6 +55,8 @@ def get_annual_cashflow_summary(user, year):
     for month in months:
         period_qs = base_qs.filter(date__year=year, date__month=month)
         stats = metrics.get_period_metrics(period_qs)
+
+        category_breakdown = metrics.get_category_breakdown(period_qs)
         
         # Calcular tasa de ahorro
         savings_rate = (stats["savings"] / stats["income"] * 100) if stats["income"] > 0 else 0
@@ -67,11 +69,12 @@ def get_annual_cashflow_summary(user, year):
             "fixed": stats["fixed"],
             "variable": stats["variable"],
             "savings": stats["savings"],
-            "savings_rate": savings_rate
+            "savings_rate": savings_rate,
+            "categories": category_breakdown,
         })
         
     return monthly_data
 
 def get_available_transaction_years(user):
-    """Exponemos la lista de años disponibles"""
+    """We present the list of available years"""
     return queries.get_available_years(user)

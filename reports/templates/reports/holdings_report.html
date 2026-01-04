@@ -5,7 +5,9 @@
         <h4 class="fw-bold text-dark">Monthly breakdown of balances by bank account</h4>
     </div>
 
-    {% include "reports/components/report_table.html" with hover=True table_template="reports/tables/holdings_table.html" %}
+    
+
+    {% include "reports/components/report_table.html" with hover=True extra_classes="report-table-holdings" table_template="reports/tables/holdings_table.html" %}
 
     <div class="row g-4 mt-1">
         <div class="card card-rounded border-0 shadow-sm p-4 bg-white">

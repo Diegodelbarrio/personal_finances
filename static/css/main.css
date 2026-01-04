@@ -10,18 +10,71 @@
     --brand-primary: #0d6efd;
     --brand-dark: #0b1c2d;
     --bg-soft: #f8f9fb;
-    --navbar-height: 50px;
+    --navbar-height: 65px;
+    --accent-blue: #eef2ff; 
+    --accent-green: #f0fdfb;
 }
 
 body {
-    /* background-color: #f8fafc; */
+    background-color: #f8fafc;
     font-family: 'Inter', -apple-system, sans-serif;
     color: #1e293b;
     min-height: 100vh;
     display: flex;
+    padding-top: 30px;
     flex-direction: column;
     background-color: var(--bg-soft);
+    background-image: 
+        radial-gradient(at 0% 0%, var(--accent-blue) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, var(--accent-blue) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, #f1f5f9 0px, transparent 50%);
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+
+/* Maximizamos el aprovechamiento de pantalla en Dashboards */
+@media (min-width: 1200px) {
+    .container-fluid {
+        /* Dejamos un margen del 4% en lugar del ancho fijo de 1320px */
+        padding-left: 5% !important;
+        padding-right: 5% !important;
+    }
+}
+
+/* Para pantallas ultra-anchas (Ultrawide) */
+@media (min-width: 2000px) {
+    .container-fluid {
+        max-width: 1900px;
+        margin: 0 auto;
+    }
+}
+
+/* Optimizamos el contenedor para pantallas pequeñas */
+@media (max-width: 576px) {
+    main {
+        padding-left: 5%;
+        padding-right: 5%;
+    }
+
+
+    /* Forzamos que los textos de las tablas no sean gigantes en móvil */
+    .report-table {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .report-table .asset-col {
+        position: sticky;
+        left: 0;
+        background-color: white; /* Evita que los números de los meses se vean por debajo */
+        z-index: 2;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+    }
+}
+/* Estilo para que el footer siempre esté abajo incluso con poco contenido */
+.min-vh-100 {
+    min-height: 100vh !important;
 }
 
 /* Componentes de Tarjetas Reutilizables */

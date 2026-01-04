@@ -52,3 +52,17 @@ def get_expense_distribution_chart(qs):
         "labels": [item['subcategory__parent_category__name'] for item in expense_stats],
         "data": [float(_clean(item['total'])) for item in expense_stats]
     }
+
+
+def get_category_breakdown(qs):
+    """
+    Returns a dictionary { 'Category Name': total_amount }
+    for the provided queryset.
+    """
+    data = qs.filter(
+        subcategory__parent_category__transaction_type='EXPENSE'
+    ).values(
+        'subcategory__parent_category__name'
+    ).annotate(total=Sum('amount'))
+    
+    return {item['subcategory__parent_category__name']: _clean(item['total']) for item in data}

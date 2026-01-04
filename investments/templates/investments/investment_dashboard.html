@@ -8,7 +8,6 @@
 {% endblock %}
 
 {% block content %}
-<div class="container py-5">
     <div class="d-flex justify-content-between align-items-start mb-4">
         <div>
             <h1 class="fw-bold mb-0">My Portfolio</h1>
@@ -241,7 +240,6 @@
             {% include "components/coming_soon_card.html" with title="Advanced Analytics" text="Coming Soon: AI-driven projections and dividend tracking." icon="bi-rocket-takeoff" %}
         </div>
     </div>
-</div>
 
 {{ performance_history|json_script:"performance-data" }}
 {{ allocation_labels|json_script:"allocation-labels" }}
