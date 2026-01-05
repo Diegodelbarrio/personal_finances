@@ -1,0 +1,180 @@
+/* ==========================================================================
+   KNOWLEDGE BASE STYLES - REFINED
+   ========================================================================== */
+
+/* --- Utilities --- */
+
+/* Hover Lift: Smoother movement without unnecessary !important */
+.hover-lift {
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), 
+                box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), 
+                border-color 0.3s ease;
+    will-change: transform, box-shadow;
+}
+
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15); /* More diffuse and elegant shadow */
+    border-color: var(--fin-primary);
+}
+
+/* Line Clamp: Standard and webkit multi-line truncation */
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    line-clamp: 3;
+    overflow: hidden;
+}
+
+/* --- Article Body Typography (The "Prose") --- */
+.article-body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 1.125rem; /* 18px on desktop */
+    line-height: 1.8;
+    color: var(--fin-slate-600);
+    text-rendering: optimizeLegibility; /* Improves letter kerning */
+}
+
+/* Mobile adjustment: slightly smaller font to fit more text */
+@media (max-width: 768px) {
+    .article-body {
+        font-size: 1.05rem; 
+    }
+}
+
+/* Paragraphs */
+.article-body p {
+    margin-bottom: 1.75rem; /* A bit more space between paragraphs */
+}
+
+/* Drop Cap (Magazine Style Capital Letter) */
+/* Only applies if the paragraph DOES NOT have the .lead or .alert class */
+.article-body > p:not(.lead):not(.alert):first-of-type::first-letter {
+    font-size: 3.5em;
+    font-weight: 800;
+    float: left;
+    line-height: 0.8;
+    margin-right: 0.15em;
+    margin-top: 0.1em;
+    color: var(--fin-primary);
+}
+
+/* Links within the text */
+.article-body a {
+    color: var(--fin-primary);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.article-body a:hover {
+    color: #0b1c2d; /* Brand Dark */
+    text-decoration-thickness: 2px;
+}
+
+/* H2 and H3 Headers */
+.article-body h2 {
+    font-size: 1.85rem;
+    font-weight: 800;
+    color: var(--fin-slate-900);
+    margin-top: 3rem;
+    margin-bottom: 1.25rem;
+    letter-spacing: -0.025em;
+    position: relative;
+}
+
+.article-body h3 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--fin-slate-900);
+    margin-top: 2.25rem;
+    margin-bottom: 1rem;
+}
+
+/* Lists */
+.article-body ul, .article-body ol {
+    margin-bottom: 2rem;
+    padding-left: 1.5rem;
+}
+
+.article-body li {
+    margin-bottom: 0.5rem;
+    padding-left: 0.5rem;
+}
+
+/* List bullet customization */
+.article-body ul li::marker {
+    color: var(--fin-primary); /* Blue dots instead of black */
+    font-weight: bold;
+}
+
+/* Blockquotes (Quotes) */
+.article-body blockquote {
+    background: var(--fin-gray-soft);
+    border-left: 4px solid var(--fin-primary);
+    border-radius: 0 12px 12px 0;
+    padding: 1.5rem 2rem;
+    margin: 2.5rem 0;
+    font-style: italic;
+    color: var(--fin-slate-600);
+    font-weight: 500;
+}
+
+/* Pro Tip Quotes (Optional, if using <strong> tag inside the quote) */
+.article-body blockquote strong {
+    color: #0f172a;
+    font-style: normal;
+}
+
+/* Images */
+.article-body img {
+    border-radius: 12px; /* More rounded */
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    margin: 2.5rem auto;
+    max-width: 100%;
+    height: auto;
+    display: block; /* So that margin auto works and centers */
+}
+
+/* Tables (NEW: Important for your financial examples) */
+.article-body table {
+    width: 100%;
+    margin-bottom: 2rem;
+    border-collapse: separate; /* Necessary for border-radius */
+    border-spacing: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.article-body th {
+    background-color: #f1f5f9;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    padding: 1rem;
+    color: #64748b;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.article-body td {
+    padding: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.article-body tr:last-child td {
+    border-bottom: none;
+}
+
+/* Horizontal Separators */
+.article-body hr {
+    margin: 3rem 0;
+    border: 0;
+    height: 1px;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0));
+}

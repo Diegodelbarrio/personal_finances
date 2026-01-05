@@ -10,8 +10,11 @@ class UserSettings(models.Model):
         )    
     # Objetivos Financieros
     annual_savings_target = models.DecimalField(_("Annual Savings Target"), max_digits=12, decimal_places=2, default=0.00)
+    monthly_budget = models.DecimalField(_("Monthly Budget"), max_digits=10, decimal_places=2, default=0.00)
     net_worth_target = models.DecimalField(_("Net Worth Target"), max_digits=15, decimal_places=2, default=0.00)
+    savings_rate_target = models.DecimalField(_("Savings Rate Target (%)"), max_digits=5, decimal_places=2, default=20.00)
     target_date = models.DateField(_("Target date"), null=True, blank=True)
+    retirement_age = models.PositiveIntegerField(_("Retirement Age"), default=65)
     
     # Preferencias
     main_currency = models.CharField(max_length=3, default='EUR', choices=[('EUR', 'EUR'), ('USD', 'USD')])

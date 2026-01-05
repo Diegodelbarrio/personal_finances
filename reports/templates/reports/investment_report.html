@@ -1,4 +1,5 @@
 {% extends "reports/_layout.html" %}
+{% load static %}
 
 {% block report_title %}
 Investments · Annual Performance
@@ -6,12 +7,49 @@ Investments · Annual Performance
 
 {% block report_content %}
 
-<div class="row g-4 gx-xl-3 mb-5 row-cols-1 row-cols-md-2 row-cols-xl-4">
+<div class="row g-4 gx-xl-3 mb-4 row-cols-2 row-cols-xl-4">
     <div class="col">{% include "reports/components/metric_card.html" with label="Current Market Value" value=report.annual_stats.final_market_value|floatformat:2 suffix=" €" color="primary" icon="bi-wallet2" %}</div>
     <div class="col">{% include "reports/components/metric_card.html" with label="New Contributions" value=report.annual_stats.total_contributions|floatformat:2 suffix=" €" color="info" icon="bi-cash-coin" %}</div>
     <div class="col">{% include "reports/components/metric_card.html" with label="Yearly Profit" value=report.annual_stats.total_profit_abs|floatformat:2 suffix=" €" prefix=report.annual_stats.profit_prefix color=report.annual_stats.profit_status icon=report.annual_stats.profit_icon %}</div>
     <div class="col">{% include "reports/components/metric_card.html" with label="Annual ROI" value=report.annual_stats.annual_roi_abs|floatformat:2 suffix=" %" prefix=report.annual_stats.roi_prefix color=report.annual_stats.roi_status icon=report.annual_stats.roi_icon %}</div>
 </div>
+
+{% if report.family_stats %}
+<div class="card border-0 shadow-sm mb-4 card-family-investment">
+    <div class="card-body p-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center">
+                <div class="bg-white rounded-circle shadow-sm d-flex align-items-center justify-content-center me-3 icon-family-investment">
+                    <i class="bi bi-people text-primary fs-4"></i>
+                </div>
+                <div>
+                    <h6 class="text-uppercase text-muted fw-bold mb-1 label-family-investment">Family Investment Fund</h6>
+                    <div class="d-flex align-items-baseline">
+                        <span class="fs-4 fw-bold text-dark me-2">{{ report.family_stats.current_value|floatformat:2 }} €</span>
+                        <span class="badge bg-white text-secondary border fw-normal">Excluded from main report</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex gap-4">
+                <div class="text-center">
+                    <div class="text-muted small fw-semibold mb-1">Yearly Profit</div>
+                    <span class="fw-bold text-{{ report.family_stats.profit_status }}">
+                        {{ report.family_stats.profit_prefix }}{{ report.family_stats.profit|floatformat:2 }} €
+                    </span>
+                </div>
+                <div class="text-center">
+                    <div class="text-muted small fw-semibold mb-1">Annual ROI</div>
+                    <span class="badge bg-{{ report.family_stats.roi_status }}-subtle text-{{ report.family_stats.roi_status }} border border-{{ report.family_stats.roi_status }}-subtle px-3 py-2 rounded-pill">
+                        <i class="{{ report.family_stats.roi_icon }} me-1"></i>
+                        {{ report.family_stats.roi_prefix }}{{ report.family_stats.roi|floatformat:2 }}%
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <div class="mb-5">
 {% include "reports/components/report_table.html" with hover=True extra_classes="performance-grid" table_template="reports/tables/investments_table.html" %}
@@ -20,15 +58,15 @@ Investments · Annual Performance
 <div class="mb-5">
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div class="d-flex align-items-center">
-            <div class="d-flex align-items-center justify-content-center bg-white rounded-circle shadow-sm me-3" style="width: 54px; height: 54px;">
+            <div class="d-flex align-items-center justify-content-center bg-white rounded-circle shadow-sm me-3 icon-asset-breakdown">
                 <i class="bi bi-bar-chart-line-fill text-primary fs-3"></i>
             </div>
             
             <div>
-                <h4 class="fw-extrabold m-0 text-dark" style="letter-spacing: -0.01em;">
+                <h4 class="fw-extrabold m-0 text-dark letter-spacing-tight">
                     Asset Performance Breakdown
                 </h4>
-                <p class="text-muted m-0" style="font-size: 0.9rem; font-weight: 500;">
+                <p class="text-muted m-0 section-subtitle">
                     Monthly P&L and ROI analysis per asset
                 </p>
             </div>
@@ -42,7 +80,7 @@ Investments · Annual Performance
                     <tr>
                         <th class="asset-col">Asset</th>
                         {% for m_date in report.month_names %}
-                            <th class="month-col">{{ m_date|date:"M"|upper }}</th>
+                            <th class="month-col num-align">{{ m_date|date:"M"|upper }}</th>
                         {% endfor %}
                         <th class="total-col">TOTAL YTD</th>
                     </tr>
@@ -81,11 +119,31 @@ Investments · Annual Performance
 
 <div class="row g-4 mt-2">
     <div class="col-12 col-lg-6">
-        {% include "components/coming_soon_card.html" with title="Diversification" text="Coming Soon: Asset allocation by geography and sector." icon="bi-pie-chart" %}
+        <div class="card card-rounded border-0 shadow-sm p-4 h-100 bg-white">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h6 class="fw-bold text-muted mb-0">Performance History</h6>
+                    <small class="text-muted small">Annual Evolution ({{ report.year }})</small>
+                </div>
+                <span class="badge bg-primary-subtle text-primary rounded-pill px-3">
+                    Invested vs Market
+                </span>
+            </div>
+            <div style="height: 250px;">
+                <canvas id="performanceChart"></canvas>
+            </div>
+        </div>
     </div>
     <div class="col-12 col-lg-6">
         {% include "components/coming_soon_card.html" with title="Advanced Analytics" text="Coming Soon: AI-driven projections and dividend tracking." icon="bi-rocket-takeoff" %}
     </div>
 </div>
 
+{{ report.performance_chart_data|json_script:"performance-data" }}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'investments/js/investments.js' %}"></script>
 {% endblock %}

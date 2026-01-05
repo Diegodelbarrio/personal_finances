@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'knowledge/css/knowledge.css' %}">
+{% endblock %}
+
+{% block content %}
+    
+    <div class="row justify-content-center mb-4">
+        <div class="col-lg-10 col-xl-9">
+            <a href="{% url 'knowledge:index' %}" class="text-decoration-none text-muted d-inline-flex align-items-center fw-medium hover-primary transition-colors">
+                <div class="bg-white border rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm" style="width: 32px; height: 32px;">
+                    <i class="bi bi-arrow-left"></i>
+                </div>
+                Back to the Academy
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center mb-0">
+        <div class="col-lg-10 col-xl-9">
+            
+            <main class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4">
+                <div class="card-body p-4 p-md-5">
+                    
+                    <header class="text-center mb-5 pb-4 border-bottom mx-2 mx-lg-5">
+                        <div class="mb-3">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2 text-uppercase fw-bold letter-spacing" style="font-size: 0.7rem;">
+                                {{ article.get_category_display }}
+                            </span>
+                        </div>
+                        
+                        <h1 class="fw-bold text-dark mb-4 display-5" style="letter-spacing: -0.02em;">
+                            {{ article.title }}
+                        </h1>
+                        
+                        <div class="d-flex justify-content-center align-items-center gap-3 text-muted small flex-wrap">
+                            <div class="d-flex align-items-center bg-light px-3 py-1 rounded-pill border">
+                                <i class="bi bi-calendar3 me-2 text-primary"></i>
+                                <span>{{ article.created_at|date:"d M, Y" }}</span>
+                            </div>
+                            <div class="d-flex align-items-center bg-light px-3 py-1 rounded-pill border">
+                                <i class="bi bi-clock me-2 text-primary"></i>
+                                <span>{{ article.read_time_minutes }} min read</span>
+                            </div>
+                            
+                            {% if user.is_superuser %}
+                            <a href="{% url 'admin:knowledge_article_change' article.id %}" class="btn btn-sm btn-outline-primary rounded-pill ms-2">
+                                <i class="bi bi-pencil-square me-1"></i> Edit
+                            </a>
+                            {% endif %}
+                        </div>
+                    </header>
+
+                    <div class="mx-2 mx-lg-4">
+                        <article class="article-body">
+                            {{ article.content|safe }}
+                        </article>
+                    </div>
+                    
+                </div>
+            </main>
+
+            <div class="mt-0 pt-0 text-center">
+                <div class="d-inline-block bg-light rounded-4 p-4 border">
+                    <h6 class="fw-bold text-dark mb-3">Was this article helpful?</h6>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button class="btn btn-white border shadow-sm rounded-pill px-4 hover-lift">
+                            <i class="bi bi-hand-thumbs-up text-success me-2"></i> Yes
+                        </button>
+                        <button class="btn btn-white border shadow-sm rounded-pill px-4 hover-lift">
+                            <i class="bi bi-share text-primary me-2"></i> Share
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {% if related_articles %}
+            <div class="mt-5 mb-3">
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <h4 class="fw-bold text-dark mb-0">Keep learning</h4>
+                    <a href="{% url 'knowledge:index' %}" class="text-decoration-none small fw-bold">See all <i class="bi bi-arrow-right"></i></a>
+                </div>
+                
+                <div class="row g-4">
+                    {% for related in related_articles %}
+                    <div class="col-md-6">
+                        <a href="{{ related.get_absolute_url }}" class="text-decoration-none">
+                            <div class="card h-100 border-0 shadow-sm rounded-4 hover-lift transition-all bg-white">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <span class="badge bg-light text-muted border rounded-pill text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">
+                                            {{ related.get_category_display }}
+                                        </span>
+                                        <small class="text-muted"><i class="bi bi-clock me-1"></i> {{ related.read_time_minutes }} min</small>
+                                    </div>
+                                    <h5 class="fw-bold text-dark mb-2">{{ related.title }}</h5>
+                                    <p class="text-muted small mb-0 line-clamp-3">{{ related.summary }}</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'knowledge/js/compound_interest.js' %}"></script>
+{% endblock %}

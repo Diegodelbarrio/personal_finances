@@ -4,14 +4,20 @@
 <link rel="stylesheet" href="{% static 'core/css/index.css' %}">
 {% endblock extra_head %}
 
-{% block content %}
+{% block navbar_class %}navbar-landing{% endblock %}
 
-<div class="text-center py-4 mb-3">
-    <h1 class="fw-bold display-6 mb-2">Your Finances, Your Future</h1>
-    <p class="text-muted mb-0">
-        A clear overview of your money, investments, and goals
-    </p>
+{% block hero %}
+<div class="dashboard-header text-center">
+    <div class="position-relative" style="z-index: 1;">
+        <h1 class="fw-bold display-5 mb-2 text-white" style="letter-spacing: -1px;">Your Finances, Your Future</h1>
+        <p class="text-white-50 mb-0 fs-5 fw-light">
+            A clear overview of your money, investments, and goals
+        </p>
+    </div>
 </div>
+{% endblock hero %}
+
+{% block content %}
 
 <div class="row g-4 mb-5">
     <div class="col-md-4">
@@ -63,11 +69,11 @@
 
 <div class="row g-4 mb-5">
     <div class="col-md-6">
-        <div class="section-card h-100 p-4 position-relative border-0 shadow-sm" style="border-radius: 1.25rem; background: #ffffff;">
+        <div class="section-card h-100 p-4 position-relative border-0 shadow-sm">
             
             <div class="d-flex justify-content-between align-items-start mb-2">
                 <div>
-                    <h6 class="fw-bold text-muted text-uppercase mb-1" style="font-size: 0.75rem; letter-spacing: 0.1rem;">
+                    <h6 class="fw-bold text-muted text-uppercase mb-1 nw-label">
                         Global Net Worth
                     </h6>
                     <div class="d-flex align-items-baseline">
@@ -77,20 +83,39 @@
                     </div>
                 </div>
                 
-                <div class="status-badge {% if is_stale %}status-stale{% else %}status-updated{% endif %}" 
-                     title="{% if is_stale %}Los datos necesitan actualizarse{% else %}Datos al día{% endif %}">
-                    <i class="bi {% if is_stale %}bi-exclamation-circle{% else %}bi-check-circle{% endif %} me-1"></i>
+                <div class="status-badge 
+                    {% if data_status == 'danger' %}status-danger
+                    {% elif data_status == 'warning' %}status-warning
+                    {% else %}status-updated{% endif %}"
+                     data-bs-toggle="tooltip" 
+                     data-bs-placement="top"
+                     title="{% if data_status == 'danger' %}Data is old (>30 days). Update required{% elif data_status == 'warning' %}Partial update: Some assets are still pending for this month{% else %}All data is up to date.{% endif %}">
+                    <i class="bi 
+                        {% if data_status == 'danger' %}bi-exclamation-circle
+                        {% elif data_status == 'warning' %}bi-hourglass-split
+                        {% else %}bi-check-circle{% endif %} me-1"></i>
                     {% if last_market_date %}{{ last_market_date|date:"d/m/Y" }}{% else %}--/--/--{% endif %}
                 </div>
             </div>
 
-            <div class="mb-4">
-                <span class="badge bg-light text-secondary border-0 fw-medium px-2 py-1" style="font-size: 0.75rem;">
+            <div class="mb-2">
+                <span class="badge bg-light text-secondary border-0 fw-medium px-2 py-1 nw-evolution-badge">
                     <i class="bi bi-graph-up me-1"></i> Total Assets Evolution
                 </span>
             </div>
 
-            <div class="chart-container" style="height: 280px; width: 100%;">
+            <div class="nw-breakdown-container mb-4">
+                <div class="progress mb-1 nw-progress-container">
+                    <div id="cash-bar" class="progress-bar bg-success" role="progressbar" data-bs-toggle="tooltip" data-bs-placement="top" title="Cash"></div>
+                    <div id="investments-bar" class="progress-bar bg-primary" role="progressbar" data-bs-toggle="tooltip" data-bs-placement="top" title="Investments"></div>
+                </div>
+                <div class="d-flex justify-content-between nw-breakdown-labels">
+                    <span class="text-muted">Cash: <span id="cash-percentage" class="fw-bold text-dark">--%</span></span>
+                    <span class="text-muted">Investments: <span id="investments-percentage" class="fw-bold text-dark">--%</span></span>
+                </div>
+            </div>
+
+            <div class="chart-container nw-chart-wrapper">
                 <canvas id="netWorthChart"></canvas>
             </div>
         </div>
@@ -103,7 +128,7 @@
         {% else %}
             <div class="card card-rounded border-0 shadow-sm h-100 border-2 border-dashed d-flex align-items-center justify-content-center p-5">
                 <div class="text-center">
-                    <i class="bi bi-plus-circle text-muted mb-3" style="font-size: 2rem;"></i>
+                    <i class="bi bi-plus-circle text-muted mb-3 empty-state-icon"></i>
                     <h6 class="fw-bold">No Objectives Set</h6>
                     <p class="small text-muted mb-3">Define your targets to track progress.</p>
                     <a href="{% url 'settings:settings_home' %}" class="btn btn-sm btn-outline-primary rounded-pill px-4">Setup Now</a>
@@ -115,35 +140,91 @@
 
 <div class="row g-4 mb-5">
     <div class="col-md-4">
-        <a href="/admin/finances/transaction/add/" class="text-decoration-none text-dark">
-            <div class="action-card h-100 border">
-                <div class="plus-icon text-primary">+</div>
-                <div class="fw-bold">Add Expense / Income</div>
-                <small class="text-muted">Admin entry</small>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-md-4">
-        <a href="/admin/investments/transaction/add/" class="text-decoration-none text-dark">
-            <div class="action-card h-100 border">
-                <div class="plus-icon text-success">+</div>
-                <div class="fw-bold">Add Investment</div>
-                <small class="text-muted">Admin entry</small>
-            </div>
-        </a>
-    </div>
-
-    <!-- <div class="col-md-4">
-        <div class="action-card h-100 bg-light disabled-card">
-            <div class="plus-icon">+</div>
-            <div class="fw-bold text-muted">TBD</div>
-            <small class="text-muted">Coming soon</small>
+        <div class="d-flex flex-column gap-3 h-100">
+            <a href="/admin/finances/transaction/add/" class="text-decoration-none text-dark flex-grow-1">
+                <div class="action-card h-100 py-2 px-3 flex-row justify-content-start gap-3">
+                    <div class="plus-icon text-primary mb-0" style="font-size: 1.8rem;">+</div>
+                    <div class="text-start">
+                        <div class="fw-bold small">Add Expense</div>
+                        <small class="text-muted" style="font-size: 0.7rem;">Finances</small>
+                    </div>
+                </div>
+            </a>
+            <a href="/admin/investments/transaction/add/" class="text-decoration-none text-dark flex-grow-1">
+                <div class="action-card h-100 py-2 px-3 flex-row justify-content-start gap-3">
+                    <div class="plus-icon text-success mb-0" style="font-size: 1.8rem;">+</div>
+                    <div class="text-start">
+                        <div class="fw-bold small">Add Investment</div>
+                        <small class="text-muted" style="font-size: 0.7rem;">Portfolio</small>
+                    </div>
+                </div>
+            </a>
         </div>
-    </div> -->
+    </div>
 
     <div class="col-md-4">
-        {% include "components/coming_soon_card.html" with title="TBD" text="Planned" %}    
+        <div class="card card-rounded card-dashed h-100 p-4">
+            <div class="text-center">
+                <i class="bi bi-rocket-takeoff fs-2 text-muted mb-2"></i>
+                <h6 class="fw-bold text-muted mb-1">Smart Insights</h6>
+                <p class="small text-muted mb-0">Coming Soon: AI-driven financial projections.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        {% if emergency_fund %}
+            <div class="card h-100 border-0 shadow-sm p-4 card-emergency">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h6 class="fw-bold text-muted text-uppercase small mb-1">Emergency Fund</h6>
+                        <div class="d-flex align-items-baseline">
+                            <h2 class="fw-bold mb-0 text-dark">{{ emergency_fund.months_covered|floatformat:1 }}</h2>
+                            <span class="text-muted ms-1 small">months</span>
+                        </div>
+                    </div>
+                    <div class="rounded-circle d-flex align-items-center justify-content-center {% if emergency_fund.is_ready %}bg-success text-white{% else %}bg-primary text-white{% endif %} shadow-sm icon-box">
+                        <i class="bi bi-shield-check fs-5"></i>
+                    </div>
+                </div>
+                
+                <div class="mt-auto">
+                    <div class="d-flex justify-content-between align-items-end mb-1">
+                        <span class="badge {% if emergency_fund.is_ready %}bg-success{% else %}bg-primary{% endif %} rounded-pill badge-status">
+                            {{ emergency_fund.progress|floatformat:0 }}% Ready
+                        </span>
+                        <small class="text-muted text-target">Goal: {{ emergency_fund.target_cash|floatformat:0 }}€ ({{ emergency_fund.target_months }} months)</small>
+                    </div>
+                    
+                    <div class="progress mb-3 progress-custom">
+                        <div class="progress-bar js-progress {% if emergency_fund.is_ready %}bg-success{% else %}bg-primary{% endif %}" 
+                             role="progressbar" 
+                             data-value="{{ emergency_fund.progress|floatformat:0 }}">
+                        </div>
+                    </div>
+
+                    <div class="row g-0 pt-2 border-top">
+                        <div class="col-6 border-end">
+                            <div class="text-muted text-uppercase footer-label">Liquid Cash</div>
+                            <div class="fw-bold text-dark small">{{ emergency_fund.total_cash|floatformat:0 }}€</div>
+                        </div>
+                        <div class="col-6 ps-3">
+                            <div class="text-muted text-uppercase footer-label">Avg. Exp ({{ emergency_fund.calc_year }})</div>
+                            <div class="fw-bold text-dark small">{{ emergency_fund.avg_expenses|floatformat:0 }}€</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="card h-100 border-0 shadow-sm p-4 d-flex flex-column justify-content-center align-items-center text-center position-relative card-emergency">
+                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mb-3 icon-box-lg">
+                    <i class="bi bi-shield-plus text-muted fs-4"></i>
+                </div>
+                <h6 class="fw-bold text-dark mb-1">Emergency Fund</h6>
+                <p class="text-muted small mb-0">Not configured yet</p>
+                <a href="{% url 'settings:settings_home' %}" class="stretched-link"></a>
+            </div>
+        {% endif %}
     </div>
 </div>
 

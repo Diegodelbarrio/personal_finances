@@ -1,5 +1,7 @@
 from calendar import month_name
+from django.utils import timezone
 from . import queries, metrics
+from holdings.services import api as holdings_api
 
 def get_summary_page_data(user, year, month):
     """
@@ -46,4 +48,40 @@ def get_summary_page_data(user, year, month):
             float(stats["fixed"]), 
             float(stats["variable"])
         ]
+    }
+
+def get_emergency_fund_status(user):
+    """
+    Calculates the status of the emergency fund.
+    Returns context data for the dashboard.
+    """
+    # 1. Get Target from Settings (default to 6 if not set)
+    target_months = 6
+    if hasattr(user, 'settings'):
+        target_months = getattr(user.settings, 'emergency_fund_months', 6)
+
+    # 2. Get Liquid Assets (Cash)
+    total_cash, _ = holdings_api.get_current_value(user)
+
+    # 3. Calculate Average Monthly Expenses (Year 2025)
+    calc_year = 2025
+    qs = queries.get_base_transaction_qs(user)
+    period_qs = qs.filter(date__year=calc_year)
+    
+    stats = metrics.get_period_metrics(period_qs)
+    avg_expenses = abs(float(stats.get("expenses", 0))) / 12.0
+
+    months_covered = (total_cash / avg_expenses) if avg_expenses > 0 else 0
+    progress = (months_covered / target_months * 100) if target_months > 0 else 0
+    target_cash = avg_expenses * target_months
+
+    return {
+        "target_months": target_months,
+        "months_covered": months_covered,
+        "progress": min(progress, 100),
+        "total_cash": total_cash,
+        "target_cash": target_cash,
+        "avg_expenses": avg_expenses,
+        "is_ready": months_covered >= target_months,
+        "calc_year": calc_year
     }

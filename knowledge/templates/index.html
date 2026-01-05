@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'templates/css/knowledge.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid pb-5">
+    
+    <div class="row mb-5">
+        <div class="col-lg-8">
+            <h6 class="text-uppercase text-primary fw-bold letter-spacing mb-2">{{page_title|capfirst}}</h6>
+            <h1 class="display-5 fw-bold text-dark mb-3">Financial Knowledge</h1>
+            <p class="text-muted lead" style="max-width: 600px;">
+               Master the key concepts for managing your wealth. Practical guides and financial strategies
+            </p>
+        </div>
+        {% if user.is_superuser %}
+        <div class="col-lg-4 text-lg-end align-self-start">
+            <a href="{% url 'admin:knowledge_article_add' %}" class="btn btn-primary rounded-pill px-4">
+                <i class="bi bi-plus-lg me-1"></i> New Article
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if articles %}
+    <div class="row g-4"> {% for article in articles %}
+        <div class="col-md-6 col-lg-4 col-xl-4">
+            <a href="{{ article.get_absolute_url }}" class="text-decoration-none h-100 d-block">
+                <div class="card card-rounded border h-100 hover-lift bg-white">
+                    <div class="card-body d-flex flex-column p-4">
+                        
+                        <div class="mb-3">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2 badge-category">
+                                {{ article.get_category_display }}
+                            </span>
+                        </div>
+
+                        <h4 class="card-title fw-bold text-dark mb-3 fs-5">
+                            {{ article.title }}
+                        </h4>
+
+                        <p class="card-text text-muted small line-clamp-3 mb-4 flex-grow-1">
+                            {{ article.summary }}
+                        </p>
+
+                        <div class="d-flex align-items-center text-muted small border-top pt-3 mt-auto">
+                            <div class="d-flex align-items-center me-3">
+                                <i class="bi bi-clock me-1"></i>
+                                <span>{{ article.read_time_minutes }} min</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-calendar3 me-1"></i>
+                                <span>{{ article.created_at|date:"d M Y" }}</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="row justify-content-center py-5">
+        <div class="col-md-6 text-center">
+            <div class="card card-dashed card-rounded p-5">
+                <i class="bi bi-journal-bookmark fs-1 text-muted mb-3"></i>
+                <h5 class="fw-bold text-dark">No articles published</h5>
+                <p class="text-muted">Please return later to view new content.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

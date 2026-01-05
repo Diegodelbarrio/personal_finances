@@ -1,11 +1,74 @@
+ /* =========================================
+   HERO / HEADER SECTION (FINAL)
+   ========================================= */
+.dashboard-header {
+    /* 1. Posicionamiento y Layout */
+    position: relative;
+    width: 100%;
+    margin-top: -40px !important; 
+    
+    /* CÁLCULO DEL PADDING SUPERIOR:
+       80px (Altura Navbar) + 60px (Espacio visual extra) = 140px 
+       Esto baja el texto "Your Finances" para que quede centrado visualmente.
+    */
+    padding: 140px 2rem 2.5rem 2rem; 
+    
+    overflow: hidden; /* Corta los brillos que se salgan */
+    margin-bottom: 1.5rem; /* Separa el contenido (tablas/gráficos) que viene después */
+
+    /* 2. Estética "Deep Ocean" */
+    background-color: #0f172a; /* Fallback color */
+    background-image: 
+        /* Brillo Cyan (Growth) - Arriba Derecha */
+        radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.18) 0px, transparent 50%),
+        /* Brillo Indigo (Stability) - Abajo Izquierda */
+        radial-gradient(at 0% 100%, rgba(79, 70, 229, 0.18) 0px, transparent 50%),
+        /* Base Profunda */
+        linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+
+    /* 3. Profundidad y Acabado */
+    box-shadow: 
+        inset 0 -1px 0 rgba(255, 255, 255, 0.1), /* Borde interno sutil abajo */
+        0 20px 40px -5px rgba(15, 23, 42, 0.4); /* Sombra difusa hacia el contenido */
+        
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Patrón de puntos (Data Texture) */
+.dashboard-header::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    
+    background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='1.5'/%3E%3C/g%3E%3C/svg%3E");
+    
+    /* Vignette: Desvanece los puntos en los bordes */
+    mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+    -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+    
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Línea de luz superior (Top Highlight) - Opcional pero elegante */
+.dashboard-header::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.3), transparent);
+    z-index: 1;
+}
+
+
 .action-card,
 .section-card {
     background: #ffffff;
-    border-radius: 1.5rem;
+    border-radius: 1.25rem;
     padding: 2rem;
     box-shadow: 0 .4rem .8rem rgba(0,0,0,.05);
     transition: all 0.3s ease;
-    border: 1px solid rgba(0,0,0,0.03);
+    /* border: 1px solid rgba(0,0,0,0.03); */
 }
 
 .action-card {
@@ -18,19 +81,9 @@
 }
 
 .action-card:hover:not(.disabled-card) {
-    transform: translateY(-5px);
+    transform: translateY(-1px);
     box-shadow: 0 1rem 2rem rgba(0,0,0,.1);
 }
-
-.status-badge {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    font-size: 0.7rem;
-    padding: 5px 12px;
-    border-radius: 50px;
-}
-
 .plus-icon {
     font-size: 2.5rem;
     font-weight: 300;
@@ -47,7 +100,7 @@
 
 /* Ajuste opcional para la tarjeta deshabilitada */
 .disabled-card {
-    border: 1px dashed #e2e8f0 !important; /* Efecto de "en construcción" */
+    border: 1px dashed #e2e8f0 !important;
     background-color: #fbfcfd !important;
 }
 
@@ -125,6 +178,51 @@
     will-change: width;
 }
 
+.nw-breakdown-container .progress-bar {
+    cursor: pointer;
+    /* Sincronizamos la duración con la animación de carga */
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.9;
+}
+
+.nw-breakdown-container .progress-bar:hover {
+    opacity: 1;
+    filter: brightness(1.1);
+}
+
+.nw-breakdown-container {
+    max-width: 100%;
+    margin-top: 0.5rem;
+}
+
+.nw-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.1rem;
+}
+
+.nw-evolution-badge {
+    font-size: 0.75rem;
+}
+
+.nw-progress-container {
+    height: 6px;
+    background-color: rgba(0,0,0,0.05);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.nw-breakdown-labels {
+    font-size: 0.7rem;
+}
+
+.nw-chart-wrapper {
+    height: 280px;
+    width: 100%;
+}
+
+.empty-state-icon {
+    font-size: 2rem;
+}
 
 /* Tipografía y Números */
 .display-amount {
@@ -141,14 +239,18 @@
 
 /* Badges de Estado */
 .status-badge {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
     font-size: 0.75rem;
     padding: 5px 12px;
-    border-radius: 20px;
+    border-radius: 50px;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
     border: 1px solid transparent;
     transition: all 0.3s ease;
+    z-index: 5;
 }
 
 .status-updated {
@@ -157,11 +259,18 @@
     border-color: #dcfce7;
 }
 
-.status-stale {
+.status-danger {
     background-color: #fff1f2; /* Rojo suave */
     color: #e11d48;
     border-color: #ffe4e6;
     animation: pulse-border 2s infinite;
+}
+
+.status-warning {
+    background-color: #fffbeb; /* Amarillo suave */
+    color: #b45309;
+    border-color: #fef3c7;
+    /* Sin animación de pulso, es solo informativo */
 }
 
 /* Animación para datos obsoletos */
@@ -185,3 +294,40 @@
     position: relative;
 }
 
+/* Emergency Fund Card */
+.card-emergency {
+    border-radius: 1.25rem !important;
+}
+
+.card-emergency .icon-box {
+    width: 42px;
+    height: 42px;
+}
+
+.card-emergency .icon-box-lg {
+    width: 50px;
+    height: 50px;
+}
+
+.card-emergency .badge-status {
+    font-size: 0.7rem;
+}
+
+.card-emergency .text-target {
+    font-size: 0.75rem;
+}
+
+.card-emergency .progress-custom {
+    height: 6px;
+    border-radius: 10px;
+    background-color: #f0f2f5;
+}
+
+.card-emergency .progress-custom .progress-bar {
+    border-radius: 10px;
+}
+
+.card-emergency .footer-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+}

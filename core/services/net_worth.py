@@ -16,27 +16,42 @@ def calculate_net_worth(user):
     # B. Investments
     investments_data = get_portfolio_overview(user)
     investments_value = investments_data["global_current_value"]
-    investments_date = investments_data["last_market_date"]
+    investments_min_date = investments_data.get("last_market_date")
+    investments_max_date = investments_data.get("latest_market_date")
 
     snapshot_dates = []
     if holdings_dates:
         snapshot_dates.extend(holdings_dates)
-    if investments_date:
-        snapshot_dates.append(investments_date)
+    
+    # Añadimos los extremos de inversiones para evaluar el rango completo
+    if investments_min_date:
+        snapshot_dates.append(investments_min_date)
+    if investments_max_date:
+        snapshot_dates.append(investments_max_date)
 
     current_net_worth = holdings_value + investments_value
 
-    # Fecha de referencia (la más antigua)
-    last_market_date = min(snapshot_dates) if snapshot_dates else None
+    # Evaluamos el estado de los datos
+    data_status = "ok"  # Posibles valores: 'ok', 'warning', 'danger'
+    last_market_date = None
 
-    # Indicador de desactualización
-    is_stale = False
-    if last_market_date:
-        if last_market_date < (timezone.now().date() - timedelta(days=30)):
-            is_stale = True
+    if snapshot_dates:
+        min_date = min(snapshot_dates)
+        max_date = max(snapshot_dates)
+        now = timezone.now().date()
+        last_market_date = min_date
+
+        # 1. Criterio clásico: Datos demasiado antiguos (> 30 días)
+        if min_date < (now - timedelta(days=30)):
+            data_status = "danger"
+        # 2. Criterio de consistencia: Actualización parcial del mes
+        # Si ya hay datos de este mes (max es actual) pero quedan datos viejos (min no es actual)
+        elif max_date.month == now.month and max_date.year == now.year:
+            if min_date.month != now.month or min_date.year != now.year:
+                data_status = "warning"
 
     return {
         "current_net_worth": current_net_worth,
         "last_market_date": last_market_date,
-        "is_stale": is_stale,
+        "data_status": data_status,
     }

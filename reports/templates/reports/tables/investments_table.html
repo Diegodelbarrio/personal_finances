@@ -34,12 +34,12 @@
         {% endif %}
     </td>
 
-    <td class="text-end num-align fw-bold {% if m.profit_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+    <td class="text-end num-align fw-bold {% if m.profit_loss > 0 %}text-success{% elif m.profit_loss < 0 %}text-danger{% else %}text-muted{% endif %}">
         {{ m.profit_loss|floatformat:2 }} €
     </td>
 
     <td class="text-center">
-        <span class="badge-roi {% if m.roi >= 0 %}roi-up{% else %}roi-down{% endif %}">
+        <span class="badge-roi {% if m.roi > 0 %}roi-up{% elif m.roi < 0 %}roi-down{% else %}bg-light text-muted border{% endif %}">
             {{ m.roi|floatformat:2 }}%
         </span>
     </td>
@@ -65,7 +65,7 @@
         +{{ report.annual_stats.total_contributions|floatformat:2 }} €
     </td>
 
-    <td class="text-end num-align fw-bold {% if report.annual_stats.total_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+    <td class="text-end num-align fw-bold {% if report.annual_stats.total_profit > 0 %}text-success{% elif report.annual_stats.total_profit < 0 %}text-danger{% else %}text-muted{% endif %}">
         {{ report.annual_stats.total_profit|floatformat:2 }} €
     </td>
 

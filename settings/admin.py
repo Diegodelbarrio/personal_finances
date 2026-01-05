@@ -3,22 +3,22 @@ from .models import UserSettings
 
 @admin.register(UserSettings)
 class UserSettingsAdmin(admin.ModelAdmin):
-    # Columnas que se verán en el listado principal
+    # Columns to be displayed in the main list
     list_display = ('user', 'annual_savings_target', 'net_worth_target', 'target_date', 'main_currency', 'updated_at')
     
-    # Filtros laterales
+    # Sidebar filters
     list_filter = ('main_currency', 'updated_at')
     
-    # Buscador por nombre de usuario
+    # Search by username
     search_fields = ('user__username', 'user__email')
     
-    # Organización del formulario de edición
+    # Edit form organization
     fieldsets = (
         ('User Information', {
             'fields': ('user',)
         }),
         ('Financial Objectives', {
-            'fields': ('annual_savings_target', 'net_worth_target', 'target_date'),
+            'fields': ('net_worth_target', 'target_date', 'annual_savings_target', 'monthly_budget', 'savings_rate_target', 'retirement_age'),
             'description': "Define the user's long-term goals."
         }),
         ('System Preferences', {
@@ -27,8 +27,8 @@ class UserSettingsAdmin(admin.ModelAdmin):
         }),
     )
 
-    # Evita que se pueda cambiar el usuario una vez creado para mantener la integridad
+    # Prevents changing the user once created to maintain integrity
     def get_readonly_fields(self, request, obj=None):
-        if obj: # Si el objeto ya existe
+        if obj: # If the object already exists
             return ('user',)
         return ()

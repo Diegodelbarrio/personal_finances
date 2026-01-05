@@ -1,4 +1,4 @@
-/* ROOT: Definición de la paleta financiera y espaciados */
+/* ROOT: Financial palette and spacing definitions */
 :root {
     --fin-primary: #0d6efd;
     --fin-success: #198754;
@@ -13,6 +13,16 @@
     --navbar-height: 65px;
     --accent-blue: #eef2ff; 
     --accent-green: #f0fdfb;
+}
+
+:root {
+    --nav-bg-glass: rgba(15, 23, 42, 0.85); 
+    --nav-border: rgba(255, 255, 255, 0.08);
+    --nav-hover-bg: rgba(255, 255, 255, 0.05);
+    --accent-cyan: #06b6d4;
+    --accent-indigo: #4f46e5;
+    --text-muted: #94a3b8; 
+    --text-light: #e2e8f0;
 }
 
 body {
@@ -32,16 +42,16 @@ body {
 }
 
 
-/* Maximizamos el aprovechamiento de pantalla en Dashboards */
+/* Maximize screen utilization in Dashboards */
 @media (min-width: 1200px) {
     .container-fluid {
-        /* Dejamos un margen del 4% en lugar del ancho fijo de 1320px */
-        padding-left: 5% !important;
-        padding-right: 5% !important;
+        /* Use a 5% margin instead of the fixed 1320px width */
+        padding-left: 8% !important;
+        padding-right: 8% !important;
     }
 }
 
-/* Para pantallas ultra-anchas (Ultrawide) */
+/* For ultra-wide screens (Ultrawide) */
 @media (min-width: 2000px) {
     .container-fluid {
         max-width: 1900px;
@@ -49,35 +59,38 @@ body {
     }
 }
 
-/* Optimizamos el contenedor para pantallas pequeñas */
+/* Optimize the container for small screens */
 @media (max-width: 576px) {
     main {
-        padding-left: 5%;
-        padding-right: 5%;
+        padding-left: 0; 
+        padding-right: 0;
     }
 
-
-    /* Forzamos que los textos de las tablas no sean gigantes en móvil */
+    /* Ensure table text is not too large on mobile */
     .report-table {
         font-size: 0.85rem;
     }
 }
 
 @media (max-width: 768px) {
+    main {
+        padding-left: 0; 
+        padding-right: 0;
+    }
     .report-table .asset-col {
         position: sticky;
         left: 0;
-        background-color: white; /* Evita que los números de los meses se vean por debajo */
+        background-color: white; /* Prevents month numbers from showing underneath */
         z-index: 2;
         box-shadow: 2px 0 5px rgba(0,0,0,0.05);
     }
 }
-/* Estilo para que el footer siempre esté abajo incluso con poco contenido */
+/* Style to keep the footer at the bottom even with little content */
 .min-vh-100 {
     min-height: 100vh !important;
 }
 
-/* Componentes de Tarjetas Reutilizables */
+/* Reusable Card Components */
 .card-rounded { 
     border-radius: var(--fin-radius); 
 }
@@ -92,7 +105,7 @@ body {
     justify-content: center;
 }
 
-/* Estado Vacío / Próximamente (Dashed Card) */
+/* Empty State / Coming Soon (Dashed Card) */
 .card-dashed {
     border: 2px dashed #cbd5e1 !important;
     background-color: var(--fin-gray-soft);
@@ -103,12 +116,12 @@ body {
     transition: all 0.3s ease;
 }
 
-/* Utilidades de Badges Financieros */
+/* Financial Badge Utilities */
 .bg-success-subtle { background-color: #e8f5e9 !important; color: var(--fin-success) !important; }
 .bg-danger-subtle { background-color: #ffebee !important; color: var(--fin-danger) !important; }
 .bg-primary-subtle { background-color: #e0e7ff !important; color: var(--fin-primary) !important; }
 
-/* Estilos Globales para DataTables */
+/* Global Styles for DataTables */
 .table thead th {
     border: none;
     font-size: 0.65rem;
@@ -127,81 +140,189 @@ body {
 }
 
 
-/* --- NAVBAR CRISTALIZADA --- */
+/* =========================================
+   NAVBAR: DEEP GLASS STYLE
+   ========================================= */
+
+/* =========================================
+   SMOOTH TRANSITION NAVBAR
+   ========================================= */
+
+/* Estado BASE (Normal para todas las páginas - Sólido) */
 .navbar {
     position: fixed;
     top: 0;
     width: 100%;
     z-index: 1030;
-    height: var(--navbar-height);
-    background: rgba(11, 28, 45, 0.8); /* tono cristal inicial */
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    transition: background 0.3s ease, box-shadow 0.3s ease;
+    height: 70px; 
+    
+    /* Fondo Sólido por defecto */
+    background: rgba(15, 23, 42, 0.90); 
+    backdrop-filter: blur(16px); 
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08); 
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    
+    /* Transición suave */
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Estado SCROLLED (Refuerza el estilo sólido) */
 .navbar.scrolled {
-    background: rgba(11, 28, 45, 0.8); 
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    height: 70px; 
+    background: rgba(15, 23, 42, 0.90); /* Aparece el fondo Slate */
+    backdrop-filter: blur(16px); /* Aparece el efecto cristal */
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08); /* Aparece el borde */
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
-.navbar-brand {
-    font-weight: 700;
-    letter-spacing: 0.5px;
+/* MODIFICADOR: Landing Page (Empieza transparente) */
+.navbar-landing {
+    height: 80px; 
+    background: transparent; 
+    border-bottom: 1px solid transparent; 
+    backdrop-filter: none; 
+    box-shadow: none !important;
 }
 
-.nav-link {
+/* Ajuste de Links para contraste perfecto */
+/* .navbar {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1030;
+    height: 70px; 
+    background: var(--nav-bg-glass);
+    backdrop-filter: blur(16px); 
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--nav-border);
+    transition: all 0.3s ease;
+} */
+
+/* Estado Scrolled (opcional si quieres que se oscurezca más al bajar) */
+/* .navbar.scrolled {
+    background: rgba(15, 23, 42, 0.95); 
+    box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.3);
+} */
+
+/* --- LINKS DE NAVEGACIÓN --- */
+.navbar-nav .nav-link {
     font-size: 0.9rem;
     font-weight: 500;
-    opacity: 0.8;
-    transition: opacity 0.2s ease;
-}
-
-.nav-link:hover {
-    opacity: 1;
-}
-
-.nav-link {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.7) !important; /* Blanco semitransparente */
+    color: rgba(255, 255, 255, 0.7) !important; 
+    margin: 0 0.2rem;
+    border-radius: 20px; 
+    /* transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); */
     display: flex;
     align-items: center;
-    padding: 0.5rem 1rem;
-    transition: color 0.2s ease;
-    
-    /* Reset de Bootstrap para evitar el cuadro azul */
-    /* background: none !important;
-    border: none !important;
-    outline: none !important; */
-    box-shadow: none !important;
-    text-decoration: none;
+    padding: 0.6rem 0;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    white-space: nowrap;
+    min-width: 0;
 }
 
-/* Estado activo o hover del enlace */
-.nav-link:hover, 
-.nav-link.active {
-    color: #ffffff !important; /* Blanco puro al pasar el ratón */
+.navbar-nav .nav-link span {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* El icono dentro del enlace */
-.nav-link i {
+/* Hover State: Fondo sutil + Texto blanco */
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link.active {
+    color: #fff !important;
+    background: var(--nav-hover-bg);
+    /* transform: translateY(-1px);  */
+}
+
+.navbar-nav .nav-link i {
     font-size: 1.1rem;
-    /* El margen 'me-1' o 'me-2' del HTML da el espacio al texto */
+    color: var(--bg-soft); 
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+/* .navbar-nav .nav-link:hover i {
+    opacity: 1;
+    text-shadow: 0 0 8px rgba(6, 182, 212, 0.4); 
+} */
+
+/* --- DROPDOWNS (Estilo Oscuro) --- */
+.dropdown-menu {
+    background-color: #1e293b; /* Slate 800 - Un tono más claro que el fondo */
+    border: 1px solid var(--nav-border);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 0.5rem;
+    margin-top: 0.5rem !important; /* Espacio desde la navbar */
+}
+
+/* Elementos del dropdown */
+.dropdown-item {
+    color: var(--text-light);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    transition: all 0.15s;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(79, 70, 229, 0.15); /* Fondo Indigo muy sutil */
+    color: white;
+    padding-left: 1.25rem; /* Pequeño desplazamiento a la derecha */
+}
+
+.dropdown-item i {
+    opacity: 0.7;
+}
+
+.dropdown-divider {
+    border-top-color: var(--nav-border);
+}
+
+.dropdown-header, .dropdown-item-text {
+    color: #64748b; /* Slate 500 */
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+/* --- USER PILL (Botón de usuario a la derecha) --- */
+.user-pill {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white !important;
+}
+
+.user-pill:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+}
+
+/* Animación de entrada suave para dropdowns */
+@keyframes fadeInSlide {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-menu.show {
+    animation: fadeInSlide 0.2s ease-out forwards;
 }
 
 .user-pill {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.1);
     transition: background 0.2s;
-    height: 32px; /* Un poco más de altura para que el texto respire */
+    height: 32px; /* Slightly more height for text breathing room */
     
-    /* CONTROL DE ANCHO */
-    min-width: 180px;  /* Evita que se encoja mucho con nombres cortos */
-    max-width: 180px;  /* Evita que se estire demasiado con nombres largos */
+    /* WIDTH CONTROL */
+    min-width: 180px;  /* Prevents excessive shrinking with short names */
+    max-width: 180px;  /* Prevents excessive stretching with long names */
     
-    /* ALINEACIÓN Y TRUNCADO */
+    /* ALIGNMENT AND TRUNCATION */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -210,7 +331,7 @@ body {
     white-space: nowrap;
 }
 
-/* Aplicar el truncado al texto dentro de la pill */
+/* Apply truncation to text inside the pill */
 .user-pill span, .user-pill strong {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -221,11 +342,8 @@ body {
     background: rgba(255, 255, 255, 0.2);
 }
 
-.user-pill:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
 
-/* --- ESTRUCTURA PRINCIPAL --- */
+/* --- MAIN STRUCTURE --- */
 main {
     flex-grow: 1;
     padding-top: calc(var(--navbar-height));
@@ -243,10 +361,10 @@ footer small {
     color: #7f7f7f;
 }
 
-/* --- COMPONENTES GLOBALES REUTILIZABLES --- */
+/* --- GLOBAL REUSABLE COMPONENTS --- */
 .letter-spacing { letter-spacing: 1px; font-size: 0.7rem; }
 
-/* Estilo para el Dropdown del Usuario */
+/* User Dropdown Style */
 .dropdown-menu {
     border-radius: 1rem;
     padding: 0.75rem;
@@ -264,7 +382,7 @@ footer small {
 }
 
 
-/* Efectos para la leyenda interactiva */
+/* Interactive legend effects */
 .legend-card {
     transition: all 0.2s ease;
     border: 1px solid transparent;
@@ -293,7 +411,7 @@ footer small {
 }
 
 
-/* Estilo para el Badge de última actualización */
+/* Last update Badge style */
 .last-update-badge {
     display: inline-flex;
     align-items: center;
@@ -307,19 +425,19 @@ footer small {
     white-space: nowrap;
 }
 
-/* Estado cuando la fecha es antigua (Stale) */
+/* State when the date is old (Stale) */
 .last-update-badge.date-stale {
     background-color: #fff1f2;
     color: #e11d48;
     border-color: #fecdd3;
 }
 
-/* Icono dentro del badge */
+/* Icon inside the badge */
 .last-update-badge i {
     font-size: 0.85rem;
 }
 
-/* Espaciado y estilo de los items del dropdown */
+/* Spacing and style for dropdown items */
 .dropdown-item {
     padding-left: 1.25rem;
     padding-right: 1.5rem;
@@ -328,12 +446,12 @@ footer small {
     transition: all 0.3s ease;
 }
 
-/* Efecto al pasar el ratón por cada opción */
+/* Effect when hovering over each option */
 .dropdown-item:hover {
-    transform: translateX(2px); /* Pequeño desplazamiento a la derecha */
+    transform: translateX(2px); /* Small displacement to the right */
 }
 
-/* Tamaño fijo para los iconos para que el texto esté alineado */
+/* Fixed size for icons to keep text aligned */
 .dropdown-item i {
     width: 20px;
     font-size: 1.1rem;
@@ -343,14 +461,18 @@ footer small {
 
 /* --- RESPONSIVE NAVBAR FIXES --- */
 
-/* Ajuste general de altura para que el contenido no se oculte */
+/* General height adjustment so content is not hidden */
 @media (max-width: 991.98px) {
     .navbar {
-        height: auto !important; /* Permitimos que crezca si el menú se abre */
+        height: auto !important; /* Allow growth if the menu opens */
         min-height: var(--navbar-height);
         padding-top: 5px;
         padding-bottom: 5px;
-        background: rgba(11, 28, 45, 0.98) !important; /* Más opaco en móvil para lectura */
+    }
+
+    .navbar:not(.navbar-landing),
+    .navbar.scrolled {
+        background: rgba(15, 23, 42, 0.98) !important;
     }
 
     .navbar-collapse {
@@ -360,11 +482,13 @@ footer small {
     }
 
     .nav-link {
-        padding: 0.8rem 1rem !important; 
+        padding: 0.6rem 0 !important; 
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
         font-size: 1rem !important;
     }
 
-    /* En móvil, quitamos el ancho fijo a la pill de usuario para que se adapte */
+    /* On mobile, remove fixed width from user pill to adapt */
     .user-pill {
         min-width: 100% !important;
         max-width: 100% !important;
@@ -373,7 +497,7 @@ footer small {
         background: rgba(255, 255, 255, 0.05);
     }
 
-    /* Los dropdowns en móvil se ven mejor sin sombra flotante */
+    /* Mobile dropdowns look better without floating shadows */
     .dropdown-menu {
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -385,99 +509,99 @@ footer small {
     }
 }
 
-/* Escritorio: Forzamos el color gris de Bootstrap */
+/* Desktop: Force Bootstrap gray color */
 @media (min-width: 992px) {
     .text-lg-muted {
         color: var(--fin-text-muted) !important;
     }
 }
 
-/* Móvil: Ajustes de legibilidad para el texto de usuario */
+/* Mobile: Readability adjustments for user text */
 @media (max-width: 991.98px) {
     .dropdown-item-text {
         padding-top: 0.5rem;
         padding-bottom: 0.5rem;
-        font-size: 0.85rem; /* Un pelín más grande en móvil para facilitar lectura */
+        font-size: 0.85rem; /* Slightly larger on mobile for easier reading */
     }
 }
-/* Animación suave para la apertura del menú */
+/* Smooth animation for menu opening */
 
 @keyframes slideDown {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Mejora de visibilidad de los iconos en el dropdown de móvil */
+/* Improved icon visibility in mobile dropdown */
 .dropdown-item i {
     opacity: 0.9;
 }
 
 
-/* Color del nombre de usuario */
+/* User name color */
 .user-name-text {
-    color: #ffffff; /* Blanco por defecto (Móvil/Collapsed) */
+    color: #ffffff; /* White by default (Mobile/Collapsed) */
 }
 
 @media (min-width: 992px) {
-    /* En escritorio, el fondo del dropdown es blanco, 
-       así que el texto debe ser oscuro */
+    /* On desktop, the dropdown background is white, 
+       so text must be dark */
     .user-name-text {
-        color: #1e293b !important; /* Gris muy oscuro/Azul marino */
+        color: #1e293b !important; /* Very dark gray/Navy blue */
     }
     
     .text-lg-muted {
         color: var(--fin-text-muted) !important;
-        opacity: 1 !important; /* Quitamos la opacidad en escritorio para que se vea el gris */
+        opacity: 1 !important; /* Remove opacity on desktop so gray is visible */
     }
 }
 
-/* --- AJUSTES DROPDOWN EN MÓVIL (COLLAPSED) --- */
+/* --- MOBILE DROPDOWN ADJUSTMENTS (COLLAPSED) --- */
 @media (max-width: 991.98px) {
-    /* Eliminamos el fondo en el hover de los items del dropdown */
+    /* Remove background on dropdown item hover */
     .dropdown-item:hover, 
     .dropdown-item:active, 
     .dropdown-item:focus {
-        background-color: transparent !important; /* Sin cambio de fondo */
-        color: #ffffff !important; /* Texto blanco puro para resaltar el hover */
-        transform: translateX(5px); /* Un ligero movimiento para dar feedback visual */
+        background-color: transparent !important; /* No background change */
+        color: #ffffff !important; /* Pure white text to highlight hover */
+        transform: translateX(5px); /* A slight movement to provide visual feedback */
     }
 
-    /* Opcional: Si quieres que el texto no se mueva, quita el transform anterior */
+    /* Optional: If you don't want the text to move, remove the previous transform */
     
-    /* Aseguramos que el contenedor del dropdown no tenga fondo blanco */
+    /* Ensure the dropdown container does not have a white background */
     .dropdown-menu {
         /* background: transparent !important; */
         /* border: none !important; */
         /* box-shadow: none !important; */
-        padding-left: 1rem; /* Indentamos un poco para dar jerarquía */
+        padding-left: 1rem; /* Indent slightly to provide hierarchy */
     }
 }
 
-/* --- AJUSTE EN ESCRITORIO (Se mantiene igual) --- */
+/* --- DESKTOP ADJUSTMENT (Stays the same) --- */
 @media (min-width: 992px) {
     .dropdown-item:hover {
-        background-color: #f1f5f9; /* Mantiene el gris suave en escritorio */
+        background-color: #f1f5f9; /* Maintains soft gray on desktop */
         transform: translateX(2px);
     }
 }
 
 /* ==========================================================================
-   SISTEMA DE DROPDOWNS DIFERENCIADOS
+   DIFFERENTIATED DROPDOWN SYSTEM
    ========================================================================== */
 
-/* --- 1. ESTILOS COMUNES (Escritorio y móvil fondo claro) --- */
+/* --- 1. COMMON STYLES (Desktop and mobile light background) --- */
 .dropdown-menu {
     border-radius: 1rem;
     padding: 0.75rem;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     border: none;
-    background-color: #ffffff; /* Fondo blanco por defecto */
+    background-color: #ffffff; /* White background by default */
 }
 
 .dropdown-item {
     padding: 0.5rem 1.25rem;
     font-weight: 500;
-    color: #475569; /* Gris oscuro para fondos claros */
+    color: #475569; /* Dark gray for light backgrounds */
     transition: all 0.2s ease;
 }
 
@@ -487,12 +611,12 @@ footer small {
     transform: translateX(2px);
 }
 
-/* --- 2. DROPDOWNS ESPECÍFICOS DE NAVBAR (Modo Cristal/Oscuro en Collapse) --- */
+/* --- 2. NAVBAR SPECIFIC DROPDOWNS (Crystal/Dark Mode in Collapse) --- */
 @media (max-width: 991.98px) {
     
-    /* Solo afectamos a los dropdowns que están dentro de la navbar colapsada */
+    /* Only affect dropdowns inside the collapsed navbar */
     .navbar-collapse .dropdown-menu {
-        background: rgba(255, 255, 255, 0.05) !important; /* Fondo casi transparente */
+        background: rgba(255, 255, 255, 0.05) !important; /* Almost transparent background */
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
         box-shadow: none !important;
         margin-top: 0;
@@ -500,16 +624,16 @@ footer small {
     }
 
     .navbar-collapse .dropdown-item {
-        color: rgba(255, 255, 255, 0.8) !important; /* Texto blanco suave */
+        color: rgba(255, 255, 255, 0.8) !important; /* Soft white text */
     }
 
     .navbar-collapse .dropdown-item:hover {
-        background-color: transparent !important; /* Sin fondo en hover móvil navbar */
+        background-color: transparent !important; /* No background on mobile navbar hover */
         color: #ffffff !important;
         transform: translateX(5px);
     }
 
-    /* El texto "Signed in as" y "Analytics" dentro de la navbar */
+    /* "Signed in as" and "Analytics" text inside the navbar */
     .navbar-collapse .text-white.text-lg-muted {
         color: #ffffff !important;
         opacity: 0.7;
@@ -520,8 +644,8 @@ footer small {
     }
 }
 
-/* --- 3. DROPDOWNS DE CONTENIDO (Se mantienen claros siempre) --- */
-/* Esto asegura que el selector de año no se vuelva oscuro en móvil */
+/* --- 3. CONTENT DROPDOWNS (Always stay light) --- */
+/* This ensures the year selector doesn't turn dark on mobile */
 main .dropdown-menu {
     background-color: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
@@ -530,49 +654,49 @@ main .dropdown-menu {
 
 
 /* ==========================================================================
-   DROPDOWNS DE CONTENIDO (Fondo Claro)
+   CONTENT DROPDOWNS (Light Background)
    ========================================================================== */
 
-/* 1. Item normal (Gris oscuro) */
+/* 1. Normal item (Dark gray) */
 main .dropdown-item {
     color: #475569 !important;
     font-weight: 500;
     transition: all 0.2s ease;
 }
 
-/* 2. Item en Hover (No activo) */
-/* Solo aplica el fondo gris y letra gris si NO tiene la clase active */
+/* 2. Hover item (Not active) */
+/* Only apply gray background and text if it DOES NOT have the active class */
 main .dropdown-item:hover:not(.active) {
     background-color: #f1f5f9 !important;
     color: #1e293b !important;
     transform: translateX(3px);
 }
 
-/* 3. Item Activo (Seleccionado) */
+/* 3. Active item (Selected) */
 main .dropdown-item.active {
     background-color: var(--fin-primary) !important;
-    color: #ffffff !important; /* Letras blancas siempre en activo */
+    color: #ffffff !important; /* White letters always when active */
 }
 
-/* 4. Item Activo cuando se le hace Hover */
-/* Evitamos que las letras se vuelvan grises al pasar el ratón por el seleccionado */
+/* 4. Active item when hovered */
+/* Prevent letters from turning gray when hovering over the selected item */
 main .dropdown-item.active:hover {
-    background-color: #0b5ed7 !important; /* Un azul un poco más intenso */
-    color: #ffffff !important; /* Forzamos blanco para que no cambie a gris */
-    transform: none; /* Opcional: quitamos el desplazamiento si está seleccionado */
+    background-color: #0b5ed7 !important; /* A slightly more intense blue */
+    color: #ffffff !important; /* Force white so it doesn't change to gray */
+    transform: none; /* Optional: remove displacement if selected */
 }
 
-/* 5. Iconos dentro de dropdowns claros */
+/* 5. Icons inside light dropdowns */
 main .dropdown-item i {
     color: var(--fin-text-muted);
 }
 main .dropdown-item.active i {
-    color: rgba(255, 255, 255, 0.8); /* Icono casi blanco si está activo */
+    color: rgba(255, 255, 255, 0.8); /* Almost white icon if active */
 }
 
-/* --- 4. EXCEPCIÓN ESCRITORIO PARA NAVBAR --- */
+/* --- 4. DESKTOP EXCEPTION FOR NAVBAR --- */
 @media (min-width: 992px) {
-    /* Cuando la navbar NO está colapsada, sus dropdowns vuelven a ser claros */
+    /* When the navbar is NOT collapsed, its dropdowns become light again */
     .navbar .dropdown-menu {
         background-color: #ffffff !important;
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;

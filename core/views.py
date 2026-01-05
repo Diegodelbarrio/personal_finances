@@ -7,6 +7,7 @@ from core.services.net_worth import calculate_net_worth
 from holdings.services.history import get_net_worth_evolution
 from settings.services.api import SettingsService
 from finances.services.api import get_annual_cashflow_summary
+from finances.services.selectors import get_emergency_fund_status
 
 @login_required
 def home(request):
@@ -42,7 +43,10 @@ def home(request):
         current_annual_savings=total_annual_savings
     )
 
-    # 4. Contexto Final para el template
+    # 4. Datos del Fondo de Emergencia
+    emergency_fund_data = get_emergency_fund_status(request.user)
+
+    # 5. Contexto Final para el template
     context = {
         "net_worth_history": net_worth_history,
         "stats": stats,
@@ -50,7 +54,8 @@ def home(request):
         "total_annual_savings": total_annual_savings,
         "total_income": total_income,
         "total_expenses": total_expenses,
-        **net_worth_data, #
+        "emergency_fund": emergency_fund_data,
+        **net_worth_data,
     }
 
     return render(request, "core/index.html", context)

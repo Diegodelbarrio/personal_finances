@@ -43,7 +43,6 @@ def investment_report(request):
 
     available_years = services.get_available_years(request.user)
     
-    # Llamada al servicio de inversiones
     report_data = services.get_investment_annual_report(request.user, current_year)
 
     context = {

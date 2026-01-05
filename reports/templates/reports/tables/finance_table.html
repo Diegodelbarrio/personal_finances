@@ -1,10 +1,10 @@
 <thead>
     <tr>
         <th class="ps-4">Month</th>
-        <th class="text-end">Income</th>
-        <th class="text-end">Fixed Exp.</th>
-        <th class="text-end">Var. Exp.</th>
-        <th class="text-end">Net Savings</th>
+        <th class="text-center">Income</th>
+        <th class="text-center">Fixed Exp.</th>
+        <th class="text-center">Var. Exp.</th>
+        <th class="text-center">Net Savings</th>
         <th class="text-center">Savings %</th>
     </tr>
 </thead>
@@ -16,19 +16,19 @@
         {{ m.date_obj|date:"F" }}
     </td>
 
-    <td class="num-align text-income fw-bold">
+    <td class="num-align text-income fw-bold text-center">
         {{ m.income|floatformat:2 }} €
     </td>
 
-    <td class="num-align text-muted small">
+    <td class="num-align text-muted small text-center">
         {{ m.fixed|floatformat:2 }} €
     </td>
 
-    <td class="num-align text-muted small">
+    <td class="num-align text-muted small text-center">
         {{ m.variable|floatformat:2 }} €
     </td>
 
-    <td class="num-align fw-bold {% if m.savings >= 0 %}text-success{% else %}text-danger{% endif %}">
+    <td class="num-align text-center fw-bold {% if m.savings >= 0 %}text-success{% else %}text-danger{% endif %}">
         {{ m.savings|floatformat:2 }} €
     </td>
 

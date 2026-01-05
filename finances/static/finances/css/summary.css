@@ -17,9 +17,15 @@
     font-size: 0.85rem;
 }
 
-/* Colores de KPI específicos de Finanzas si no son globales */
-.soft-income { background:#e8f5e9 !important; color:#2e7d32 !important; }
-.soft-expenses { background:#fce4ec !important; color:#c2185b !important; }
+/* Modern KPI Cards */
+.kpi-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+}
 
 /* Warning box de "Missing Data" */
 .warning-box {

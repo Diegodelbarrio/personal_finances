@@ -6,8 +6,11 @@ class SettingsForm(forms.ModelForm):
         model = UserSettings
         fields = [
             'annual_savings_target', 
+            'monthly_budget',
             'net_worth_target', 
+            'savings_rate_target',
             'target_date', 
+            'retirement_age',
             'main_currency', 
             'emergency_fund_months'
         ]
@@ -33,10 +36,21 @@ class SettingsForm(forms.ModelForm):
                 'placeholder': '0.00',
                 'step': '100'
             }),
+            'monthly_budget': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'placeholder': '0.00',
+                'step': '50'
+            }),
             'net_worth_target': forms.NumberInput(attrs={
                 'class': 'form-control', 
                 'placeholder': '0.00',
                 'step': '1000'
+            }),
+            'savings_rate_target': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'placeholder': '20',
+                'min': '0',
+                'max': '100'
             }),
             'target_date': forms.DateInput(attrs={
                 'type': 'date',  
@@ -50,11 +64,18 @@ class SettingsForm(forms.ModelForm):
                 'min': '1',
                 'max': '24'
             }),
+            'retirement_age': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '18',
+                'max': '100'
+            }),
         }
         
         # Etiquetas personalizadas (opcional, si no usas verbose_name en models)
         labels = {
             'annual_savings_target': 'Annual Savings Target',
+            'monthly_budget': 'Monthly Budget Limit',
             'net_worth_target': 'Net Worth Target',
+            'savings_rate_target': 'Target Savings Rate (%)',
             'emergency_fund_months': 'Emergency Fund Months',
         }

@@ -66,3 +66,25 @@ def get_category_breakdown(qs):
     ).annotate(total=Sum('amount'))
     
     return {item['subcategory__parent_category__name']: _clean(item['total']) for item in data}
+
+def get_subcategory_breakdown(qs):
+    """
+    Returns a nested dictionary { 'Category': { 'Subcategory': total_amount } }
+    for the provided queryset.
+    """
+    data = qs.filter(
+        subcategory__parent_category__transaction_type='EXPENSE'
+    ).values(
+        'subcategory__parent_category__name',
+        'subcategory__name'
+    ).annotate(total=Sum('amount'))
+
+    breakdown = {}
+    for item in data:
+        cat_name = item['subcategory__parent_category__name']
+        sub_name = item['subcategory__name']
+        if cat_name not in breakdown:
+            breakdown[cat_name] = {}
+        breakdown[cat_name][sub_name] = _clean(item['total'])
+
+    return breakdown

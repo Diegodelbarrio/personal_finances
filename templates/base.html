@@ -14,8 +14,8 @@
     {% block extra_head %} {% endblock extra_head %}
 </head>
 <body>
-
-<nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
+    
+<nav class="navbar navbar-expand-lg navbar-dark shadow-sm {% block navbar_class %}{% endblock %}">
     <div class="container">
         <a href="{% url 'home' %}" class="d-flex align-items-center text-decoration-none" style="height: 45px;">
             {% include "components/logo_svg.html" %}
@@ -26,7 +26,7 @@
         </button>
 
         <div class="collapse navbar-collapse" id="mainNavbar">
-            <ul class="navbar-nav ms-auto align-items-lg-center gap-1 gap-lg-2 py-3 py-lg-0">
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-1 gap-lg-1 py-3 py-lg-0">
                 
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'investment_dashboard' %}">
@@ -42,7 +42,7 @@
                 </li>
 
                 <li class="nav-item dropdown dropdown-hover">
-                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-file-earmark-text me-2 me-lg-1"></i> 
                         <span>Reports</span>
                     </a>
@@ -54,18 +54,25 @@
                     </ul>
                 </li>
 
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'knowledge:index' %}">
+                        <i class="bi bi-journal-bookmark me-2 me-lg-1"></i> 
+                        <span>Knowledge</span>
+                    </a>
+                </li>
+
                 <li class="d-lg-none my-2 border-top border-white border-opacity-10"></li>
 
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 user-pill rounded-pill px-3" 
                        href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-person-circle"></i>
-                        <span class="d-inline">{{ user.username|capfirst }}</span>
+                        <span class="d-inline">{{ user.first_name|capfirst }}</span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-lg-2" aria-labelledby="userDropdown">
                         <li>
                             <span class="dropdown-item-text small text-white text-lg-muted opacity-75">
-                                Signed in as <strong class="user-name-text">{{ user.username|capfirst }}</strong>
+                                Signed in as <strong class="user-name-text">{{ user.first_name|capfirst }}</strong>
                             </span>
                         </li>                        
                         <li><hr class="dropdown-divider"></li>
@@ -87,8 +94,10 @@
     </div>
 </nav>
 
+ {% block hero %}{% endblock hero %}
+
 <main class="flex-grow-1 mt-5 pt-4">
-    <div class="container-fluid px-2 px-sm-3 px-md-5 mb-5">
+    <div class="container-fluid px-3 px-sm-4 px-md-5 mb-5">
         {% block content %}{% endblock content %}
     </div>
 </main>

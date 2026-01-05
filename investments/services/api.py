@@ -67,6 +67,7 @@ def get_portfolio_overview(user):
         "no_family_profit_loss": no_family_value - no_family_invested,
         "no_family_roi": ((no_family_value - no_family_invested) / no_family_invested * 100 if no_family_invested != 0 else 0),
         "last_market_date": min(last_market_dates) if last_market_dates else None,
+        "latest_market_date": max(last_market_dates) if last_market_dates else None,
         "chart_assets": no_family,
     }
 
@@ -167,4 +168,58 @@ def get_investment_detailed_evolution(user, year):
     return {
         "assets": asset_matrix,
         "month_names": [date(year, m, 1) for m in months_range]
+    }
+
+def get_family_investment_performance(user, year):
+    """Calculates annual performance for the excluded Family Investments asset."""
+    try:
+        asset = Asset.objects.get(user=user, name=EXCLUDE_ASSET_NAME)
+    except Asset.DoesNotExist:
+        return None
+
+    now = timezone.now().date()
+    
+    if year > now.year:
+        return None
+        
+    if year == now.year:
+        cutoff_date = now
+    else:
+        cutoff_date = date(year, 12, 31)
+
+    # Value at start of year (end of previous year)
+    start_of_year = date(year, 1, 1)
+    day_before_start = start_of_year - timezone.timedelta(days=1)
+    
+    h_prev = asset.history.filter(date__lte=day_before_start).order_by('-date').first()
+    prev_mv = float(h_prev.total_value if h_prev else 0)
+
+    # Contributions in the year
+    contrib = asset.transactions.filter(date__year=year, date__lte=cutoff_date).aggregate(t=Sum("amount"))["t"] or 0
+    contrib = float(contrib)
+
+    # Value at end of period
+    h_curr = asset.history.filter(date__lte=cutoff_date).order_by('-date').first()
+    
+    if h_curr:
+        current_mv = float(h_curr.total_value)
+    else:
+        invested_total = asset.transactions.filter(date__lte=cutoff_date).aggregate(t=Sum("amount"))["t"] or 0
+        current_mv = float(invested_total)
+
+    profit = current_mv - prev_mv - contrib
+    invested_base = prev_mv + contrib
+    
+    roi = (profit / invested_base * 100) if invested_base > 0 else 0
+
+    return {
+        "name": asset.name,
+        "current_value": current_mv,
+        "profit": profit,
+        "roi": roi,
+        "profit_status": "success" if profit >= 0 else "danger",
+        "roi_status": "success" if roi >= 0 else "danger",
+        "profit_prefix": "+" if profit > 0 else ("" if profit < 0 else ""),
+        "roi_prefix": "+" if roi > 0 else ("" if roi < 0 else ""),
+        "roi_icon": "bi-graph-up-arrow" if roi >= 0 else "bi-graph-down-arrow",
     }

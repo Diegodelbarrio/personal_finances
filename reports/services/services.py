@@ -1,7 +1,7 @@
 # reports/services.py
 
 from finances.services.api import get_annual_cashflow_summary, get_available_transaction_years
-from investments.services.api import get_annual_portfolio_evolution, get_investment_detailed_evolution
+from investments.services.api import get_annual_portfolio_evolution, get_investment_detailed_evolution, get_family_investment_performance
 from holdings.services.api import get_annual_balance_evolution
 
 def get_available_years(user):
@@ -15,10 +15,19 @@ def get_financial_annual_report(user, year):
     month_names = [m["date_obj"] for m in monthly_data]
     active_months = len(monthly_data) if len(monthly_data) > 0 else 1
 
-    # 1. Identificar todas las categorías únicas que han tenido gastos este año
-    all_categories = set()
+    # 1. Identificar todas las categorías y sus subcategorías
+    cat_sub_map = {}
     for m in monthly_data:
-        all_categories.update(m["categories"].keys())
+        # Mapeamos Categoría -> Set de Subcategorías presentes en el año
+        for cat_name, subs in m.get("subcategories", {}).items():
+            if cat_name not in cat_sub_map:
+                cat_sub_map[cat_name] = set()
+            cat_sub_map[cat_name].update(subs.keys())
+        
+        # Aseguramos que categorías sin subcategorías también se incluyan
+        for cat_name in m["categories"].keys():
+            if cat_name not in cat_sub_map:
+                cat_sub_map[cat_name] = set()
     
     # We count months with actual activity for fair averages.
     active_months_count = sum(1 for m in monthly_data if m["income"] > 0 or m["expenses"] > 0)
@@ -47,10 +56,42 @@ def get_financial_annual_report(user, year):
 
     total_expenses_year = annual_stats["expenses"]
     detailed_categories = []
-    for cat_name in sorted(list(all_categories)):
+    for cat_name in sorted(cat_sub_map.keys()):
         cat_monthly_series = []
         total_ytd = 0
         
+        # Procesar subcategorías para esta categoría
+        subs_list = []
+        for sub_name in sorted(list(cat_sub_map[cat_name])):
+            sub_monthly_series = []
+            sub_total_ytd = 0
+            
+            # Accumulator for trips (Travel subcategory)
+            trip_accumulator = {}
+
+            for m in monthly_data:
+                val = m.get("subcategories", {}).get(cat_name, {}).get(sub_name, 0)
+                sub_total_ytd += val
+                sub_monthly_series.append(val)
+                
+                if sub_name == "Travel":
+                    t_data = m.get("travel_breakdown", {})
+                    for loc, amount in t_data.items():
+                        trip_accumulator[loc] = trip_accumulator.get(loc, 0) + amount
+            
+            trips = []
+            if sub_name == "Travel" and trip_accumulator:
+                for loc, amount in trip_accumulator.items():
+                    trips.append({'name': loc, 'total': abs(amount)})
+                trips.sort(key=lambda x: x['total'], reverse=True)
+
+            subs_list.append({
+                "name": sub_name,
+                "monthly_data": sub_monthly_series,
+                "total_ytd": sub_total_ytd,
+                "trips": trips
+            })
+
         for m in monthly_data:
             val = m["categories"].get(cat_name, 0)
             total_ytd += val
@@ -66,13 +107,14 @@ def get_financial_annual_report(user, year):
             "total_ytd": total_ytd,
             "weight": weight,
             "monthly_avg": monthly_avg, 
+            "subcategories": subs_list,
         })
 
     return {
         "year": year,
         "monthly_data": monthly_data,
         "annual_stats": annual_stats,
-        "month_names": month_names, # <--- Ahora disponible para el template
+        "month_names": month_names, 
         "detailed_categories": detailed_categories, 
         "active_months": active_months_count,
         'annual_savings_rule_labels': ['Savings', 'Fixed', 'Variable'],
@@ -113,14 +155,26 @@ def get_investment_annual_report(user, year):
         "roi_status": "success" if annual_roi >= 0 else "danger",
         "profit_icon": "bi-graph-up-arrow" if total_profit >= 0 else "bi-graph-down-arrow",
         "roi_icon": "bi-trophy" if annual_roi >= 0 else "bi-exclamation-triangle",
-        "profit_prefix": "+" if total_profit > 0 else ("-" if total_profit < 0 else ""),
-        "roi_prefix": "+" if annual_roi > 0 else ("-" if annual_roi < 0 else ""),   
+        "profit_prefix": "+" if total_profit > 0 else ("" if total_profit < 0 else ""),
+        "roi_prefix": "+" if annual_roi > 0 else ("" if annual_roi < 0 else ""),   
     }
+
+    performance_chart_data = []
+    for m in monthly_data:
+        performance_chart_data.append({
+            "label": m["date_obj"].strftime("%b"),
+            "market": m["market_value"],
+            "invested": m["invested"]
+        })
+
+    family_stats = get_family_investment_performance(user, year)
     
     return {
         "year": year,
         "monthly_data": monthly_data,
         "annual_stats": annual_stats,
+        "performance_chart_data": performance_chart_data,
+        "family_stats": family_stats,
         "detailed_assets": detailed_data["assets"],
         "month_names": detailed_data["month_names"]
     }

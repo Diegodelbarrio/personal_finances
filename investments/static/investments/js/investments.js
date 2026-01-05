@@ -7,7 +7,7 @@ const InvestmentsModule = {
         this.setupAllocationDonut();  
         this.setupContributionsChart(); 
         this.setupDataTable();
-        this.animateProgressBars(); // Nueva función para las barras de progreso
+        this.animateProgressBars(); 
     },
 
     setupAllocationDonut: function() {
@@ -76,7 +76,7 @@ const InvestmentsModule = {
         });
     },
 
-    // 2. CORRECCIÓN PRINCIPAL: Ahora usa el motor global de Barras
+    // 2. 
     setupContributionsChart: function() {
         const labelsEl = document.getElementById('bar-labels');
         const dataEl = document.getElementById('bar-datasets');
