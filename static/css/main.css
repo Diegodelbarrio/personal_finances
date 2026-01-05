@@ -157,7 +157,11 @@ body {
     height: 70px; 
     
     /* Fondo Sólido por defecto */
-    background: rgba(15, 23, 42, 0.90); 
+    background-color: #0f172a;
+    background-image: 
+        radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.18) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(79, 70, 229, 0.18) 0px, transparent 50%),
+        linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
     backdrop-filter: blur(16px); 
     -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08); 
@@ -170,7 +174,11 @@ body {
 /* Estado SCROLLED (Refuerza el estilo sólido) */
 .navbar.scrolled {
     height: 70px; 
-    background: rgba(15, 23, 42, 0.90); /* Aparece el fondo Slate */
+    background-color: #0f172a;
+    background-image: 
+        radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.18) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(79, 70, 229, 0.18) 0px, transparent 50%),
+        linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
     backdrop-filter: blur(16px); /* Aparece el efecto cristal */
     -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08); /* Aparece el borde */
@@ -471,8 +479,13 @@ footer small {
     }
 
     .navbar:not(.navbar-landing),
+    .navbar.navbar-expanded,
     .navbar.scrolled {
-        background: rgba(15, 23, 42, 0.98) !important;
+        background-color: #0f172a !important;
+        background-image: 
+            radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.18) 0px, transparent 50%),
+            radial-gradient(at 0% 100%, rgba(79, 70, 229, 0.18) 0px, transparent 50%),
+            linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%) !important;
     }
 
     .navbar-collapse {

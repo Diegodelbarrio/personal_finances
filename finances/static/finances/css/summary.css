@@ -23,7 +23,7 @@
 }
 
 .kpi-card:hover {
-    transform: translateY(-5px);
+    /* transform: translateY(-5px); */
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
 }
 
@@ -31,4 +31,13 @@
 .warning-box {
     border: 1px dashed #ffcc80;
     background-color: #fff8ec;
+}
+
+/* Search Pill Styling */
+.search-pill {
+    transition: all 0.2s ease;
+}
+.search-pill:focus-within {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
 }

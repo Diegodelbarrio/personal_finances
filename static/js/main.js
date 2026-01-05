@@ -37,7 +37,7 @@ if (window.Chart) {
     Chart.defaults.maintainAspectRatio = false;
 }
 
-// 3. COMPORTAMIENTO DE LA BARRA DE NAVEGACIÓN AL HACER SCROLL
+// 3. COMPORTAMIENTO DE LA BARRA DE NAVEGACIÓN (SCROLL & MOBILE MENU)
 document.addEventListener('DOMContentLoaded', () => {
     const navbar = document.querySelector('.navbar');
     if (!navbar) return;
@@ -47,6 +47,17 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('scroll', () => {
         navbar.classList.toggle('scrolled', window.scrollY > SCROLL_THRESHOLD);
     });
+
+    // Detectar apertura del menú móvil para poner fondo sólido
+    const navCollapse = navbar.querySelector('.navbar-collapse');
+    if (navCollapse) {
+        navCollapse.addEventListener('show.bs.collapse', () => {
+            navbar.classList.add('navbar-expanded');
+        });
+        navCollapse.addEventListener('hide.bs.collapse', () => {
+            navbar.classList.remove('navbar-expanded');
+        });
+    }
 });
 
 

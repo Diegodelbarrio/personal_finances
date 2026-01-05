@@ -14,7 +14,7 @@
     padding: 140px 2rem 2.5rem 2rem; 
     
     overflow: hidden; /* Corta los brillos que se salgan */
-    margin-bottom: 1.5rem; /* Separa el contenido (tablas/gráficos) que viene después */
+    margin-bottom: 0rem; /* Separa el contenido (tablas/gráficos) que viene después */
 
     /* 2. Estética "Deep Ocean" */
     background-color: #0f172a; /* Fallback color */
@@ -29,7 +29,7 @@
     /* 3. Profundidad y Acabado */
     box-shadow: 
         inset 0 -1px 0 rgba(255, 255, 255, 0.1), /* Borde interno sutil abajo */
-        0 20px 40px -5px rgba(15, 23, 42, 0.4); /* Sombra difusa hacia el contenido */
+        0 20px 30px -5px rgba(15, 23, 42, 0.3); /* Sombra difusa hacia el contenido */
         
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }

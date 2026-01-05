@@ -17,7 +17,7 @@
     
 <nav class="navbar navbar-expand-lg navbar-dark shadow-sm {% block navbar_class %}{% endblock %}">
     <div class="container">
-        <a href="{% url 'home' %}" class="d-flex align-items-center text-decoration-none" style="height: 45px;">
+        <a href="{% url 'core:home' %}" class="d-flex align-items-center text-decoration-none" style="height: 45px;">
             {% include "components/logo_svg.html" %}
         </a>
 
@@ -28,11 +28,17 @@
         <div class="collapse navbar-collapse" id="mainNavbar">
             <ul class="navbar-nav ms-auto align-items-lg-center gap-1 gap-lg-1 py-3 py-lg-0">
                 
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'investment_dashboard' %}">
+                <li class="nav-item dropdown dropdown-hover">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" id="investmentsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-graph-up-arrow me-2 me-lg-1"></i> 
                         <span>Investments</span>
                     </a>
+                    <ul class="dropdown-menu border-0 shadow-lg animate-fade-in" aria-labelledby="investmentsDropdown">
+                        <li><a class="dropdown-item py-2" href="{% url 'investment_dashboard' %}"><i class="bi bi-speedometer2 me-2 text-primary"></i> Dashboard</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="px-3 py-1 small text-uppercase fw-bold text-white text-lg-muted letter-spacing opacity-75"> Tools </li>
+                        <li><a class="dropdown-item py-2" href="{% url 'core:compound_interest' %}"><i class="bi bi-calculator me-2 text-primary"></i> Compound Interest</a></li>
+                    </ul>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'summary' %}">

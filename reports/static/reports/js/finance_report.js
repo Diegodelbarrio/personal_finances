@@ -10,6 +10,14 @@ const SummaryModule = {
     },
 
     setupCharts: function() {
+        // Gráfica de Distribución de Gastos Anuales
+        const expLabels = this.getData('annual-category-labels');
+        const expData = this.getData('annual-category-data');
+
+        if (expLabels && expData && expLabels.length > 0) {
+            ChartFactory.createInteractiveDonut('annualExpenseChart', 'annualExpenseLegendContainer', expLabels, expData);
+        }
+
         const savLabels = this.getData('savings-labels');
         const savValues = this.getData('savings-data');
 

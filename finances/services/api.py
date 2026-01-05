@@ -56,8 +56,11 @@ def get_annual_cashflow_summary(user, year):
         period_qs = base_qs.filter(date__year=year, date__month=month)
         stats = metrics.get_period_metrics(period_qs)
 
-        category_breakdown = metrics.get_category_breakdown(period_qs)
-        subcategory_breakdown = metrics.get_subcategory_breakdown(period_qs)
+        category_breakdown = metrics.get_category_breakdown(period_qs, transaction_type='EXPENSE')
+        subcategory_breakdown = metrics.get_subcategory_breakdown(period_qs, transaction_type='EXPENSE')
+        
+        income_category_breakdown = metrics.get_category_breakdown(period_qs, transaction_type='INCOME')
+        income_subcategory_breakdown = metrics.get_subcategory_breakdown(period_qs, transaction_type='INCOME')
         
         # Breakdown by location for Travel (Trip expenses)
         travel_breakdown = {}
@@ -80,6 +83,8 @@ def get_annual_cashflow_summary(user, year):
             "savings_rate": savings_rate,
             "categories": category_breakdown,
             "subcategories": subcategory_breakdown,
+            "income_categories": income_category_breakdown,
+            "income_subcategories": income_subcategory_breakdown,
             "travel_breakdown": travel_breakdown,
         })
         

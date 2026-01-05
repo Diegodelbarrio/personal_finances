@@ -1,0 +1,458 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Advanced Wealth Simulator | FinOrbit{% endblock %}
+
+{% block content %}    
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h2 class="fw-bold text-dark ls-tight">Wealth Projection Engine</h2>
+            <p class="text-muted mb-0">High-precision compound interest simulation.</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+    
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header bg-light text-muted p-3 border-0">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-sliders me-2 text-muted"></i>Configuration</h6>
+                </div>
+                
+                <div class="card-body p-4 bg-white">
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-uppercase text-muted tracking-wide">Initial Principal</label>
+                            <div class="input-group border rounded-5 overflow-hidden shadow-sm hover-shadow transition-all">
+                                <span class="input-group-text bg-light border-0 text-muted fw-bold">€</span>
+                                <input type="number" id="initialDeposit" class="form-control border-0 fw-bold text-dark" min="0" placeholder="e.g. 5000">
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-uppercase text-muted tracking-wide">Regular Contribution</label>
+                            <div class="input-group border rounded-5 overflow-hidden shadow-sm hover-shadow transition-all">
+                                <span class="input-group-text bg-light border-0 text-muted fw-bold">€</span>
+                                <input type="number" id="contributionAmount" class="form-control border-0 fw-bold text-dark" min="0" placeholder="e.g. 500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-uppercase text-muted tracking-wide">Frequency</label>
+                            <select class="form-select border-light bg-light fw-bold text-dark rounded-5" id="contributionFrequency">
+                                <option value="1">Annually</option>
+                                <option value="2">Semi-Annually</option>
+                                <option value="4">Quarterly</option>
+                                <option value="12" selected>Monthly</option>
+                                <option value="26">Bi-Weekly</option>
+                                <option value="52">Weekly</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-uppercase text-muted tracking-wide">Timing</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="contribTiming" id="timingBegin" value="begin">
+                                <label class="btn btn-outline-light text-dark border-light fw-bold rounded-start-5 w-50" for="timingBegin">Begin</label>
+
+                                <input type="radio" class="btn-check" name="contribTiming" id="timingEnd" value="end" checked>
+                                <label class="btn btn-outline-light text-dark border-light fw-bold rounded-end-5 w-50" for="timingEnd">End</label>
+                                
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="border-light my-4">
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-uppercase text-muted tracking-wide">Interest Rate</label>
+                            <div class="input-group border rounded-5 overflow-hidden shadow-sm hover-shadow transition-all">
+                                <input type="number" id="interestRate" class="form-control border-0 fw-bold text-primary" step="0.01" min="0" placeholder="e.g. 7.0">
+                                <span class="input-group-text bg-white border-0 text-muted fw-bold">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-uppercase text-muted tracking-wide">Period</label>
+                            <div class="input-group border rounded-5 overflow-hidden shadow-sm hover-shadow transition-all">
+                                <input type="number" id="years" class="form-control border-0 fw-bold text-dark" min="1" step="1" placeholder="e.g. 10">
+                                <span class="input-group-text bg-white border-0 text-muted fw-bold">Years</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button id="calculateBtn" class="btn btn-primary flex-grow-1 py-2 rounded-5 fw-bold shadow-sm d-flex justify-content-center align-items-center gap-2">
+                            <i class="bi bi-calculator-fill"></i> Calculate
+                        </button>
+                        <button id="resetBtn" class="btn btn-outline-secondary py-2 rounded-5 fw-bold px-3 shadow-sm" title="Reset fields">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="p-4 rounded-4 bg-white border border-light shadow-sm h-100 position-relative overflow-hidden">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="icon-shape bg-primary-subtle text-primary rounded-circle p-2 me-2">
+                                <i class="bi bi-wallet2"></i>
+                            </div>
+                            <span class="small fw-bold text-uppercase text-muted">Future Value</span>
+                        </div>
+                        <h4 id="totalBalance" class="fw-bolder text-dark mb-0 ls-tight">-- €</h4>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="p-4 rounded-4 bg-white border border-light shadow-sm h-100">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="icon-shape bg-success-subtle text-success rounded-circle p-2 me-2">
+                                <i class="bi bi-graph-up-arrow"></i>
+                            </div>
+                            <span class="small fw-bold text-uppercase text-muted">Total Interest</span>
+                        </div>
+                        <h4 id="totalInterest" class="fw-bolder text-success mb-0 ls-tight">-- €</h4>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="p-4 rounded-4 bg-white border border-light shadow-sm h-100">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="icon-shape bg-secondary-subtle text-secondary rounded-circle p-2 me-2">
+                                <i class="bi bi-piggy-bank"></i>
+                            </div>
+                            <span class="small fw-bold text-uppercase text-muted">Principal</span>
+                        </div>
+                        <h4 id="totalContributions" class="fw-bolder text-secondary mb-0 ls-tight">-- €</h4>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0">Wealth Trajectory</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div style="height: 400px; width: 100%;">
+                        <canvas id="growthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion shadow-sm rounded-4 overflow-hidden border-0" id="breakdownAccordion">
+                <div class="accordion-item border-0">
+                    <h2 class="accordion-header" id="headingOne">
+                        <button class="accordion-button collapsed fw-bold bg-white py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTable" aria-expanded="false">
+                            <i class="bi bi-table me-2 text-primary"></i> Show Annual Breakdown
+                        </button>
+                    </h2>
+                    <div id="collapseTable" class="accordion-collapse collapse" aria-labelledby="headingOne">
+                        <div class="accordion-body p-0">
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-hover table-striped mb-0 text-center align-middle">
+                                    <thead class="bg-light sticky-top">
+                                        <tr>
+                                            <th class="py-3 text-muted small text-uppercase">Year</th>
+                                            <th class="py-3 text-muted small text-uppercase">Deposits</th>
+                                            <th class="py-3 text-muted small text-uppercase">Interest</th>
+                                            <th class="py-3 text-primary small text-uppercase fw-bold">Total Balance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="breakdownBody" class="small">
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+<style>
+    /* UI Refinements */
+    .input-group:focus-within {
+        box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.25) !important;
+        border-color: #06b6d4 !important;
+    }
+    .hover-shadow:hover { box-shadow: 0 .5rem 1rem rgba(0,0,0,.08)!important; }
+    .transition-all { transition: all 0.2s ease; }
+    
+    /* Placeholder Styling */
+    .form-control::placeholder {
+        font-weight: 400 !important;
+        color: #94a3b8 !important;
+    }
+
+    /* Button Hover Effect */
+    #calculateBtn {
+        transition: all 0.2s;
+    }
+    #calculateBtn:hover {
+        /* transform: translateY(-2px); */
+        box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3) !important;
+    }
+    #calculateBtn:active {
+        transform: translateY(0);
+    }
+    
+    /* Segmented Control Styling */
+    .btn-check:checked + .btn-outline-light {
+        background-color: #0f172a;
+        color: white !important;
+        border-color: #0f172a;
+    }
+    .btn-outline-light {
+        background-color: #f8fafc;
+        border-color: #e2e8f0;
+    }
+    .btn-outline-light:hover {
+        background-color: #e2e8f0;
+    }
+
+    /* Validation Styles */
+    .border-danger { border-color: #dc3545 !important; }
+    .shake-animation {
+        animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+    }
+    @keyframes shake {
+        10%, 90% { transform: translate3d(-1px, 0, 0); }
+        20%, 80% { transform: translate3d(2px, 0, 0); }
+        30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+        40%, 60% { transform: translate3d(4px, 0, 0); }
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('growthChart').getContext('2d');
+        let chart;
+
+        // --- Inputs DOM Elements ---
+        const inputs = {
+            initial: document.getElementById('initialDeposit'),
+            contribution: document.getElementById('contributionAmount'),
+            frequency: document.getElementById('contributionFrequency'),
+            rate: document.getElementById('interestRate'),
+            years: document.getElementById('years'),
+            timing: document.querySelectorAll('input[name="contribTiming"]')
+        };
+        
+        const calcBtn = document.getElementById('calculateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        const display = {
+            total: document.getElementById('totalBalance'),
+            contrib: document.getElementById('totalContributions'),
+            interest: document.getElementById('totalInterest'),
+            table: document.getElementById('breakdownBody')
+        };
+
+        const formatter = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+        const compactFormatter = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', notation: "compact" });
+
+        function validateInputs() {
+            let isValid = true;
+            const fieldsToCheck = ['initial', 'contribution', 'rate', 'years'];
+            
+            fieldsToCheck.forEach(key => {
+                const input = inputs[key];
+                const container = input.closest('.input-group');
+                
+                if (!input.value || input.value.trim() === "") {
+                    container.classList.add('border-danger');
+                    container.classList.add('shake-animation');
+                    setTimeout(() => container.classList.remove('shake-animation'), 500);
+                    isValid = false;
+                } else {
+                    container.classList.remove('border-danger');
+                }
+            });
+            return isValid;
+        }
+
+        function calculate() {
+            if (!validateInputs()) return;
+
+            // Animación de carga en el botón
+            const originalBtnText = calcBtn.innerHTML;
+            calcBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Calculating...';
+            
+            // Usamos un pequeño timeout para que la UI se refresque y se vea el spinner aunque el cálculo sea rápido
+            setTimeout(() => {
+                performCalculation();
+                calcBtn.innerHTML = originalBtnText;
+            }, 200);
+        }
+
+        function performCalculation() {
+            // --- 1. Get Values ---
+            let P = parseFloat(inputs.initial.value) || 0;     
+            let C = parseFloat(inputs.contribution.value) || 0; 
+            let r_annual = parseFloat(inputs.rate.value) || 0;  
+            let years = parseInt(inputs.years.value) || 1;      
+            let n = parseInt(inputs.frequency.value); 
+            let timing = document.querySelector('input[name="contribTiming"]:checked').value;
+
+            // --- 2. Math Setup ---
+            let r = r_annual / 100; 
+            
+            let chartLabels = [];
+            let dataBalance = [];
+            let dataPrincipal = [];
+            let tableHTML = '';
+
+            chartLabels.push('Start');
+            dataBalance.push(P);
+            dataPrincipal.push(P);
+
+            let accumulatedBalance = P;
+            let totalDeposited = P;
+
+            // Loop through Years
+            for (let year = 1; year <= years; year++) {
+                
+                let ratePerPeriod = r / n;
+                let periodsPerYear = n;
+
+                // 1. Compound existing balance
+                accumulatedBalance = accumulatedBalance * Math.pow((1 + ratePerPeriod), periodsPerYear);
+
+                // 2. Add FV of contributions
+                let futureValueOfContributions = C * ( (Math.pow(1 + ratePerPeriod, periodsPerYear) - 1) / ratePerPeriod );
+
+                if (timing === 'begin') {
+                    futureValueOfContributions *= (1 + ratePerPeriod);
+                }
+
+                accumulatedBalance += futureValueOfContributions;
+                totalDeposited += (C * periodsPerYear);
+
+                // Store Data
+                chartLabels.push(`Year ${year}`);
+                dataBalance.push(accumulatedBalance);
+                dataPrincipal.push(totalDeposited);
+
+                tableHTML += `
+                    <tr>
+                        <td class="fw-bold text-muted">${year}</td>
+                        <td>${formatter.format(totalDeposited)}</td>
+                        <td class="text-success">+${formatter.format(accumulatedBalance - totalDeposited)}</td>
+                        <td class="fw-bold text-primary">${formatter.format(accumulatedBalance)}</td>
+                    </tr>
+                `;
+            }
+
+            // --- 3. Update UI ---
+            display.total.innerText = formatter.format(accumulatedBalance);
+            display.contrib.innerText = formatter.format(totalDeposited);
+            display.interest.innerText = formatter.format(accumulatedBalance - totalDeposited);
+            display.table.innerHTML = tableHTML;
+
+            updateChart(chartLabels, dataBalance, dataPrincipal);
+        }
+
+        function updateChart(labels, dataTotal, dataPrincipal) {
+            if (chart) chart.destroy();
+
+            let gradientFill = ctx.createLinearGradient(0, 0, 0, 400);
+            gradientFill.addColorStop(0, 'rgba(37, 99, 235, 0.15)');
+            gradientFill.addColorStop(1, 'rgba(37, 99, 235, 0)');
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Total Wealth',
+                            data: dataTotal,
+                            borderColor: '#2563eb',
+                            backgroundColor: gradientFill,
+                            borderWidth: 3,
+                            pointRadius: 0,
+                            pointHoverRadius: 6,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Principal',
+                            data: dataPrincipal,
+                            borderColor: '#64748b',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            padding: 10,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: (ctx) => (ctx.dataset.label || '') + ': ' + formatter.format(ctx.parsed.y)
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { maxTicksLimit: 8, color: '#94a3b8' } },
+                        y: { border: { display: false }, grid: { color: '#f1f5f9' }, ticks: { color: '#94a3b8', callback: (v) => compactFormatter.format(v) } }
+                    }
+                }
+            });
+        }
+
+        // --- Event Listeners ---
+        // SOLO al hacer clic en el botón
+        calcBtn.addEventListener('click', calculate);
+
+        // Limpiar error al escribir
+        ['initial', 'contribution', 'rate', 'years'].forEach(key => {
+            inputs[key].addEventListener('input', function() {
+                const container = this.closest('.input-group');
+                container.classList.remove('border-danger');
+            });
+        });
+
+            // Lógica del botón Reset
+            resetBtn.addEventListener('click', function() {
+                inputs.initial.value = "";
+                inputs.contribution.value = "";
+                inputs.rate.value = "";
+                inputs.years.value = "";
+                inputs.frequency.value = "12";
+                document.getElementById('timingEnd').checked = true;
+                
+                // Limpiar errores visuales
+                ['initial', 'contribution', 'rate', 'years'].forEach(key => {
+                    inputs[key].closest('.input-group').classList.remove('border-danger');
+                });
+
+                // Limpiar UI y Gráfica
+                display.total.innerText = "-- €";
+                display.contrib.innerText = "-- €";
+                display.interest.innerText = "-- €";
+                display.table.innerHTML = "";
+                if (chart) chart.destroy();
+            });
+    });
+</script>
+{% endblock %}

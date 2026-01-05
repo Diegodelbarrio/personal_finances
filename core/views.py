@@ -59,3 +59,9 @@ def home(request):
     }
 
     return render(request, "core/index.html", context)
+
+@login_required
+def compound_interest_calculator(request):
+    return render(request, "core/compound_interest.html", {
+        "page_title": "Compound Interest Calculator"
+    })

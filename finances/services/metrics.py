@@ -54,27 +54,31 @@ def get_expense_distribution_chart(qs):
     }
 
 
-def get_category_breakdown(qs):
+def get_category_breakdown(qs, transaction_type='EXPENSE'):
     """
     Returns a dictionary { 'Category Name': total_amount }
     for the provided queryset.
     """
-    data = qs.filter(
-        subcategory__parent_category__transaction_type='EXPENSE'
-    ).values(
+    filters = {}
+    if transaction_type:
+        filters['subcategory__parent_category__transaction_type'] = transaction_type
+
+    data = qs.filter(**filters).values(
         'subcategory__parent_category__name'
     ).annotate(total=Sum('amount'))
     
     return {item['subcategory__parent_category__name']: _clean(item['total']) for item in data}
 
-def get_subcategory_breakdown(qs):
+def get_subcategory_breakdown(qs, transaction_type='EXPENSE'):
     """
     Returns a nested dictionary { 'Category': { 'Subcategory': total_amount } }
     for the provided queryset.
     """
-    data = qs.filter(
-        subcategory__parent_category__transaction_type='EXPENSE'
-    ).values(
+    filters = {}
+    if transaction_type:
+        filters['subcategory__parent_category__transaction_type'] = transaction_type
+
+    data = qs.filter(**filters).values(
         'subcategory__parent_category__name',
         'subcategory__name'
     ).annotate(total=Sum('amount'))

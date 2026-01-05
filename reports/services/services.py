@@ -16,18 +16,23 @@ def get_financial_annual_report(user, year):
     active_months = len(monthly_data) if len(monthly_data) > 0 else 1
 
     # 1. Identificar todas las categorías y sus subcategorías
-    cat_sub_map = {}
+    expense_map = {}
+    income_map = {}
+
     for m in monthly_data:
-        # Mapeamos Categoría -> Set de Subcategorías presentes en el año
+        # EXPENSES
         for cat_name, subs in m.get("subcategories", {}).items():
-            if cat_name not in cat_sub_map:
-                cat_sub_map[cat_name] = set()
-            cat_sub_map[cat_name].update(subs.keys())
-        
-        # Aseguramos que categorías sin subcategorías también se incluyan
+            if cat_name not in expense_map: expense_map[cat_name] = set()
+            expense_map[cat_name].update(subs.keys())
         for cat_name in m["categories"].keys():
-            if cat_name not in cat_sub_map:
-                cat_sub_map[cat_name] = set()
+            if cat_name not in expense_map: expense_map[cat_name] = set()
+            
+        # INCOME
+        for cat_name, subs in m.get("income_subcategories", {}).items():
+            if cat_name not in income_map: income_map[cat_name] = set()
+            income_map[cat_name].update(subs.keys())
+        for cat_name in m.get("income_categories", {}).keys():
+            if cat_name not in income_map: income_map[cat_name] = set()
     
     # We count months with actual activity for fair averages.
     active_months_count = sum(1 for m in monthly_data if m["income"] > 0 or m["expenses"] > 0)
@@ -55,14 +60,17 @@ def get_financial_annual_report(user, year):
 
 
     total_expenses_year = annual_stats["expenses"]
+    total_income_year = annual_stats["income"]
     detailed_categories = []
-    for cat_name in sorted(cat_sub_map.keys()):
+    detailed_income = []
+
+    # --- PROCESAR GASTOS (EXPENSES) ---
+    for cat_name in sorted(expense_map.keys()):
         cat_monthly_series = []
         total_ytd = 0
         
-        # Procesar subcategorías para esta categoría
         subs_list = []
-        for sub_name in sorted(list(cat_sub_map[cat_name])):
+        for sub_name in sorted(list(expense_map[cat_name])):
             sub_monthly_series = []
             sub_total_ytd = 0
             
@@ -89,6 +97,7 @@ def get_financial_annual_report(user, year):
                 "name": sub_name,
                 "monthly_data": sub_monthly_series,
                 "total_ytd": sub_total_ytd,
+                "monthly_avg": sub_total_ytd / active_months if active_months > 0 else 0,
                 "trips": trips
             })
 
@@ -97,11 +106,48 @@ def get_financial_annual_report(user, year):
             total_ytd += val
             cat_monthly_series.append(val)
         
-        # Calculamos el peso de esta categoría en el año
-        weight = (total_ytd / total_expenses_year * 100) if total_expenses_year > 0 else 0
         monthly_avg = total_ytd / active_months
 
+        weight = (total_ytd / total_expenses_year * 100) if total_expenses_year > 0 else 0
         detailed_categories.append({
+            "name": cat_name,
+            "monthly_data": cat_monthly_series,
+            "total_ytd": total_ytd,
+            "weight": weight,
+            "monthly_avg": monthly_avg, 
+            "subcategories": subs_list,
+        })
+
+    # --- PROCESAR INGRESOS (INCOME) ---
+    for cat_name in sorted(income_map.keys()):
+        cat_monthly_series = []
+        total_ytd = 0
+        
+        subs_list = []
+        for sub_name in sorted(list(income_map[cat_name])):
+            sub_monthly_series = []
+            sub_total_ytd = 0
+            for m in monthly_data:
+                val = m.get("income_subcategories", {}).get(cat_name, {}).get(sub_name, 0)
+                sub_total_ytd += val
+                sub_monthly_series.append(val)
+            
+            subs_list.append({
+                "name": sub_name,
+                "monthly_data": sub_monthly_series,
+                "total_ytd": sub_total_ytd,
+                "monthly_avg": sub_total_ytd / active_months if active_months > 0 else 0,
+            })
+
+        for m in monthly_data:
+            val = m.get("income_categories", {}).get(cat_name, 0)
+            total_ytd += val
+            cat_monthly_series.append(val)
+        
+        monthly_avg = total_ytd / active_months
+        weight = (total_ytd / total_income_year * 100) if total_income_year > 0 else 0
+        
+        detailed_income.append({
             "name": cat_name,
             "monthly_data": cat_monthly_series,
             "total_ytd": total_ytd,
@@ -116,13 +162,16 @@ def get_financial_annual_report(user, year):
         "annual_stats": annual_stats,
         "month_names": month_names, 
         "detailed_categories": detailed_categories, 
+        "detailed_income": detailed_income,
         "active_months": active_months_count,
         'annual_savings_rule_labels': ['Savings', 'Fixed', 'Variable'],
         'annual_savings_rule_data': [
             max(0, float(annual_stats["savings"])), 
             float(annual_stats["fixed_total"]), 
             float(annual_stats["variable_total"])
-        ]
+        ],
+        "annual_category_labels": [c["name"] for c in detailed_categories if c["total_ytd"] != 0],
+        "annual_category_data": [abs(float(c["total_ytd"])) for c in detailed_categories if c["total_ytd"] != 0],
     }
 
 # 2 REPORTE INVERSIONES (Rendimiento)
@@ -139,8 +188,13 @@ def get_investment_annual_report(user, year):
     
     total_contributions = sum(m.get("contributions", 0) for m in monthly_data)
     total_profit = sum(m.get("profit_loss", 0) for m in monthly_data)
-    final_invested = last_month.get("invested", 0)
-    annual_roi = (total_profit / final_invested * 100) if final_invested > 0 else 0
+    
+    # Para que el ROI anual coincida con la lógica de rendimiento real, 
+    # calculamos sobre el capital neto invertido (Cost Basis).
+    # Si estamos en el primer mes, esto alineará el KPI con la fila de la tabla.
+    current_market_value = last_month.get("market_value", 0)
+    cost_basis = current_market_value - total_profit
+    annual_roi = (total_profit / cost_basis * 100) if cost_basis > 0 else 0
     
     annual_stats = {
         "total_contributions": total_contributions,
