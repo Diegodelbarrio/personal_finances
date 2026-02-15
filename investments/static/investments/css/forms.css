@@ -1,0 +1,24 @@
+.inv-form-grid .inv-pane {
+    border: 1px solid #e2e8f0;
+    border-radius: 0.9rem;
+    background: #fbfdff;
+    padding: 1rem;
+}
+
+.inv-form-grid textarea.form-control {
+    min-height: 120px;
+}
+
+.inv-submit-row {
+    align-items: stretch;
+}
+
+@media (max-width: 991.98px) {
+    .inv-form-grid .inv-pane {
+        padding: 0.9rem;
+    }
+
+    .inv-submit-row {
+        flex-direction: column;
+    }
+}

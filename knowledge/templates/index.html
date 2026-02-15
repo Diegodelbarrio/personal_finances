@@ -8,9 +8,9 @@
 {% block content %}
 <div class="container-fluid pb-5">
     
-    <div class="row mb-5">
+    <div class="row mb-3">
         <div class="col-lg-8">
-            <h6 class="text-uppercase text-primary fw-bold letter-spacing mb-2">{{page_title|capfirst}}</h6>
+            <!-- <h6 class="text-uppercase text-primary fw-bold letter-spacing mb-2">{{page_title|capfirst}}</h6> -->
             <h1 class="display-5 fw-bold text-dark mb-3">Financial Knowledge</h1>
             <p class="text-muted lead" style="max-width: 600px;">
                Master the key concepts for managing your wealth. Practical guides and financial strategies
@@ -26,7 +26,7 @@
     </div>
 
     {% if articles %}
-    <div class="row g-4"> {% for article in articles %}
+    <div class="row g-4">3 {% for article in articles %}
         <div class="col-md-6 col-lg-4 col-xl-4">
             <a href="{{ article.get_absolute_url }}" class="text-decoration-none h-100 d-block">
                 <div class="card card-rounded border h-100 hover-lift bg-white">

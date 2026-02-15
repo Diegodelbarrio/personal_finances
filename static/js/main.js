@@ -43,10 +43,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!navbar) return;
 
     const SCROLL_THRESHOLD = 30;
-
-    window.addEventListener('scroll', () => {
+    const syncNavbarScrollState = () => {
         navbar.classList.toggle('scrolled', window.scrollY > SCROLL_THRESHOLD);
-    });
+    };
+
+    syncNavbarScrollState();
+    window.addEventListener('scroll', syncNavbarScrollState, { passive: true });
 
     // Detectar apertura del menú móvil para poner fondo sólido
     const navCollapse = navbar.querySelector('.navbar-collapse');
@@ -222,34 +224,128 @@ const FinLog = (message, data = null) => {
  * Maneja el comportamiento hover de forma eficiente
  */
 const DropdownHandler = {
+    listeners: [],
+    hoverMediaQuery: window.matchMedia('(min-width: 992px) and (hover: hover) and (pointer: fine)'),
+
     init() {
-        const hoverDropdowns = document.querySelectorAll('.dropdown-hover');
-        
-        hoverDropdowns.forEach(dropdown => {
+        if (!window.bootstrap || !window.bootstrap.Dropdown) return;
+        this.hoverDropdowns = Array.from(document.querySelectorAll('.dropdown-hover'));
+        if (!this.hoverDropdowns.length) return;
+
+        this.hoverDropdowns.forEach(dropdown => {
+            const toggle = dropdown.querySelector('.dropdown-toggle[href="#"]');
+            if (!toggle || toggle.dataset.preventNavBound === 'true') return;
+            toggle.dataset.preventNavBound = 'true';
+            toggle.addEventListener('click', (event) => event.preventDefault());
+        });
+
+        this.applyInteractionMode();
+
+        if (!this._boundViewportListener) {
+            this._boundViewportListener = () => this.applyInteractionMode();
+            if (this.hoverMediaQuery.addEventListener) {
+                this.hoverMediaQuery.addEventListener('change', this._boundViewportListener);
+            } else {
+                this.hoverMediaQuery.addListener(this._boundViewportListener);
+            }
+        }
+    },
+
+    applyInteractionMode() {
+        this.teardown();
+
+        // En móvil/touch dejamos sólo click para evitar cierres accidentales.
+        if (!this.hoverMediaQuery.matches) {
+            this.closeAll();
+            return;
+        }
+
+        this.hoverDropdowns.forEach(dropdown => {
             const toggle = dropdown.querySelector('.dropdown-toggle');
-            // Creamos la instancia una sola vez y la guardamos
+            const menu = dropdown.querySelector('.dropdown-menu');
+            if (!toggle) return;
+
             const instance = bootstrap.Dropdown.getOrCreateInstance(toggle);
-            let timeout = null;
+            let openTimer = null;
+            let closeTimer = null;
 
-            dropdown.addEventListener('mouseenter', () => {
-                clearTimeout(timeout);
-                // Cerramos otros dropdowns abiertos si los hubiera
-                this.closeAll();
-                instance.show();
-            });
+            const clearTimers = () => {
+                clearTimeout(openTimer);
+                clearTimeout(closeTimer);
+            };
 
-            dropdown.addEventListener('mouseleave', () => {
-                timeout = setTimeout(() => {
+            const openDropdown = () => {
+                clearTimeout(closeTimer);
+                openTimer = setTimeout(() => {
+                    this.closeAll(dropdown);
+                    instance.show();
+                }, 0);
+            };
+
+            const closeDropdown = (event) => {
+                if (event && dropdown.contains(event.relatedTarget)) return;
+                clearTimeout(openTimer);
+                closeTimer = setTimeout(() => {
                     instance.hide();
-                }, 150);
+                }, 100);
+            };
+
+            const focusOutHandler = (event) => {
+                if (!dropdown.contains(event.relatedTarget)) {
+                    closeDropdown();
+                }
+            };
+
+            const escapeHandler = (event) => {
+                if (event.key === 'Escape') {
+                    clearTimers();
+                    instance.hide();
+                    toggle.focus();
+                }
+            };
+
+            dropdown.addEventListener('mouseenter', openDropdown);
+            dropdown.addEventListener('mouseleave', closeDropdown);
+            dropdown.addEventListener('focusin', openDropdown);
+            dropdown.addEventListener('focusout', focusOutHandler);
+            dropdown.addEventListener('keydown', escapeHandler);
+            if (menu) {
+                menu.addEventListener('mouseenter', openDropdown);
+                menu.addEventListener('mouseleave', closeDropdown);
+            }
+
+            this.listeners.push({
+                dropdown,
+                menu,
+                openDropdown,
+                closeDropdown,
+                focusOutHandler,
+                escapeHandler,
+                clearTimers
             });
         });
     },
 
-    closeAll() {
-        const openMenus = document.querySelectorAll('.dropdown-hover .show');
-        openMenus.forEach(menu => {
-            const toggle = menu.parentElement.querySelector('.dropdown-toggle');
+    teardown() {
+        this.listeners.forEach(({ dropdown, menu, openDropdown, closeDropdown, focusOutHandler, escapeHandler, clearTimers }) => {
+            dropdown.removeEventListener('mouseenter', openDropdown);
+            dropdown.removeEventListener('mouseleave', closeDropdown);
+            dropdown.removeEventListener('focusin', openDropdown);
+            dropdown.removeEventListener('focusout', focusOutHandler);
+            dropdown.removeEventListener('keydown', escapeHandler);
+            if (menu) {
+                menu.removeEventListener('mouseenter', openDropdown);
+                menu.removeEventListener('mouseleave', closeDropdown);
+            }
+            clearTimers();
+        });
+        this.listeners = [];
+    },
+
+    closeAll(exceptDropdown = null) {
+        const openToggles = document.querySelectorAll('.dropdown-hover > .dropdown-toggle.show');
+        openToggles.forEach(toggle => {
+            if (exceptDropdown && exceptDropdown.contains(toggle)) return;
             const inst = bootstrap.Dropdown.getInstance(toggle);
             if (inst) inst.hide();
         });

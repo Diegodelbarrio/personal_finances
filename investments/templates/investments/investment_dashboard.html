@@ -8,15 +8,35 @@
 {% endblock %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-start mb-4">
+    {% if messages %}
+        {% for message in messages %}
+            {% if "investments_" in message.tags %}
+                <div class="alert {% if 'success' in message.tags %}alert-success{% elif 'info' in message.tags %}alert-info{% elif 'warning' in message.tags %}alert-warning{% else %}alert-danger{% endif %} border-0 shadow-sm mb-3" role="alert">
+                    {{ message }}
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start mb-4 gap-3">
         <div>
             <h1 class="fw-bold mb-0">My Portfolio</h1>
             <p class="text-muted">Performance analysis and asset distribution</p>
         </div>
-        <span class="badge bg-light text-dark border rounded-pill px-3 py-2">
-            <i class="bi bi-clock-history me-2"></i>
-            {% if last_market_date %}{{ last_market_date|date:"d/m/Y" }}{% else %}No data{% endif %}
-        </span>
+        <div class="d-flex flex-column align-items-lg-end gap-2">
+            <span class="badge bg-light text-dark border rounded-pill px-3 py-2">
+                <i class="bi bi-clock-history me-2"></i>
+                {% if last_market_date %}{{ last_market_date|date:"d/m/Y" }}{% else %}No data{% endif %}
+            </span>
+            <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                <a href="{% url 'investments:create_transaction' %}?next={{ current_path|urlencode }}" class="btn btn-sm btn-primary rounded-pill px-3">
+                    <i class="bi bi-plus-circle me-1"></i> Add Transaction
+                </a>
+                <a href="{% url 'investments:create_asset_history' %}?next={{ current_path|urlencode }}" class="btn btn-sm btn-light border rounded-pill px-3">
+                    <i class="bi bi-plus-circle me-1"></i> Add Snapshot
+                </a>
+            </div>
+        </div>
     </div>
 
     <div class="row g-4 mb-4">

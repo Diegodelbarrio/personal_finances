@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Delete Transaction{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'finances/css/category_manager.css' %}">
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-xl-6">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <h4 class="fw-bold mb-2">Delete Transaction</h4>
+                <p class="text-muted mb-4">This action cannot be undone.</p>
+
+                <div class="bg-light rounded-4 p-3 mb-4">
+                    <div class="small text-muted mb-2">Transaction details</div>
+                    <div><strong>Date:</strong> {{ transaction.date|date:"Y-m-d" }}</div>
+                    <div><strong>Amount:</strong> {{ transaction.amount|floatformat:2 }} €</div>
+                    <div><strong>Subcategory:</strong> {{ transaction.subcategory.parent_category.name }} -> {{ transaction.subcategory.name }}</div>
+                    <div><strong>Description:</strong> {{ transaction.description|default:"-" }}</div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger rounded-pill px-4 flex-grow-1">Delete</button>
+                        <a href="{{ next_url }}" class="btn btn-outline-secondary rounded-pill px-4">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

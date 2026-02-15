@@ -1,9 +1,11 @@
 from django.test import TestCase
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from datetime import date
 
 from holdings.models import BankAccount, AccountBalanceSnapshot
 from holdings.services.api import get_current_value
+
+User = get_user_model()
 
 
 class HoldingsServiceTest(TestCase):
@@ -13,13 +15,16 @@ class HoldingsServiceTest(TestCase):
 
         account = BankAccount.objects.create(
             user=self.user,
-            name="Cuenta Principal"
+            name="Cuenta Principal",
+            institution="Test Bank",
+            account_type="CHECKING",
         )
 
         AccountBalanceSnapshot.objects.create(
+            user=self.user,
             account=account,
             date=date(2024, 1, 31),
-            balance=1000
+            balance=1000,
         )
 
     def test_get_current_value(self):

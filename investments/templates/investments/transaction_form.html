@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}New Investment Transaction{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'investments/css/forms.css' %}">
+
+<div class="row justify-content-center">
+    <div class="col-12 col-xl-10">
+        <div class="d-flex justify-content-between align-items-center mb-4 gap-3">
+            <div>
+                <h3 class="fw-bold mb-1">New Investment Transaction</h3>
+                <p class="text-muted mb-0">Register buy/sell operations for your own assets only.</p>
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+                <a href="{% url 'investments:import_transactions_csv' %}?next={{ next_url|urlencode }}" class="btn btn-light border rounded-pill px-3">
+                    <i class="bi bi-filetype-csv me-1"></i>Import CSV
+                </a>
+                <a href="{{ next_url }}" class="btn btn-light border rounded-pill px-3">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </a>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                {% if "investments_transactions" in message.tags %}
+                    <div class="alert {% if 'success' in message.tags %}alert-success{% elif 'info' in message.tags %}alert-info{% elif 'warning' in message.tags %}alert-warning{% else %}alert-danger{% endif %} border-0 shadow-sm mb-3" role="alert">
+                        {{ message }}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+
+        {% if not has_assets %}
+            <div class="alert alert-warning border-0 shadow-sm mb-4">
+                You need at least one asset before saving investment transactions.
+                <div class="mt-2">
+                    <a class="btn btn-sm btn-dark rounded-pill" href="{% url 'investments:create_asset' %}?next={{ return_to_form_url|urlencode }}">
+                        <i class="bi bi-plus-circle me-1"></i>New Asset
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ next_url }}">
+
+                    <div class="row g-4 inv-form-grid">
+                        <div class="col-12 col-lg-7">
+                            <div class="inv-pane">
+                                <div class="mb-3">
+                                    <label for="{{ form.date.id_for_label }}" class="form-label fw-semibold">{{ form.date.label }}</label>
+                                    {{ form.date }}
+                                    {% for error in form.date.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.action.id_for_label }}" class="form-label fw-semibold">{{ form.action.label }}</label>
+                                    {{ form.action }}
+                                    {% for error in form.action.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.shares.id_for_label }}" class="form-label fw-semibold">{{ form.shares.label }}</label>
+                                    {{ form.shares }}
+                                    {% for error in form.shares.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="mb-0">
+                                    <label for="{{ form.price_per_share.id_for_label }}" class="form-label fw-semibold">{{ form.price_per_share.label }}</label>
+                                    {{ form.price_per_share }}
+                                    {% for error in form.price_per_share.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-lg-5">
+                            <div class="inv-pane h-100">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center gap-2 mb-2 flex-wrap">
+                                        <label for="{{ form.asset.id_for_label }}" class="form-label fw-semibold mb-0">{{ form.asset.label }}</label>
+                                        <a class="btn btn-sm btn-light border rounded-pill px-3" href="{% url 'investments:create_asset' %}?next={{ return_to_form_url|urlencode }}">
+                                            <i class="bi bi-plus-lg me-1"></i>Asset
+                                        </a>
+                                    </div>
+                                    {{ form.asset }}
+                                    {% for error in form.asset.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.amount.id_for_label }}" class="form-label fw-semibold">{{ form.amount.label }}</label>
+                                    {{ form.amount }}
+                                    <div class="form-text">Always enter a positive amount. Sell operations are stored as negative.</div>
+                                    {% for error in form.amount.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="mb-0">
+                                    <label for="{{ form.notes.id_for_label }}" class="form-label fw-semibold">{{ form.notes.label }}</label>
+                                    {{ form.notes }}
+                                    {% for error in form.notes.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% for error in form.non_field_errors %}
+                        <div class="invalid-feedback d-block mt-3">{{ error }}</div>
+                    {% endfor %}
+
+                    <div class="d-flex gap-2 mt-4 inv-submit-row">
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 flex-grow-1" {% if not has_assets %}disabled{% endif %}>
+                            Save
+                        </button>
+                        <a href="{{ next_url }}" class="btn btn-outline-secondary rounded-pill px-4">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

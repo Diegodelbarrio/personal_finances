@@ -1,10 +1,93 @@
 from calendar import monthrange
 from datetime import date
+from math import isfinite
 from django.db.models import Sum, Min, Max
 from django.utils import timezone
 from ..models import Asset, Transaction
 
 EXCLUDE_ASSET_NAME = "Family Investments"
+
+def _xnpv(rate, cash_flows):
+    if rate <= -0.999999:
+        return float("inf")
+    t0 = cash_flows[0][0]
+    total = 0.0
+    for flow_date, amount in cash_flows:
+        days = (flow_date - t0).days
+        total += amount / ((1 + rate) ** (days / 365.0))
+    return total
+
+def _xirr(cash_flows, tol=1e-7, max_iter=100):
+    if not cash_flows:
+        return None
+    cash_flows = sorted(cash_flows, key=lambda x: x[0])
+    has_pos = any(amount > 0 for _, amount in cash_flows)
+    has_neg = any(amount < 0 for _, amount in cash_flows)
+    if not (has_pos and has_neg):
+        return None
+
+    low = -0.9999
+    high = 10.0
+    f_low = _xnpv(low, cash_flows)
+    f_high = _xnpv(high, cash_flows)
+
+    attempts = 0
+    while f_low * f_high > 0 and attempts < 20 and isfinite(f_high):
+        high *= 2
+        f_high = _xnpv(high, cash_flows)
+        attempts += 1
+
+    if f_low * f_high > 0:
+        return None
+
+    mid = None
+    for _ in range(max_iter):
+        mid = (low + high) / 2
+        f_mid = _xnpv(mid, cash_flows)
+        if abs(f_mid) < tol:
+            return mid
+        if f_low * f_mid < 0:
+            high = mid
+            f_high = f_mid
+        else:
+            low = mid
+            f_low = f_mid
+
+    return mid
+
+def get_money_weighted_return(user, start_date, end_date, start_value, end_value, asset=None, include_family=False):
+    """
+    Money-weighted return (IRR) for the period, including initial value,
+    intermediate cash flows, and ending market value.
+    """
+    if start_date > end_date:
+        return None
+
+    cash_flows = []
+    if start_value:
+        cash_flows.append((start_date, -float(start_value)))
+
+    txs = Transaction.objects.filter(
+        asset__user=user,
+        date__gte=start_date,
+        date__lte=end_date,
+    )
+    if asset is not None:
+        txs = txs.filter(asset=asset)
+    elif not include_family:
+        txs = txs.exclude(asset__name=EXCLUDE_ASSET_NAME)
+    txs = txs.values("date", "action", "amount")
+    for tx in txs:
+        amount = float(tx["amount"] or 0)
+        if amount == 0:
+            continue
+        sign = -1 if tx["action"] == "BUY" else 1
+        cash_flows.append((tx["date"], sign * abs(amount)))
+
+    if end_value:
+        cash_flows.append((end_date, float(end_value)))
+
+    return _xirr(cash_flows)
 
 def _get_last_day_of_month(year, month):
     """Utility to obtain the last day of the month."""
@@ -212,11 +295,39 @@ def get_family_investment_performance(user, year):
     
     roi = (profit / invested_base * 100) if invested_base > 0 else 0
 
+    mwrr = get_money_weighted_return(
+        user=user,
+        start_date=start_of_year,
+        end_date=cutoff_date,
+        start_value=prev_mv,
+        end_value=current_mv,
+        asset=asset,
+    )
+
+    if mwrr is None:
+        mwrr_display = "N/A"
+        mwrr_suffix = ""
+        mwrr_prefix = ""
+        mwrr_status = "secondary"
+        mwrr_icon = "bi-dash-circle"
+    else:
+        mwrr_display = f"{abs(mwrr) * 100:.2f}"
+        mwrr_suffix = "%"
+        mwrr_prefix = "+" if mwrr > 0 else ("" if mwrr < 0 else "")
+        mwrr_status = "success" if mwrr >= 0 else "danger"
+        mwrr_icon = "bi-percent"
+
     return {
         "name": asset.name,
         "current_value": current_mv,
         "profit": profit,
         "roi": roi,
+        "mwrr": mwrr,
+        "mwrr_display": mwrr_display,
+        "mwrr_suffix": mwrr_suffix,
+        "mwrr_prefix": mwrr_prefix,
+        "mwrr_status": mwrr_status,
+        "mwrr_icon": mwrr_icon,
         "profit_status": "success" if profit >= 0 else "danger",
         "roi_status": "success" if roi >= 0 else "danger",
         "profit_prefix": "+" if profit > 0 else ("" if profit < 0 else ""),

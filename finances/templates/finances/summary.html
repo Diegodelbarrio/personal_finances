@@ -10,6 +10,12 @@
             <p class="text-muted small">Monthly tracking of income and expenses</p>
         </div>
         <div class="d-flex align-items-center gap-2">
+            <a href="{% url 'create_transaction' %}?next={{ current_path|urlencode }}" class="btn btn-sm btn-primary shadow-sm rounded-pill px-3 py-2 fw-bold">
+                <i class="bi bi-plus-circle me-1"></i> Add Transaction
+            </a>
+            <a href="{% url 'manage_categories' %}" class="btn btn-sm btn-light shadow-sm rounded-pill px-3 py-2 fw-bold">
+                <i class="bi bi-tags me-1"></i> Manage Categories
+            </a>
             <div class="dropdown">
                 <button class="btn btn-sm btn-white shadow-sm rounded-pill px-3 py-2 fw-bold dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
                     <i class="bi bi-calendar-event text-muted small"></i> {{ sel_year }}
@@ -33,6 +39,16 @@
             </div>
         </div>
     </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            {% if "finances_transactions" in message.tags %}
+                <div class="alert {% if 'success' in message.tags %}alert-success{% elif 'info' in message.tags %}alert-info{% elif 'warning' in message.tags %}alert-warning{% else %}alert-danger{% endif %} border-0 shadow-sm mb-3" role="alert">
+                    {{ message }}
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
 
     <div class="row g-4 mb-5">
         {% for kpi in kpis %}
@@ -123,6 +139,7 @@
                         <th class="text-end pe-4 cursor-pointer sortable-header" data-sort="amount">
                             Amount <i class="bi bi-arrow-down-up ms-1 small opacity-50"></i>
                         </th>
+                        <th class="text-end pe-4">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
@@ -138,6 +155,32 @@
                             <span class="{% if tx.amount > 0 %}text-success{% else %}text-dark{% endif %}">
                                 {{ tx.amount|floatformat:2 }} €
                             </span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="dropdown">
+                                <button
+                                    class="btn btn-sm btn-light border rounded-circle"
+                                    type="button"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false"
+                                    aria-label="Open actions"
+                                >
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0">
+                                    <li>
+                                        <a href="{% url 'edit_transaction' tx.id %}?next={{ current_path|urlencode }}" class="dropdown-item">
+                                            <i class="bi bi-pencil-square me-2"></i>Edit
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a href="{% url 'delete_transaction' tx.id %}?next={{ current_path|urlencode }}" class="dropdown-item text-danger">
+                                            <i class="bi bi-trash3 me-2"></i>Delete
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}

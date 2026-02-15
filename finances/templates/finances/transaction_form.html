@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if is_edit %}Edit Transaction{% else %}New Transaction{% endif %}{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'finances/css/category_manager.css' %}">
+<link rel="stylesheet" href="{% static 'finances/css/transaction_form.css' %}">
+
+<div class="row justify-content-center">
+    <div class="col-12 col-xl-10">
+        <div class="d-flex justify-content-between align-items-center mb-4 gap-3">
+            <div>
+                <h3 class="fw-bold mb-1">{% if is_edit %}Edit Transaction{% else %}New Transaction{% endif %}</h3>
+                <p class="text-muted mb-0">Add income or expense entries using your existing subcategories.</p>
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+                {% if not is_edit %}
+                    <a href="{% url 'import_transactions_csv' %}?next={{ next_url|urlencode }}" class="btn btn-light border rounded-pill px-3">
+                        <i class="bi bi-filetype-csv me-1"></i>Import CSV
+                    </a>
+                {% endif %}
+                <a href="{{ next_url }}" class="btn btn-light border rounded-pill px-3">
+                    <i class="bi bi-arrow-left me-2"></i>Back
+                </a>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                {% if "finances_transactions" in message.tags %}
+                    <div class="alert {% if 'success' in message.tags %}alert-success{% elif 'info' in message.tags %}alert-info{% elif 'warning' in message.tags %}alert-warning{% else %}alert-danger{% endif %} border-0 shadow-sm mb-3" role="alert">
+                        {{ message }}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+
+        {% if not has_subcategories %}
+            <div class="alert alert-warning border-0 shadow-sm mb-4">
+                You need at least one subcategory before saving transactions.
+                <div class="mt-2 d-flex flex-wrap gap-2">
+                    <a class="btn btn-sm btn-dark rounded-pill" href="{% url 'create_category' %}?next={{ return_to_form_url|urlencode }}">
+                        <i class="bi bi-plus-circle me-1"></i>New Category
+                    </a>
+                    <a class="btn btn-sm btn-outline-dark rounded-pill" href="{% url 'create_subcategory' %}?next={{ return_to_form_url|urlencode }}">
+                        <i class="bi bi-plus-circle me-1"></i>New Subcategory
+                    </a>
+                    <a class="btn btn-sm btn-outline-primary rounded-pill" href="{% url 'manage_categories' %}#categoryOnboarding">
+                        <i class="bi bi-magic me-1"></i>Use Defaults
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <form method="post" novalidate class="tx-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ next_url }}">
+
+                    <div class="row g-4 tx-form-grid">
+                        <div class="col-12 col-lg-7">
+                            <div class="tx-pane">
+                                <div class="mb-3">
+                                    <label for="{{ form.date.id_for_label }}" class="form-label fw-semibold">{{ form.date.label }}</label>
+                                    {{ form.date }}
+                                    {% for error in form.date.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.amount.id_for_label }}" class="form-label fw-semibold">{{ form.amount.label }}</label>
+                                    {{ form.amount }}
+                                    <div class="form-text">Always enter a positive amount. The sign is inferred from subcategory type.</div>
+                                    {% for error in form.amount.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="mb-0">
+                                    <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">{{ form.description.label }}</label>
+                                    {{ form.description }}
+                                    {% for error in form.description.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-lg-5">
+                            <div class="tx-pane h-100">
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-between align-items-center gap-2 mb-2 flex-wrap">
+                                        <label for="{{ form.subcategory.id_for_label }}" class="form-label fw-semibold mb-0">{{ form.subcategory.label }}</label>
+                                        <div class="tx-field-actions">
+                                            <a class="btn btn-sm btn-light border rounded-pill px-3" href="{% url 'create_category' %}?next={{ return_to_form_url|urlencode }}">
+                                                <i class="bi bi-plus-lg me-1"></i>Category
+                                            </a>
+                                            <a class="btn btn-sm btn-light border rounded-pill px-3" href="{% url 'create_subcategory' %}?next={{ return_to_form_url|urlencode }}">
+                                                <i class="bi bi-plus-lg me-1"></i>Subcategory
+                                            </a>
+                                        </div>
+                                    </div>
+                                    {{ form.subcategory }}
+                                    {% for error in form.subcategory.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="mb-0">
+                                    <div class="d-flex justify-content-between align-items-center gap-2 mb-2 flex-wrap">
+                                        <label for="{{ form.location.id_for_label }}" class="form-label fw-semibold mb-0">{{ form.location.label }}</label>
+                                        <a class="btn btn-sm btn-light border rounded-pill px-3" href="{% url 'create_location' %}?next={{ return_to_form_url|urlencode }}">
+                                            <i class="bi bi-plus-lg me-1"></i>Location
+                                        </a>
+                                    </div>
+                                    {{ form.location }}
+                                    {% for error in form.location.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% for error in form.non_field_errors %}
+                        <div class="invalid-feedback d-block mt-3">{{ error }}</div>
+                    {% endfor %}
+
+                    <div class="d-flex gap-2 mt-4 tx-submit-row">
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 flex-grow-1" {% if not has_subcategories %}disabled{% endif %}>
+                            {% if is_edit %}Save Changes{% else %}Save{% endif %}
+                        </button>
+                        <a href="{{ next_url }}" class="btn btn-outline-secondary rounded-pill px-4">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

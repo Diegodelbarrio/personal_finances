@@ -1,13 +1,17 @@
 from datetime import date
+
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
+from django.http import Http404, HttpResponse
 
 # Servicios de las diferentes Apps
+from core.services.market_watch import get_market_watch_context, period_options
+from core.services.csv_import import get_csv_template_payload
 from core.services.net_worth import calculate_net_worth
-from holdings.services.history import get_net_worth_evolution
-from settings.services.api import SettingsService
 from finances.services.api import get_annual_cashflow_summary
 from finances.services.selectors import get_emergency_fund_status
+from holdings.services.history import get_net_worth_evolution
+from settings.services.api import SettingsService
 
 @login_required
 def home(request):
@@ -65,3 +69,24 @@ def compound_interest_calculator(request):
     return render(request, "core/compound_interest.html", {
         "page_title": "Compound Interest Calculator"
     })
+
+
+@login_required
+def investment_dashboard(request):
+    selected_period = request.GET.get("period", "1y")
+    force_refresh = request.GET.get("refresh") == "1"
+
+    context = get_market_watch_context(selected_period, force_refresh=force_refresh)
+    context["period_options"] = period_options()
+    return render(request, "core/market_data.html", context)
+
+
+@login_required
+def download_csv_template(request, template_key):
+    payload = get_csv_template_payload(template_key)
+    if payload is None:
+        raise Http404("CSV template not found.")
+
+    response = HttpResponse(payload["content"], content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="{payload["filename"]}"'
+    return response

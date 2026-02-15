@@ -1,0 +1,30 @@
+.tx-form-grid .tx-pane {
+    border: 1px solid #e2e8f0;
+    border-radius: 0.9rem;
+    background: #fbfdff;
+    padding: 1rem;
+}
+
+.tx-form-grid textarea.form-control {
+    min-height: 50px;
+}
+
+.tx-field-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.tx-submit-row {
+    align-items: stretch;
+}
+
+@media (max-width: 991.98px) {
+    .tx-form-grid .tx-pane {
+        padding: 0.9rem;
+    }
+
+    .tx-submit-row {
+        flex-direction: column;
+    }
+}

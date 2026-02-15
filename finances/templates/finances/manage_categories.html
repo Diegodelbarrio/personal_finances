@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Category Manager{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'finances/css/category_manager.css' %}">
+
+<div class="row justify-content-center">
+    <div class="col-12 col-xl-11">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+            <div>
+                <h2 class="fw-bold mb-1">Category Manager</h2>
+                <p class="text-muted mb-0">Manage categories and subcategories for your personal finance setup.</p>
+            </div>
+            <a href="{% url 'summary' %}" class="btn btn-light border rounded-pill px-3">
+                <i class="bi bi-arrow-left me-2"></i>Back to Monthly Summary
+            </a>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                {% if "finances_categories" in message.tags %}
+                    <div class="alert {% if 'success' in message.tags %}alert-success{% elif 'info' in message.tags %}alert-info{% elif 'warning' in message.tags %}alert-warning{% else %}alert-danger{% endif %} border-0 shadow-sm mb-3" role="alert">
+                        {{ message }}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+
+        <div class="alert alert-info border-0 shadow-sm mb-4">
+            <strong>Deletion behavior:</strong>
+            If a category or subcategory has related transactions, it cannot be deleted.
+            Transactions are protected and remain untouched.
+        </div>
+
+        {% if not has_categories %}
+            <div class="card border-0 shadow-sm rounded-4 manager-card setup-card mb-4" id="categoryOnboarding">
+                <div class="card-body p-4 p-lg-5">
+                    <div class="d-flex flex-column flex-md-row justify-content-between gap-3 mb-4">
+                        <div>
+                            <h5 class="fw-bold mb-1">Start Your Category Setup</h5>
+                            <p class="text-muted mb-0">
+                                You do not have categories yet. Choose one of these two options to begin.
+                            </p>
+                        </div>
+                        <span class="badge rounded-pill text-bg-light align-self-start setup-badge">
+                            Required default category: Income
+                        </span>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-12 col-lg-4">
+                            <div class="setup-option-card h-100">
+                                <h6 class="fw-bold mb-2">Option 1: Build Manually</h6>
+                                <p class="text-muted small mb-3">
+                                    Create categories from zero. You can add subcategories directly when creating each category.
+                                </p>
+                                <a
+                                    href="{% url 'create_category' %}?next={{ current_path|urlencode }}"
+                                    class="btn btn-dark rounded-pill px-4"
+                                >
+                                    <i class="bi bi-pencil-square me-2"></i>Create From Scratch
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-lg-8">
+                            <div class="setup-option-card h-100">
+                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+                                    <div>
+                                        <h6 class="fw-bold mb-1">Option 2: Use Default Categories</h6>
+                                        <p class="text-muted small mb-0">
+                                            Multi-select categories and choose which default subcategories to include.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <form method="post" id="defaultCategoriesForm" novalidate>
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="create_default_categories">
+
+                                    {% for error in default_setup_form.non_field_errors %}
+                                        <div class="invalid-feedback d-block mb-2">{{ error }}</div>
+                                    {% endfor %}
+                                    {% for error in default_setup_form.category_keys.errors %}
+                                        <div class="invalid-feedback d-block mb-2">{{ error }}</div>
+                                    {% endfor %}
+                                    {% for error in default_setup_form.subcategory_keys.errors %}
+                                        <div class="invalid-feedback d-block mb-2">{{ error }}</div>
+                                    {% endfor %}
+
+                                    <div class="preset-category-grid">
+                                        {% for category in default_category_options %}
+                                            <article class="preset-category-card">
+                                                <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                                                    <label class="form-check d-flex align-items-center gap-2 m-0">
+                                                        <input
+                                                            class="form-check-input preset-category-toggle"
+                                                            type="checkbox"
+                                                            name="category_keys"
+                                                            value="{{ category.key }}"
+                                                            data-category-key="{{ category.key }}"
+                                                            {% if category.key in default_selected_category_keys or category.key in default_required_category_keys %}checked{% endif %}
+                                                            {% if category.key in default_required_category_keys %}disabled{% endif %}
+                                                        >
+                                                        <span class="fw-semibold">{{ category.name }}</span>
+                                                    </label>
+                                                    {% if category.key in default_required_category_keys %}
+                                                        <span class="badge rounded-pill bg-primary-subtle text-primary">Required</span>
+                                                        <input type="hidden" name="category_keys" value="{{ category.key }}">
+                                                    {% endif %}
+                                                </div>
+                                                <div class="preset-subcategory-group" data-subcategory-group="{{ category.key }}">
+                                                    {% for subcategory in category.subcategories %}
+                                                        <label class="form-check preset-subcategory-item">
+                                                            <input
+                                                                class="form-check-input"
+                                                                type="checkbox"
+                                                                name="subcategory_keys"
+                                                                value="{{ subcategory.key }}"
+                                                                data-category-key="{{ category.key }}"
+                                                                {% if subcategory.key in default_selected_subcategory_keys %}checked{% endif %}
+                                                            >
+                                                            <span class="form-check-label">{{ subcategory.name }}</span>
+                                                        </label>
+                                                    {% endfor %}
+                                                </div>
+                                            </article>
+                                        {% endfor %}
+                                    </div>
+
+                                    <div class="d-flex justify-content-end mt-3">
+                                        <button type="submit" class="btn btn-primary rounded-pill px-4">
+                                            <i class="bi bi-magic me-2"></i>Create Selected Defaults
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="card border-0 shadow-sm rounded-4 manager-card mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+                    <h5 class="fw-bold mb-0">Your Categories</h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="{% url 'create_category' %}?next={{ current_path|urlencode }}" class="btn btn-sm btn-primary rounded-pill px-3">
+                            <i class="bi bi-plus-circle me-1"></i>New Category
+                        </a>
+                        <span class="badge bg-light text-dark rounded-pill px-3 py-2">
+                            <span id="categoriesVisibleCount">{{ categories|length }}</span> shown
+                        </span>
+                    </div>
+                </div>
+
+                <div class="table-responsive manager-table-responsive">
+                    <table class="table align-middle mb-0 manager-table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>
+                                    <button type="button" class="sortable-header" data-table="categories" data-sort="name">
+                                        Name <i class="bi bi-arrow-down-up sort-icon"></i>
+                                    </button>
+                                </th>
+                                <th>
+                                    <button type="button" class="sortable-header" data-table="categories" data-sort="transaction_type">
+                                        Type <i class="bi bi-arrow-down-up sort-icon"></i>
+                                    </button>
+                                </th>
+                                <th>
+                                    <button type="button" class="sortable-header" data-table="categories" data-sort="expense_type">
+                                        Expense Type <i class="bi bi-arrow-down-up sort-icon"></i>
+                                    </button>
+                                </th>
+                                <th>
+                                    <button type="button" class="sortable-header" data-table="categories" data-sort="is_housing">
+                                        Housing <i class="bi bi-arrow-down-up sort-icon"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center">
+                                    <button type="button" class="sortable-header" data-table="categories" data-sort="subcategories_count">
+                                        Subcategories <i class="bi bi-arrow-down-up sort-icon"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center">
+                                    <button type="button" class="sortable-header" data-table="categories" data-sort="transactions_count">
+                                        Transactions <i class="bi bi-arrow-down-up sort-icon"></i>
+                                    </button>
+                                </th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                            <tr class="table-filters-row">
+                                <th>
+                                    <input id="categoryNameFilter" type="text" class="form-control form-control-sm table-filter-input" placeholder="Filter name">
+                                </th>
+                                <th>
+                                    <select id="categoryTypeFilter" class="form-select form-select-sm table-filter-select">
+                                        <option value="">All</option>
+                                        <option value="INCOME">Income</option>
+                                        <option value="EXPENSE">Expense</option>
+                                    </select>
+                                </th>
+                                <th>
+                                    <select id="categoryExpenseFilter" class="form-select form-select-sm table-filter-select">
+                                        <option value="">All</option>
+                                        <option value="FIXED">Fixed</option>
+                                        <option value="VARIABLE">Variable</option>
+                                        <option value="N/A">Not Applicable</option>
+                                    </select>
+                                </th>
+                                <th>
+                                    <select id="categoryHousingFilter" class="form-select form-select-sm table-filter-select">
+                                        <option value="">All</option>
+                                        <option value="yes">Yes</option>
+                                        <option value="no">No</option>
+                                    </select>
+                                </th>
+                                <th></th>
+                                <th></th>
+                                <th class="text-end">
+                                    <button id="clearCategoryFilters" type="button" class="btn btn-sm btn-light border rounded-pill px-3">Clear</button>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoriesTableBody">
+                            {% for category in categories %}
+                                <tr
+                                    class="category-row"
+                                    data-name="{{ category.name|lower }}"
+                                    data-transaction-type="{{ category.transaction_type }}"
+                                    data-expense-type="{{ category.expense_type }}"
+                                    data-is-housing="{{ category.is_housing|yesno:'yes,no' }}"
+                                    data-subcategories-count="{{ category.subcategories_count }}"
+                                    data-transactions-count="{{ category.transactions_count }}"
+                                >
+                                    <td class="fw-semibold">{{ category.name }}</td>
+                                    <td>
+                                        {% if category.transaction_type == "INCOME" %}
+                                            <span class="badge rounded-pill bg-success-subtle text-success">Income</span>
+                                        {% else %}
+                                            <span class="badge rounded-pill bg-danger-subtle text-danger">Expense</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ category.get_expense_type_display }}</td>
+                                    <td>
+                                        {% if category.is_housing %}
+                                            <span class="badge rounded-pill bg-primary-subtle text-primary">Yes</span>
+                                        {% else %}
+                                            <span class="text-muted">No</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">{{ category.subcategories_count }}</td>
+                                    <td class="text-center">{{ category.transactions_count }}</td>
+                                    <td class="text-end actions-cell">
+                                        <div class="dropdown">
+                                            <button
+                                                class="btn btn-sm rounded-circle quick-actions-trigger"
+                                                type="button"
+                                                data-bs-toggle="dropdown"
+                                                data-bs-display="dynamic"
+                                                data-bs-boundary="viewport"
+                                                aria-expanded="false"
+                                                aria-label="Open actions"
+                                            >
+                                                <i class="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end quick-actions-menu shadow-lg border-0">
+                                                <li>
+                                                    <a href="{% url 'edit_category' category.id %}" class="dropdown-item quick-action-item">
+                                                        <i class="bi bi-pencil-square me-2"></i>Edit
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <form method="post" class="js-delete-category-form" data-category-name="{{ category.name }}">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="action" value="delete_category">
+                                                        <input type="hidden" name="category_id" value="{{ category.id }}">
+                                                        <button type="submit" class="dropdown-item quick-action-item quick-action-delete">
+                                                            <i class="bi bi-trash3 me-2"></i>Delete
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr class="category-empty-row">
+                                    <td colspan="7" class="text-center py-4 text-muted">You do not have categories yet.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div id="categoriesPaginationWrapper" class="table-pagination d-none">
+                    <p id="categoriesPaginationInfo" class="pagination-info mb-0"></p>
+                    <div id="categoriesPaginationControls" class="pagination-controls"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 manager-card">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+                    <h5 class="fw-bold mb-0">Your Subcategories</h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="{% url 'create_subcategory' %}?next={{ current_path|urlencode }}" class="btn btn-sm btn-primary rounded-pill px-3">
+                            <i class="bi bi-plus-circle me-1"></i>New Subcategory
+                        </a>
+                        <span class="badge bg-light text-dark rounded-pill px-3 py-2">
+                            <span id="subcategoriesVisibleCount">{{ subcategories|length }}</span> shown
+                        </span>
+                    </div>
+                </div>
+
+                <div class="table-responsive manager-table-responsive">
+                    <table class="table align-middle mb-0 manager-table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>
+                                    <button type="button" class="sortable-header" data-table="subcategories" data-sort="name">
+                                        Subcategory <i class="bi bi-arrow-down-up sort-icon"></i>
+                                    </button>
+                                </th>
+                                <th>
+                                    <button type="button" class="sortable-header" data-table="subcategories" data-sort="parent_category">
+                                        Category <i class="bi bi-arrow-down-up sort-icon"></i>
+                                    </button>
+                                </th>
+                                <th>
+                                    <button type="button" class="sortable-header" data-table="subcategories" data-sort="is_essential">
+                                        Essential <i class="bi bi-arrow-down-up sort-icon"></i>
+                                    </button>
+                                </th>
+                                <th class="text-center">
+                                    <button type="button" class="sortable-header" data-table="subcategories" data-sort="transactions_count">
+                                        Transactions <i class="bi bi-arrow-down-up sort-icon"></i>
+                                    </button>
+                                </th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                            <tr class="table-filters-row">
+                                <th>
+                                    <input id="subcategoryNameFilter" type="text" class="form-control form-control-sm table-filter-input" placeholder="Filter name">
+                                </th>
+                                <th>
+                                    <select id="subcategoryCategoryFilter" class="form-select form-select-sm table-filter-select">
+                                        <option value="">All</option>
+                                        {% for category_item in category_filter_choices %}
+                                            <option value="{{ category_item.id }}">{{ category_item.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </th>
+                                <th>
+                                    <select id="subcategoryEssentialFilter" class="form-select form-select-sm table-filter-select">
+                                        <option value="">All</option>
+                                        <option value="yes">Yes</option>
+                                        <option value="no">No</option>
+                                    </select>
+                                </th>
+                                <th></th>
+                                <th class="text-end">
+                                    <button id="clearSubcategoryFilters" type="button" class="btn btn-sm btn-light border rounded-pill px-3">Clear</button>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="subcategoriesTableBody">
+                            {% for subcategory in subcategories %}
+                                <tr
+                                    class="subcategory-row"
+                                    data-name="{{ subcategory.name|lower }}"
+                                    data-parent-category-id="{{ subcategory.parent_category_id }}"
+                                    data-parent-category-name="{{ subcategory.parent_category.name|lower }}"
+                                    data-is-essential="{{ subcategory.is_essential|yesno:'yes,no' }}"
+                                    data-transactions-count="{{ subcategory.transactions_count }}"
+                                >
+                                    <td class="fw-semibold">{{ subcategory.name }}</td>
+                                    <td>{{ subcategory.parent_category.name }}</td>
+                                    <td>
+                                        {% if subcategory.is_essential %}
+                                            <span class="badge rounded-pill bg-success-subtle text-success">Yes</span>
+                                        {% else %}
+                                            <span class="text-muted">No</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">{{ subcategory.transactions_count }}</td>
+                                    <td class="text-end actions-cell">
+                                        <div class="dropdown">
+                                            <button
+                                                class="btn btn-sm rounded-circle quick-actions-trigger"
+                                                type="button"
+                                                data-bs-toggle="dropdown"
+                                                data-bs-display="dynamic"
+                                                data-bs-boundary="viewport"
+                                                aria-expanded="false"
+                                                aria-label="Open actions"
+                                            >
+                                                <i class="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end quick-actions-menu shadow-lg border-0">
+                                                <li>
+                                                    <a href="{% url 'edit_subcategory' subcategory.id %}" class="dropdown-item quick-action-item">
+                                                        <i class="bi bi-pencil-square me-2"></i>Edit
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <form method="post" class="js-delete-subcategory-form" data-subcategory-name="{{ subcategory.name }}">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="action" value="delete_subcategory">
+                                                        <input type="hidden" name="subcategory_id" value="{{ subcategory.id }}">
+                                                        <button type="submit" class="dropdown-item quick-action-item quick-action-delete">
+                                                            <i class="bi bi-trash3 me-2"></i>Delete
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr class="subcategory-empty-row">
+                                    <td colspan="5" class="text-center py-4 text-muted">You do not have subcategories yet.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div id="subcategoriesPaginationWrapper" class="table-pagination d-none">
+                    <p id="subcategoriesPaginationInfo" class="pagination-info mb-0"></p>
+                    <div id="subcategoriesPaginationControls" class="pagination-controls"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'finances/js/category_manager.js' %}?v=20260214-onboarding"></script>
+{% endblock %}

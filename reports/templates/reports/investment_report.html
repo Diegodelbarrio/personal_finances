@@ -7,11 +7,12 @@ Investments · Annual Performance
 
 {% block report_content %}
 
-<div class="row g-4 gx-xl-3 mb-4 row-cols-2 row-cols-xl-4">
+<div class="row g-4 gx-xl-3 mb-4 row-cols-2 row-cols-xl-5">
     <div class="col">{% include "reports/components/metric_card.html" with label="Current Market Value" value=report.annual_stats.final_market_value|floatformat:2 suffix=" €" color="primary" icon="bi-wallet2" %}</div>
     <div class="col">{% include "reports/components/metric_card.html" with label="New Contributions" value=report.annual_stats.total_contributions|floatformat:2 suffix=" €" color="info" icon="bi-cash-coin" %}</div>
     <div class="col">{% include "reports/components/metric_card.html" with label="Yearly Profit" value=report.annual_stats.total_profit_abs|floatformat:2 suffix=" €" prefix=report.annual_stats.profit_prefix color=report.annual_stats.profit_status icon=report.annual_stats.profit_icon %}</div>
     <div class="col">{% include "reports/components/metric_card.html" with label="Annual ROI" value=report.annual_stats.annual_roi_abs|floatformat:2 suffix=" %" prefix=report.annual_stats.roi_prefix color=report.annual_stats.roi_status icon=report.annual_stats.roi_icon %}</div>
+    <div class="col">{% include "reports/components/metric_card.html" with label="Money-Weighted Return (IRR)" value=report.annual_stats.mwrr_display suffix=report.annual_stats.mwrr_suffix prefix=report.annual_stats.mwrr_prefix color=report.annual_stats.mwrr_status icon=report.annual_stats.mwrr_icon %}</div>
 </div>
 
 {% if report.family_stats %}
@@ -31,7 +32,7 @@ Investments · Annual Performance
                 </div>
             </div>
             
-            <div class="d-flex gap-4">
+            <div class="d-flex gap-4 flex-wrap">
                 <div class="text-center">
                     <div class="text-muted small fw-semibold mb-1">Yearly Profit</div>
                     <span class="fw-bold text-{{ report.family_stats.profit_status }}">
@@ -43,6 +44,13 @@ Investments · Annual Performance
                     <span class="badge bg-{{ report.family_stats.roi_status }}-subtle text-{{ report.family_stats.roi_status }} border border-{{ report.family_stats.roi_status }}-subtle px-3 py-2 rounded-pill">
                         <i class="{{ report.family_stats.roi_icon }} me-1"></i>
                         {{ report.family_stats.roi_prefix }}{{ report.family_stats.roi|floatformat:2 }}%
+                    </span>
+                </div>
+                <div class="text-center">
+                    <div class="text-muted small fw-semibold mb-1"> IRR</div>
+                    <span class="badge bg-{{ report.family_stats.mwrr_status }}-subtle text-{{ report.family_stats.mwrr_status }} border border-{{ report.family_stats.mwrr_status }}-subtle px-3 py-2 rounded-pill">
+                        <i class=" me-1"></i>
+                        {{ report.family_stats.mwrr_prefix }}{{ report.family_stats.mwrr_display }}{{ report.family_stats.mwrr_suffix }}
                     </span>
                 </div>
             </div>

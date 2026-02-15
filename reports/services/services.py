@@ -1,7 +1,14 @@
 # reports/services.py
 
+from calendar import monthrange
+from datetime import date
 from finances.services.api import get_annual_cashflow_summary, get_available_transaction_years
-from investments.services.api import get_annual_portfolio_evolution, get_investment_detailed_evolution, get_family_investment_performance
+from investments.services.api import (
+    get_annual_portfolio_evolution,
+    get_investment_detailed_evolution,
+    get_family_investment_performance,
+    get_money_weighted_return,
+)
 from holdings.services.api import get_annual_balance_evolution
 
 def get_available_years(user):
@@ -183,6 +190,7 @@ def get_investment_annual_report(user, year):
     if not monthly_data:
         return {"year": year, "monthly_data": [], "annual_stats": None}
 
+    first_month = monthly_data[0]
     last_month = monthly_data[-1]
     active_months_count = len(monthly_data) 
     
@@ -195,6 +203,35 @@ def get_investment_annual_report(user, year):
     current_market_value = last_month.get("market_value", 0)
     cost_basis = current_market_value - total_profit
     annual_roi = (total_profit / cost_basis * 100) if cost_basis > 0 else 0
+
+    start_value = (
+        first_month.get("market_value", 0)
+        - first_month.get("profit_loss", 0)
+        - first_month.get("contributions", 0)
+    )
+    _, last_day = monthrange(year, last_month["month"])
+    period_start = date(year, first_month["month"], 1)
+    period_end = date(year, last_month["month"], last_day)
+    mwrr = get_money_weighted_return(
+        user=user,
+        start_date=period_start,
+        end_date=period_end,
+        start_value=start_value,
+        end_value=current_market_value,
+    )
+
+    if mwrr is None:
+        mwrr_display = "N/A"
+        mwrr_suffix = ""
+        mwrr_prefix = ""
+        mwrr_status = "secondary"
+        mwrr_icon = "bi-dash-circle"
+    else:
+        mwrr_display = f"{abs(mwrr) * 100:.2f}"
+        mwrr_suffix = " %"
+        mwrr_prefix = "+" if mwrr > 0 else ("" if mwrr < 0 else "")
+        mwrr_status = "success" if mwrr >= 0 else "danger"
+        mwrr_icon = "bi-percent"
     
     annual_stats = {
         "total_contributions": total_contributions,
@@ -203,6 +240,12 @@ def get_investment_annual_report(user, year):
         "final_market_value": last_month.get("market_value", 0),
         "annual_roi": annual_roi,
         "annual_roi_abs": abs(annual_roi),
+        "mwrr": mwrr,
+        "mwrr_display": mwrr_display,
+        "mwrr_suffix": mwrr_suffix,
+        "mwrr_prefix": mwrr_prefix,
+        "mwrr_status": mwrr_status,
+        "mwrr_icon": mwrr_icon,
         "avg_profit_subtitle": f"{(total_profit / active_months_count):,.0f} €/mes",
         "avg_contribution_subtitle": f"{(total_contributions / active_months_count):,.0f} €/mes",
         "profit_status": "success" if total_profit >= 0 else "danger",

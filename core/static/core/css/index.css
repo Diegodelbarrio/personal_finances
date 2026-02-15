@@ -1,333 +1,688 @@
- /* =========================================
-   HERO / HEADER SECTION (FINAL)
+/* =========================================
+   HERO / HEADER SECTION (UNCHANGED)
    ========================================= */
 .dashboard-header {
-    /* 1. Posicionamiento y Layout */
     position: relative;
     width: 100%;
-    margin-top: -40px !important; 
-    
-    /* CÁLCULO DEL PADDING SUPERIOR:
-       80px (Altura Navbar) + 60px (Espacio visual extra) = 140px 
-       Esto baja el texto "Your Finances" para que quede centrado visualmente.
-    */
-    padding: 140px 2rem 2.5rem 2rem; 
-    
-    overflow: hidden; /* Corta los brillos que se salgan */
-    margin-bottom: 0rem; /* Separa el contenido (tablas/gráficos) que viene después */
-
-    /* 2. Estética "Deep Ocean" */
-    background-color: #0f172a; /* Fallback color */
-    background-image: 
-        /* Brillo Cyan (Growth) - Arriba Derecha */
+    margin-top: -40px !important;
+    padding: 140px 2rem 2.5rem 2rem;
+    overflow: hidden;
+    margin-bottom: 0;
+    background-color: #0f172a;
+    background-image:
         radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.18) 0px, transparent 50%),
-        /* Brillo Indigo (Stability) - Abajo Izquierda */
         radial-gradient(at 0% 100%, rgba(79, 70, 229, 0.18) 0px, transparent 50%),
-        /* Base Profunda */
         linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
-
-    /* 3. Profundidad y Acabado */
-    box-shadow: 
-        inset 0 -1px 0 rgba(255, 255, 255, 0.1), /* Borde interno sutil abajo */
-        0 20px 30px -5px rgba(15, 23, 42, 0.3); /* Sombra difusa hacia el contenido */
-        
+    box-shadow:
+        inset 0 -1px 0 rgba(255, 255, 255, 0.1),
+        0 20px 30px -5px rgba(15, 23, 42, 0.3);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Patrón de puntos (Data Texture) */
 .dashboard-header::before {
     content: "";
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='1.5'/%3E%3C/g%3E%3C/svg%3E");
-    
-    /* Vignette: Desvanece los puntos en los bordes */
     mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
     -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
-    
     pointer-events: none;
     z-index: 0;
 }
 
-/* Línea de luz superior (Top Highlight) - Opcional pero elegante */
 .dashboard-header::after {
     content: "";
     position: absolute;
-    top: 0; left: 0; right: 0;
+    top: 0;
+    left: 0;
+    right: 0;
     height: 1px;
     background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.3), transparent);
     z-index: 1;
 }
 
-
-.action-card,
-.section-card {
-    background: #ffffff;
-    border-radius: 1.25rem;
-    padding: 2rem;
-    box-shadow: 0 .4rem .8rem rgba(0,0,0,.05);
-    transition: all 0.3s ease;
-    /* border: 1px solid rgba(0,0,0,0.03); */
+/* =========================================
+   LANDING CONTENT (SCOPED)
+   ========================================= */
+.landing-home {
+    --landing-title: #0f172a;
+    --landing-body: #334155;
+    --landing-muted: #64748b;
+    --landing-surface: #ffffff;
+    --landing-border: #e2e8f0;
+    --landing-soft: #f8fafc;
+    --landing-radius: 1.25rem;
+    --landing-shadow: 0 14px 36px rgba(15, 23, 42, 0.07);
+    --landing-shadow-hover: 0 22px 44px rgba(15, 23, 42, 0.12);
 }
 
-.action-card {
-    position: relative;
+.landing-home .landing-section {
+    margin-bottom: 2rem;
+}
+
+.landing-home .execution-grid {
+    align-items: stretch;
+}
+
+.landing-home .execution-grid > [class*="col-"] {
+    display: flex;
+}
+
+.landing-home .execution-card {
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
 }
 
-.action-card:hover:not(.disabled-card) {
-    transform: translateY(-1px);
-    box-shadow: 0 1rem 2rem rgba(0,0,0,.1);
-}
-.plus-icon {
-    font-size: 2.5rem;
-    font-weight: 300;
-    margin-bottom: 0.5rem;
-}
-
-.custom-divider {
-    width: 90%;         
-    border: 0;
-    border-top: 1px solid rgba(0,0,0,0.1); 
-    margin: 0.5rem 0.5;   
-    opacity: 1;            
-}
-
-/* Ajuste opcional para la tarjeta deshabilitada */
-.disabled-card {
-    border: 1px dashed #e2e8f0 !important;
-    background-color: #fbfcfd !important;
-}
-
-.bg-warning-subtle { background-color: #fff3cd !important; }
-.bg-success-subtle { background-color: #d1e7dd !important; }
-.bg-light { background-color: #f8f9fa !important; }
-
-.last-update-badge {
-    position: absolute;
-    top: 1.2rem;
-    right: 1.2rem;
-    font-size: 0.62rem;
-    font-weight: 800;
-    color: #94a3b8;
-    background: #f8fafc;
-    padding: 0.3rem 0.7rem;
-    border-radius: 6px;
-    border: 1px solid #f1f5f9;
-    letter-spacing: 0.5px;
-    transition: all 0.3s ease;
-}
-
-/* Estilo cuando los datos son antiguos (más de 30 días) */
-.date-stale {
-    color: #dc3545; /* Rojo Bootstrap */
-    background: #fff5f5;
-    border-color: #feb2b2;
-}
-
-/* El "Span" o Píldora del número */
-.net-worth-badge {
-    display: inline-flex;
-    align-items: baseline;
-    background: #f8fafc; /* Gris muy tenue para que no sea 'cantoso' */
-    padding: 0.35rem 0.9rem;
-    border-radius: 12px;
-    border: 1px solid #f1f5f9;
-}
-
-.net-worth-badge .amount {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: #1e293b;
-    line-height: 1;
-    letter-spacing: -0.5px;
-}
-
-.net-worth-badge .currency {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: #64748b; /* Gris para el símbolo, más discreto */
-    margin-left: 4px;
-    line-height: 1;
-}
-
-.letter-spacing {
-    letter-spacing: 1px;
-}
-
-/* Efecto hover suave en la tarjeta */
-.section-card:hover .net-worth-badge {
-    background: #f1f5f9;
-    border-color: #e2e8f0;
-    transition: all 0.3s ease;
-}
-
-.progress-bar {
-    /* Empezamos desde cero para que el movimiento sea visible */
-    width: 0; 
-    
-    /* Transición de 1.2 segundos con un frenado suave al final */
-    transition: width 0.3s ease-out;
-    
-    /* Evita que la barra parpadee en algunos navegadores */
-    will-change: width;
-}
-
-.nw-breakdown-container .progress-bar {
-    cursor: pointer;
-    /* Sincronizamos la duración con la animación de carga */
-    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
-    opacity: 0.9;
-}
-
-.nw-breakdown-container .progress-bar:hover {
-    opacity: 1;
-    filter: brightness(1.1);
-}
-
-.nw-breakdown-container {
-    max-width: 100%;
-    margin-top: 0.5rem;
-}
-
-.nw-label {
-    font-size: 0.75rem;
-    letter-spacing: 0.1rem;
-}
-
-.nw-evolution-badge {
-    font-size: 0.75rem;
-}
-
-.nw-progress-container {
-    height: 6px;
-    background-color: rgba(0,0,0,0.05);
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-.nw-breakdown-labels {
-    font-size: 0.7rem;
-}
-
-.nw-chart-wrapper {
-    height: 280px;
+.landing-home .execution-card-head {
     width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 0.65rem;
 }
 
-.empty-state-icon {
-    font-size: 2rem;
+.landing-home .execution-head-icon {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
 }
 
-/* Tipografía y Números */
-.display-amount {
-    font-size: 2.8rem;
-    letter-spacing: -1.5px;
+.landing-home .landing-section-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.95rem;
+}
+
+.landing-home .landing-kicker {
+    color: #0f766e;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+}
+
+.landing-home .landing-title {
+    color: var(--landing-title);
+    letter-spacing: -0.02em;
+    font-size: clamp(1.45rem, 2.2vw, 1.9rem);
+    margin: 0;
+}
+
+.landing-home .action-card,
+.landing-home .section-card,
+.landing-home .quick-actions-card,
+.landing-home .card-emergency,
+.landing-home .card-empty-goals {
+    background: var(--landing-surface);
+    border-radius: var(--landing-radius);
+    border: 1px solid var(--landing-border);
+    box-shadow: var(--landing-shadow);
+}
+
+.landing-home .action-card,
+.landing-home .section-card,
+.landing-home .quick-actions-card,
+.landing-home .card-emergency {
+    transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.landing-home .action-card:hover,
+.landing-home .section-card:hover,
+.landing-home .quick-actions-card:hover,
+.landing-home .card-emergency:hover {
+    box-shadow: var(--landing-shadow-hover);
+    border-color: #cbd5e1;
+}
+
+.landing-home .landing-panel {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    text-align: left;
+    min-height: 210px;
+}
+
+.landing-home .panel-icon {
+    width: 2.7rem;
+    height: 2.7rem;
+    border-radius: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--landing-soft);
+    font-size: 1.25rem;
+    margin-bottom: 0.7rem;
+}
+
+.landing-home .panel-copy {
+    color: var(--landing-muted);
+    font-size: 0.88rem;
+    line-height: 1.45;
+    margin-bottom: 1rem;
+}
+
+.landing-home .compound-card {
+    justify-content: flex-start;
+    padding: 1.25rem 1.15rem;
+    gap: 0.35rem;
+}
+
+.landing-home .compound-card-head {
+    margin-bottom: 0.65rem !important;
+}
+
+.landing-home .compound-tools-grid {
+    width: 100%;
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
+    gap: 0.65rem;
+}
+
+.landing-home .compound-tool-link {
+    position: relative;
+    border: 1px solid var(--landing-border);
+    border-radius: 0.9rem;
+    background: #ffffff;
+    color: #1e293b;
+    padding: 0.85rem 0.8rem 0.78rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.45rem;
+    min-height: 0;
+    transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.landing-home .compound-tool-link:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+}
+
+.landing-home .compound-tool-icon {
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 0.65rem;
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.landing-home .compound-tool-body {
+    width: 100%;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.12rem;
+}
+
+.landing-home .compound-tool-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.12;
+    text-align: left;
+}
+
+.landing-home .compound-tool-meta {
+    font-size: 0.72rem;
+    color: #64748b;
+    line-height: 1;
+    text-align: left;
+}
+
+.landing-home .compound-tool-arrow {
+    position: absolute;
+    top: 0.62rem;
+    right: 0.68rem;
+    color: #94a3b8;
+    font-size: 0.72rem;
+    opacity: 0.7;
+    transition: color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+}
+
+.landing-home .compound-tool-link:hover .compound-tool-arrow {
+    color: #475569;
+    opacity: 1;
+    transform: translate(1px, -1px);
+}
+
+.landing-home .section-card {
+    padding: 1.5rem;
+}
+
+.landing-home .nw-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.11rem;
+}
+
+.landing-home .display-amount {
+    font-size: clamp(2rem, 3vw, 2.7rem);
+    letter-spacing: -0.05em;
     font-variant-numeric: tabular-nums;
 }
 
-.currency-symbol {
-    font-size: 1.5rem;
-    color: #adb5bd;
+.landing-home .currency-symbol {
+    font-size: 1.35rem;
+    color: #94a3b8;
     font-weight: 500;
 }
 
-/* Badges de Estado */
-.status-badge {
+.landing-home .status-badge {
     position: absolute;
-    top: 1.25rem;
-    right: 1.25rem;
-    font-size: 0.75rem;
+    top: 1.1rem;
+    right: 1.1rem;
+    font-size: 0.74rem;
     padding: 5px 12px;
-    border-radius: 50px;
-    font-weight: 600;
+    border-radius: 999px;
+    font-weight: 700;
     display: inline-flex;
     align-items: center;
     border: 1px solid transparent;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
     z-index: 5;
 }
 
-.status-updated {
-    background-color: #f0fdf4; /* Verde suave */
+.landing-home .status-updated {
+    background-color: #f0fdf4;
     color: #15803d;
     border-color: #dcfce7;
 }
 
-.status-danger {
-    background-color: #fff1f2; /* Rojo suave */
-    color: #e11d48;
-    border-color: #ffe4e6;
+.landing-home .status-danger {
+    background-color: #fff1f2;
+    color: #be123c;
+    border-color: #fecdd3;
     animation: pulse-border 2s infinite;
 }
 
-.status-warning {
-    background-color: #fffbeb; /* Amarillo suave */
-    color: #b45309;
-    border-color: #fef3c7;
-    /* Sin animación de pulso, es solo informativo */
+.landing-home .status-warning {
+    background-color: #fffbeb;
+    color: #a16207;
+    border-color: #fde68a;
 }
 
-/* Animación para datos obsoletos */
 @keyframes pulse-border {
-    0% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); }
-    70% { box-shadow: 0 0 0 6px rgba(225, 29, 72, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
+    0% { box-shadow: 0 0 0 0 rgba(190, 18, 60, 0.35); }
+    70% { box-shadow: 0 0 0 8px rgba(190, 18, 60, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(190, 18, 60, 0); }
 }
 
-/* Mejora de la Tarjeta */
-.section-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+.landing-home .nw-evolution-badge {
+    font-size: 0.73rem;
+    font-weight: 600;
+    background: #f8fafc !important;
 }
 
-/* .section-card:hover {
+.landing-home .nw-breakdown-container {
+    max-width: 100%;
+    margin-top: 0.4rem;
+}
+
+.landing-home .nw-progress-container {
+    height: 6px;
+    background-color: rgba(15, 23, 42, 0.08);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.landing-home .progress-bar {
+    width: 0;
+    transition: width 0.35s ease-out;
+    will-change: width;
+}
+
+.landing-home .nw-breakdown-container .progress-bar {
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.landing-home .nw-breakdown-labels {
+    font-size: 0.75rem;
+}
+
+.landing-home .nw-chart-wrapper {
+    height: 290px;
+    width: 100%;
+}
+
+.landing-home .goals-shell .card {
+    border-radius: var(--landing-radius);
+    border: 1px solid var(--landing-border);
+    box-shadow: var(--landing-shadow);
+}
+
+.landing-home .card-empty-goals {
+    border-style: dashed;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.landing-home .empty-state-icon {
+    font-size: 2rem;
+}
+
+.landing-home .quick-actions-card {
+    padding: 1.25rem 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.72rem;
+}
+
+.landing-home .quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+}
+
+.landing-home .quick-action-tile {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    border: 1px solid var(--landing-border);
+    border-radius: 1rem;
+    background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+    transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.landing-home .quick-action-tile:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
     transform: translateY(-2px);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.06) !important;
-} */
-
-.chart-container {
-    position: relative;
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
 }
 
-/* Emergency Fund Card */
-.card-emergency {
-    border-radius: 1.25rem !important;
+.landing-home .quick-action-main {
+    min-height: 106px;
+    gap: 0.65rem;
+    padding: 0.9rem 0.86rem 0.9rem 0.9rem;
 }
 
-.card-emergency .icon-box {
+.landing-home .quick-action-small {
+    min-height: 132px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    text-align: left;
+    gap: 0.28rem;
+    padding: 0.75rem 0.65rem;
+}
+
+.landing-home .quick-action-small .quick-action-chevron {
+    margin-left: 0;
+    margin-top: auto;
+    align-self: flex-end;
+}
+
+.landing-home .quick-action-icon {
+    width: 2.05rem;
+    height: 2.05rem;
+    border-radius: 0.7rem;
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+
+.landing-home .quick-action-title {
+    font-size: 0.99rem;
+}
+
+.landing-home .quick-action-content {
+    line-height: 1.18;
+    display: inline-flex;
+    flex-direction: column;
+}
+
+.landing-home .quick-action-meta {
+    color: #64748b;
+    font-size: 0.74rem;
+    line-height: 1.1;
+}
+
+.landing-home .quick-action-chevron {
+    margin-left: auto;
+    color: #94a3b8;
+    font-size: 0.78rem;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.landing-home .quick-action-main:hover .quick-action-chevron {
+    color: #475569;
+    transform: translate(1px, -1px);
+}
+
+.landing-home .quick-action-small:hover .quick-action-chevron {
+    color: #475569;
+    transform: translate(1px, -1px);
+}
+
+.landing-home .card-emergency {
+    border: 1px solid var(--landing-border);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.landing-home .execution-card-fund {
+    justify-content: flex-start;
+    gap: 0.3rem;
+}
+
+.landing-home .execution-card-fund .fund-title {
+    letter-spacing: 0.08em;
+}
+
+.landing-home .execution-card-fund .fund-months {
+    font-size: 3rem;
+    line-height: 0.95;
+}
+
+.landing-home .execution-card-fund .fund-months-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.landing-home .execution-card-fund .fund-top {
+    margin-bottom: 0.35rem !important;
+}
+
+.landing-home .execution-card-fund .fund-pill-row {
+    margin-top: 0.6rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.landing-home .execution-card-fund .fund-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #475569;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 0.24rem 0.54rem;
+    line-height: 1;
+}
+
+.landing-home .execution-card-fund .fund-progress-block {
+    margin-top: auto;
+}
+
+.landing-home .execution-card-fund .icon-box {
+    box-shadow: 0 10px 18px rgba(37, 99, 235, 0.18) !important;
+}
+
+.landing-home .card-emergency .icon-box {
     width: 42px;
     height: 42px;
 }
 
-.card-emergency .icon-box-lg {
+.landing-home .card-emergency .icon-box-lg {
     width: 50px;
     height: 50px;
 }
 
-.card-emergency .badge-status {
-    font-size: 0.7rem;
-}
-
-.card-emergency .text-target {
-    font-size: 0.75rem;
-}
-
-.card-emergency .progress-custom {
-    height: 6px;
-    border-radius: 10px;
-    background-color: #f0f2f5;
-}
-
-.card-emergency .progress-custom .progress-bar {
-    border-radius: 10px;
-}
-
-.card-emergency .footer-label {
-    font-size: 0.65rem;
+.landing-home .card-emergency .badge-status {
+    font-size: 0.77rem;
     font-weight: 700;
+    padding: 0.3rem 0.72rem;
+}
+
+.landing-home .card-emergency .text-target {
+    font-size: 0.74rem;
+    font-weight: 500;
+}
+
+.landing-home .card-emergency .progress-custom {
+    height: 6px;
+    border-radius: 999px;
+    background-color: #eef2f7;
+}
+
+.landing-home .card-emergency .progress-custom .progress-bar {
+    border-radius: 999px;
+}
+
+.landing-home .card-emergency .footer-label {
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+
+.landing-home .card-emergency-empty {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+@media (max-width: 991.98px) {
+    .landing-home .execution-grid > [class*="col-"] {
+        display: block;
+    }
+
+    .landing-home .landing-panel {
+        padding: 1.3rem;
+    }
+
+    .landing-home .status-badge {
+        position: static;
+        margin-top: 0.4rem;
+    }
+
+    .landing-home .nw-chart-wrapper {
+        height: 255px;
+    }
+
+    .landing-home .compound-tools-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    .dashboard-header {
+        padding: 130px 1rem 2rem 1rem;
+    }
+
+    .landing-home .landing-section {
+        margin-bottom: 2rem;
+    }
+
+    .landing-home .quick-action-main,
+    .landing-home .quick-action-small {
+        min-height: 90px;
+    }
+
+    .landing-home .quick-action-small {
+        align-items: center;
+        text-align: center;
+        padding: 0.62rem 0.5rem;
+    }
+
+    .landing-home .execution-card-head {
+        margin-bottom: 0.55rem;
+    }
+
+    .landing-home .display-amount {
+        font-size: 2rem;
+    }
+
+    .landing-home .nw-chart-wrapper {
+        height: 225px;
+    }
+
+    .landing-home .compound-tools-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .landing-home .compound-tool-link {
+        min-height: 94px;
+        padding: 0.6rem 0.45rem;
+    }
+
+    .landing-home .compound-tool-title,
+    .landing-home .compound-tool-meta {
+        text-align: center;
+    }
+
+    .landing-home .compound-tool-body {
+        align-items: center;
+    }
+
+    .landing-home .compound-tool-link {
+        align-items: center;
+        text-align: center;
+    }
+
+    .landing-home .compound-tool-arrow {
+        display: none;
+    }
+
+    .landing-home .quick-action-chevron {
+        display: none;
+    }
+
+    .landing-home .execution-card-fund .fund-months {
+        font-size: 2.6rem;
+    }
+
+    .landing-home .execution-card-fund .fund-pill-row {
+        gap: 0.3rem;
+    }
+
+    .landing-home .execution-card-fund .fund-pill {
+        font-size: 0.66rem;
+        padding: 0.22rem 0.5rem;
+    }
+}
+
+@media (max-width: 420px) {
+    .landing-home .quick-actions-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .landing-home .compound-tools-grid {
+        grid-template-columns: 1fr;
+    }
 }

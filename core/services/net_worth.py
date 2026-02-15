@@ -7,11 +7,11 @@ from investments.services.api import get_portfolio_overview
 
 def calculate_net_worth(user):
     """
-    Calcula el patrimonio total actual y el estado de actualización de los datos.
+    Calculate the current total assets and the data update status..
     """
 
     # A. Cash (holdings)
-    holdings_value, holdings_dates = get_holdings_value(user)
+    holdings_value, holdings_dates = get_holdings_value(user, dates_only_active=True)
 
     # B. Investments
     investments_data = get_portfolio_overview(user)

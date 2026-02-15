@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-xl-9">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-4">
+            <div>
+                <h1 class="h3 fw-bold mb-1">{{ page_title }}</h1>
+                <p class="text-muted mb-0">{{ page_subtitle }}</p>
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+                {% if template_key %}
+                    <a href="{% url 'core:download_csv_template' template_key %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                        <i class="bi bi-download me-1"></i> Download CSV Template
+                    </a>
+                {% endif %}
+                <a href="{{ next_url }}" class="btn btn-sm btn-light border rounded-pill px-3">
+                    <i class="bi bi-arrow-left me-1"></i> Back
+                </a>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                {% if message_tag in message.tags %}
+                    <div class="alert {% if 'success' in message.tags %}alert-success{% elif 'info' in message.tags %}alert-info{% elif 'warning' in message.tags %}alert-warning{% else %}alert-danger{% endif %} border-0 shadow-sm mb-3" role="alert">
+                        {{ message }}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ next_url }}">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="{{ form.csv_file.id_for_label }}">{{ form.csv_file.label }}</label>
+                        {{ form.csv_file }}
+                        {% if form.csv_file.errors %}
+                            <div class="text-danger small mt-1">{{ form.csv_file.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">
+                        <i class="bi bi-upload me-1"></i> {{ submit_label }}
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h2 class="h6 fw-bold mb-3">Expected CSV Format</h2>
+
+                <p class="mb-2"><strong>Required columns:</strong> <code>{{ required_columns|join:", " }}</code></p>
+                {% if optional_columns %}
+                    <p class="mb-3"><strong>Optional columns:</strong> <code>{{ optional_columns|join:", " }}</code></p>
+                {% else %}
+                    <p class="mb-3"><strong>Optional columns:</strong> <span class="text-muted">None</span></p>
+                {% endif %}
+
+                <div class="table-responsive mb-3">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Column</th>
+                                <th>Required</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for name, required, description in columns_help %}
+                                <tr>
+                                    <td><code>{{ name }}</code></td>
+                                    <td>{{ required }}</td>
+                                    <td>{{ description }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 class="h6 fw-semibold mb-2">Example (includes up to 5 complete rows)</h3>
+                <pre class="bg-light rounded-3 p-3 small mb-0">{{ sample_csv }}</pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

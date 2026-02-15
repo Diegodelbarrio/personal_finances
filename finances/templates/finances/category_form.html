@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if is_edit %}Edit Category{% else %}New Category{% endif %}{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'finances/css/category_manager.css' %}">
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-xl-6">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1">{% if is_edit %}Edit Category{% else %}New Category{% endif %}</h3>
+                <p class="text-muted mb-0">
+                    {% if is_edit %}
+                        Update the selected category information.
+                    {% else %}
+                        Create a category for your transactions.
+                    {% endif %}
+                </p>
+            </div>
+            <a href="{{ next_url }}" class="btn btn-light border rounded-pill px-3">
+                <i class="bi bi-arrow-left me-2"></i>Back
+            </a>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                {% if is_edit %}
+                    <div class="alert alert-info border-0 shadow-sm mb-3">
+                        If you change transaction type, linked transactions are automatically updated in the database.
+                    </div>
+                {% endif %}
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ next_url }}">
+
+                    <div class="mb-3">
+                        <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">{{ form.name.label }}</label>
+                        {{ form.name }}
+                        {% if form.name.help_text %}
+                            <div class="form-text">{{ form.name.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.name.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.transaction_type.id_for_label }}" class="form-label fw-semibold">{{ form.transaction_type.label }}</label>
+                        {{ form.transaction_type }}
+                        {% for error in form.transaction_type.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.expense_type.id_for_label }}" class="form-label fw-semibold">{{ form.expense_type.label }}</label>
+                        {{ form.expense_type }}
+                        {% for error in form.expense_type.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-check mb-3">
+                        {{ form.is_housing }}
+                        <label for="{{ form.is_housing.id_for_label }}" class="form-check-label">{{ form.is_housing.label }}</label>
+                        {% for error in form.is_housing.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    {% if not is_edit %}
+                        <div class="mb-3">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-2">
+                                <label for="{{ form.subcategory_names.id_for_label }}" class="form-label fw-semibold mb-0">
+                                    {{ form.subcategory_names.label }}
+                                </label>
+                                <div class="input-group input-group-sm category-inline-subcategory-input">
+                                    <input
+                                        id="quickSubcategoryName"
+                                        type="text"
+                                        class="form-control"
+                                        placeholder="Quick add subcategory"
+                                        maxlength="100"
+                                    >
+                                    <button id="addQuickSubcategory" type="button" class="btn btn-light border">
+                                        <i class="bi bi-plus-lg me-1"></i>Add
+                                    </button>
+                                </div>
+                            </div>
+                            {{ form.subcategory_names }}
+                            {% if form.subcategory_names.help_text %}
+                                <div class="form-text">{{ form.subcategory_names.help_text }}</div>
+                            {% endif %}
+                            <div id="subcategoryPreviewChips" class="subcategory-preview-chips mt-2"></div>
+                            {% for error in form.subcategory_names.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    {% for error in form.non_field_errors %}
+                        <div class="invalid-feedback d-block mb-3">{{ error }}</div>
+                    {% endfor %}
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 flex-grow-1">
+                            {% if is_edit %}Save Changes{% else %}Create Category{% endif %}
+                        </button>
+                        <a href="{{ next_url }}" class="btn btn-outline-secondary rounded-pill px-4">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'finances/js/category_manager.js' %}"></script>
+{% endblock %}

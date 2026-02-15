@@ -30,6 +30,16 @@
         </div>
     </div>
 
+    {% if messages %}
+        {% for message in messages %}
+            {% if "reports_" in message.tags %}
+                <div class="alert {% if 'success' in message.tags %}alert-success{% elif 'info' in message.tags %}alert-info{% elif 'warning' in message.tags %}alert-warning{% else %}alert-danger{% endif %} border-0 shadow-sm mb-3" role="alert">
+                    {{ message }}
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
     {# Menú de navegación de reportes (Tabs) #}
     <div class="mb-2">
         {% include "reports/_tabs.html" %}

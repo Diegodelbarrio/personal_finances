@@ -1,7 +1,7 @@
 from holdings.models import AccountBalanceSnapshot, BankAccount
 
 
-def get_current_value(user):
+def get_current_value(user, dates_only_active=False):
     """
     Devuelve el valor total actual de las cuentas (cash)
     y las fechas usadas para el cálculo.
@@ -19,7 +19,8 @@ def get_current_value(user):
         )
         if last_snapshot:
             total += float(last_snapshot.balance)
-            dates.append(last_snapshot.date)
+            if (not dates_only_active) or acc.is_active:
+                dates.append(last_snapshot.date)
 
     return total, dates
 

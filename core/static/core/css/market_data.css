@@ -1,0 +1,60 @@
+.market-hero {
+    background:
+        radial-gradient(circle at top right, rgba(14, 165, 233, 0.18), transparent 55%),
+        radial-gradient(circle at bottom left, rgba(37, 99, 235, 0.15), transparent 55%),
+        linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+    border: 1px solid rgba(15, 23, 42, 0.05);
+    border-radius: 1.25rem;
+}
+
+.period-group .btn {
+    min-width: 50px;
+}
+
+.period-group .btn.active {
+    background-color: #0f172a;
+    color: #fff;
+    border-color: #0f172a;
+}
+
+.market-card {
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.market-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px -18px rgba(15, 23, 42, 0.55) !important;
+}
+
+.market-kpis {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.market-kpis > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.8rem;
+    padding: 0.5rem 0.65rem;
+    border-radius: 0.65rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    font-size: 0.85rem;
+}
+
+.market-kpis .label {
+    color: #64748b;
+    font-weight: 600;
+}
+
+.market-chart-wrap {
+    height: 250px;
+    width: 100%;
+}
+
+@media (max-width: 576px) {
+    .period-group {
+        flex-wrap: wrap;
+    }
+}

@@ -1,0 +1,7 @@
+Django==4.2.27
+django-allauth==65.13.1
+python-dotenv==1.2.1
+psycopg2-binary==2.9.11
+dj-database-url==2.2.0
+gunicorn==23.0.0
+whitenoise==6.9.0

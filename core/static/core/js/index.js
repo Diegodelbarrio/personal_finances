@@ -13,12 +13,11 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const ctx = chartCanvas.getContext('2d');
             const rawData = JSON.parse(dataContainer.textContent);
-            console.log("Datos recibidos:", rawData);
             if (rawData && rawData.length > 0) {
                 
                 // --- CÁLCULO DE PORCENTAJES (Breakdown) con Fallback ---
                 // Detectamos si el estado global no es "ok" (warning o danger)
-                const badge = document.querySelector('.status-badge');
+                const badge = document.querySelector('.js-net-worth-status');
                 const isNotOk = badge?.classList.contains('status-danger') || badge?.classList.contains('status-warning');
                 
                 let breakdownEntry = rawData[rawData.length - 1];

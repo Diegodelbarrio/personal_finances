@@ -29,12 +29,13 @@
             <ul class="navbar-nav ms-auto align-items-lg-center gap-1 gap-lg-1 py-3 py-lg-0">
                 
                 <li class="nav-item dropdown dropdown-hover">
-                    <a class="nav-link dropdown-toggle d-flex align-items-center" id="investmentsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" id="investmentsDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
                         <i class="bi bi-graph-up-arrow me-2 me-lg-1"></i> 
                         <span>Investments</span>
                     </a>
-                    <ul class="dropdown-menu border-0 shadow-lg animate-fade-in" aria-labelledby="investmentsDropdown">
-                        <li><a class="dropdown-item py-2" href="{% url 'investment_dashboard' %}"><i class="bi bi-speedometer2 me-2 text-primary"></i> Dashboard</a></li>
+                    <ul class="dropdown-menu nav-dropdown-menu border-0 shadow-lg animate-fade-in" aria-labelledby="investmentsDropdown">
+                        <li><a class="dropdown-item py-2" href="{% url 'investments:investment_dashboard' %}"><i class="bi bi-speedometer2 me-2 text-primary"></i> Dashboard</a></li>
+                        <li><a class="dropdown-item py-2" href="{% url 'core:market_data' %}"><i class="bi bi-activity me-2 text-success"></i> Market Watch</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li class="px-3 py-1 small text-uppercase fw-bold text-white text-lg-muted letter-spacing opacity-75"> Tools </li>
                         <li><a class="dropdown-item py-2" href="{% url 'core:compound_interest' %}"><i class="bi bi-calculator me-2 text-primary"></i> Compound Interest</a></li>
@@ -48,11 +49,11 @@
                 </li>
 
                 <li class="nav-item dropdown dropdown-hover">
-                    <a class="nav-link dropdown-toggle d-flex align-items-center" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" id="reportsDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
                         <i class="bi bi-file-earmark-text me-2 me-lg-1"></i> 
                         <span>Reports</span>
                     </a>
-                    <ul class="dropdown-menu border-0 shadow-lg animate-fade-in" aria-labelledby="reportsDropdown">
+                    <ul class="dropdown-menu nav-dropdown-menu border-0 shadow-lg animate-fade-in" aria-labelledby="reportsDropdown">
                         <li class="px-3 py-1 small text-uppercase fw-bold text-white text-lg-muted letter-spacing opacity-75"> Analytics </li>                        
                         <li><a class="dropdown-item py-2" href="{% url 'reports:report_finance' %}"><i class="bi bi-bank me-2 text-primary"></i> Finances</a></li>
                         <li><a class="dropdown-item py-2" href="{% url 'reports:report_investments' %}"><i class="bi bi-graph-up-arrow me-2 text-success"></i> Investments</a></li>
@@ -75,7 +76,7 @@
                         <i class="bi bi-person-circle"></i>
                         <span class="d-inline">{{ user.first_name|capfirst }}</span>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-lg-2" aria-labelledby="userDropdown">
+                    <ul class="dropdown-menu nav-dropdown-menu nav-user-menu dropdown-menu-end shadow-lg border-0 mt-lg-2" aria-labelledby="userDropdown">
                         <li>
                             <span class="dropdown-item-text small text-white text-lg-muted opacity-75">
                                 Signed in as <strong class="user-name-text">{{ user.first_name|capfirst }}</strong>
@@ -83,6 +84,7 @@
                         </li>                        
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="/admin/"><i class="bi bi-person me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="{% url 'manage_categories' %}"><i class="bi bi-tags me-2"></i>Categories</a></li>
                         <li><a class="dropdown-item" href="{% url 'settings:settings_home' %}"><i class="bi bi-gear me-2"></i>Settings</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li class="px-3">
