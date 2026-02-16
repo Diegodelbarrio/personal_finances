@@ -2,7 +2,18 @@ from django.db import models
 from django.conf import settings  # Importa settings en lugar de User
 from django.utils.translation import gettext_lazy as _
 
+
 class UserSettings(models.Model):
+    LANGUAGE_CHOICES = [
+        ("en-us", "English"),
+        ("es", "Spanish"),
+    ]
+    FINANCIAL_PROFILE_CHOICES = [
+        ("BALANCED", "Balanced"),
+        ("SECURITY", "Security First"),
+        ("GROWTH", "Growth Focus"),
+    ]
+
     user = models.OneToOneField(
             settings.AUTH_USER_MODEL, 
             on_delete=models.CASCADE, 
@@ -18,7 +29,24 @@ class UserSettings(models.Model):
     
     # Preferencias
     main_currency = models.CharField(max_length=3, default='EUR', choices=[('EUR', 'EUR'), ('USD', 'USD')])
+    financial_profile = models.CharField(
+        _("Financial Profile"),
+        max_length=12,
+        choices=FINANCIAL_PROFILE_CHOICES,
+        default="BALANCED",
+    )
     emergency_fund_months = models.IntegerField(_("Emergency Fund Months"), default=6)
+    language_code = models.CharField(
+        _("Language"),
+        max_length=10,
+        choices=LANGUAGE_CHOICES,
+        default="en-us",
+    )
+    timezone = models.CharField(
+        _("Time Zone"),
+        max_length=64,
+        default="Europe/Madrid",
+    )
 
     updated_at = models.DateTimeField(auto_now=True)
 

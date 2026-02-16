@@ -12,6 +12,7 @@ class SettingsForm(forms.ModelForm):
             'target_date', 
             'retirement_age',
             'main_currency', 
+            'financial_profile',
             'emergency_fund_months'
         ]
         
@@ -59,6 +60,9 @@ class SettingsForm(forms.ModelForm):
             'main_currency': forms.Select(attrs={
                 'class': 'form-select' 
             }),
+            'financial_profile': forms.Select(attrs={
+                'class': 'form-select'
+            }),
             'emergency_fund_months': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'min': '1',
@@ -78,4 +82,5 @@ class SettingsForm(forms.ModelForm):
             'net_worth_target': 'Net Worth Target',
             'savings_rate_target': 'Target Savings Rate (%)',
             'emergency_fund_months': 'Emergency Fund Months',
+            'financial_profile': 'Financial Profile',
         }

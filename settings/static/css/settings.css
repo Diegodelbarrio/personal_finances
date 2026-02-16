@@ -1,5 +1,216 @@
-.progress-bar {
-    /* Usamos la variable --progress y damos un valor por defecto del 0% */
-    width: var(--progress, 0%);
-    transition: width 1s cubic-bezier(0.165, 0.84, 0.44, 1);
+.settings-page {
+    --settings-bg: #f8fbff;
+    --settings-border: #dbe7f3;
+    --settings-ink: #0f172a;
+    --settings-muted: #64748b;
+    --settings-primary: #1d4ed8;
+    --settings-accent: #0891b2;
+}
+
+.settings-page .settings-hero {
+    background:
+        radial-gradient(circle at 0% 0%, rgba(29, 78, 216, 0.16), transparent 42%),
+        radial-gradient(circle at 100% 100%, rgba(8, 145, 178, 0.16), transparent 45%),
+        linear-gradient(180deg, #ffffff 0%, #f4faff 100%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.settings-page .settings-kicker {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--settings-accent);
+}
+
+.settings-page .settings-subtitle {
+    max-width: 62ch;
+}
+
+.settings-page .settings-pill {
+    background: rgba(255, 255, 255, 0.82) !important;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    color: #334155;
+    font-weight: 500;
+}
+
+.settings-page .settings-card {
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    background: #ffffff;
+}
+
+.settings-page .settings-section:not(:last-child) {
+    border-bottom: 1px dashed #dbe7f3;
+    padding-bottom: 1.5rem;
+}
+
+.settings-page .settings-section-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--settings-primary);
+    background: rgba(37, 99, 235, 0.1);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+.settings-page .form-control,
+.settings-page .form-select,
+.settings-page .input-group-text {
+    border-radius: 0.75rem;
+}
+
+.settings-page .form-control,
+.settings-page .form-select {
+    border-color: #d8e2ee;
+    padding: 0.62rem 0.8rem;
+}
+
+.settings-page .form-control:focus,
+.settings-page .form-select:focus {
+    border-color: #7ab6ff;
+    box-shadow: 0 0 0 0.2rem rgba(29, 78, 216, 0.14);
+}
+
+.settings-page .input-group > .form-control,
+.settings-page .input-group > .form-select {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.settings-page .input-group > .form-control + .input-group-text,
+.settings-page .input-group > .form-select + .input-group-text {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.settings-page .settings-error-list {
+    margin-top: 0;
+}
+
+.settings-page .score-display {
+    border-radius: 1rem;
+    border: 1px solid #dde7f4;
+    background: linear-gradient(145deg, #f8fbff, #eef5ff);
+    padding: 1rem;
+}
+
+.settings-page .score-value {
+    font-size: 2.2rem;
+    line-height: 1;
+    font-weight: 800;
+}
+
+.settings-page .score-label {
+    font-size: 0.86rem;
+}
+
+.settings-page .score-progress {
+    height: 9px;
+    border-radius: 999px;
+    background-color: #e8eef6;
+}
+
+.settings-page .score-component {
+    background: #f8fbff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 0.65rem 0.75rem;
+}
+
+.settings-page .score-component .progress {
+    height: 6px;
+    border-radius: 999px;
+    background-color: #e8eef6;
+}
+
+.settings-page .score-progress .progress-bar,
+.settings-page .score-component .progress-bar {
+    min-width: 0;
+    transition: width 0.35s ease-in-out;
+}
+
+.settings-page .score-progress .progress-bar[style*="width: 0"] {
+    min-width: 0;
+}
+
+.settings-page .score-progress .progress-bar:not([style*="width: 0"]) {
+    min-width: 2px;
+}
+
+.settings-page .score-component .progress-bar[style*="width: 0"] {
+    min-width: 0;
+}
+
+.settings-page .score-component .progress-bar:not([style*="width: 0"]) {
+    min-width: 2px;
+}
+
+.settings-page .recommendation-item {
+    border: 1px solid #dbe7f3;
+    border-radius: 0.9rem;
+    padding: 0.85rem;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.settings-page .recommendation-values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.settings-page .goal-simulator {
+    border: 1px solid #dbe7f3;
+    border-radius: 1rem;
+    background: linear-gradient(180deg, #fcfeff 0%, #f7fbff 100%);
+    padding: 1rem;
+}
+
+.settings-page .simulator-metric {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.settings-page .simulator-results {
+    border-top: 1px dashed #d9e6f3;
+    padding-top: 1rem;
+}
+
+.settings-page .simulator-result-box {
+    height: 100%;
+    border: 1px solid #dbe7f3;
+    border-radius: 0.85rem;
+    background: #ffffff;
+    padding: 0.85rem;
+}
+
+.settings-page .simulator-result-box strong {
+    font-size: 1.05rem;
+    color: var(--settings-ink);
+}
+
+@media (min-width: 1200px) {
+    .settings-page .settings-sidebar {
+        position: sticky;
+        top: 95px;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .settings-page .settings-pill {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .settings-page .score-value {
+        font-size: 1.9rem;
+    }
+
+    .settings-page .goal-simulator {
+        padding: 0.85rem;
+    }
 }

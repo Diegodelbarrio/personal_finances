@@ -4,134 +4,374 @@
 
 {% block title %}Settings{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/settings.css' %}">
+{% endblock %}
+
 {% block content %}
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="d-flex align-items-center justify-content-between mb-4">
+<section class="settings-page">
+    <div class="card border-0 shadow-sm rounded-4 mb-4 settings-hero overflow-hidden">
+        <div class="card-body p-4 p-lg-5">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-4">
                 <div>
-                    <h3 class="fw-bold text-dark mb-1">Settings & Configuration</h3>
-                    <p class="text-muted mb-0">Manage your financial targets, budget limits, and system preferences.</p>
+                    <p class="settings-kicker mb-1">Financial Control Center</p>
+                    <h1 class="h2 fw-bold mb-2 text-dark">Settings & Growth Engine</h1>
+                    <p class="text-muted mb-0 settings-subtitle">
+                        Configure your targets and use smart recommendations to improve your progress.
+                    </p>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="badge rounded-pill text-bg-light settings-pill">
+                        <i class="bi bi-clipboard-data me-1"></i>
+                        {{ phase3.snapshot.months_sampled }} months analyzed
+                    </span>
+                    <span class="badge rounded-pill text-bg-light settings-pill">
+                        <i class="bi bi-calendar3 me-1"></i>
+                        {{ phase3.snapshot.window_start|date:"M Y" }} - {{ phase3.snapshot.window_end|date:"M Y" }}
+                    </span>
+                    <span class="badge rounded-pill text-bg-light settings-pill">
+                        <i class="bi bi-cash-coin me-1"></i>
+                        Avg savings {{ phase3.snapshot.avg_monthly_savings|floatformat:0 }}{{ currency_symbol }}/mo
+                    </span>
+                    <span class="badge rounded-pill text-bg-light settings-pill">
+                        <i class="bi bi-shield-check me-1"></i>
+                        Emergency {{ phase3.snapshot.emergency_months_covered|floatformat:1 }}m
+                    </span>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <div class="card shadow-sm border-0 rounded-5 p-3">
-                <!-- <div class="card-header bg-white border-bottom py-3 px-4 ">
-                    <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-sliders me-2"></i>Global Configuration</h5>
-                </div> -->
-                <div class="card-body p-4">
-                    <form method="post" novalidate>
+    {% if form.errors %}
+        <div class="alert alert-danger border-0 shadow-sm mb-4" role="alert">
+            <div class="fw-semibold mb-2">Please review the following fields:</div>
+            <ul class="mb-0 ps-3 settings-error-list">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <div class="row g-4">
+        <div class="col-12 col-xl-8">
+            <div class="card border-0 shadow-sm rounded-4 settings-card">
+                <div class="card-body p-4 p-lg-5">
+                    <form method="post" novalidate id="settings-form">
                         {% csrf_token %}
-                        
-                        <!-- Section 1: Long Term Goals -->
-                        <div class="mb-5">
-                            <h6 class="text-uppercase text-muted fw-bold small mb-3 border-bottom pb-2">
-                                <i class="bi bi-trophy me-2"></i>Long Term Goals
-                            </h6>
-                            <div class="row g-4">
+
+                        <div class="settings-section mb-5">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="settings-section-icon"><i class="bi bi-trophy"></i></span>
+                                <h2 class="h6 fw-bold mb-0">Long Term Goals</h2>
+                            </div>
+                            <p class="text-muted small mb-3">Define where you want your wealth to be and by when.</p>
+                            <div class="row g-3">
                                 <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Net Worth Target</label>
+                                    <label class="form-label fw-semibold" for="{{ form.net_worth_target.id_for_label }}">Net Worth Target</label>
                                     <div class="input-group">
-                                        <span class="input-group-text bg-light text-muted">€</span>
+                                        <span class="input-group-text">{{ currency_symbol }}</span>
                                         {{ form.net_worth_target }}
                                     </div>
-                                    <!-- <div class="form-text small">Your wealth goal</div> -->
+                                    {% for error in form.net_worth_target.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Target Date</label>
+                                    <label class="form-label fw-semibold" for="{{ form.target_date.id_for_label }}">Target Date</label>
                                     {{ form.target_date }}
-                                    <div class="form-text small">Deadline to reach your net worth goal</div>
+                                    <div class="form-text">Deadline to reach your net worth objective.</div>
+                                    {% for error in form.target_date.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Retirement Age</label>
+                                    <label class="form-label fw-semibold" for="{{ form.retirement_age.id_for_label }}">Retirement Age</label>
                                     <div class="input-group">
                                         {{ form.retirement_age }}
-                                        <span class="input-group-text bg-light text-muted">Years</span>
+                                        <span class="input-group-text">Years</span>
                                     </div>
-                                    <div class="form-text small">Target age to stop working.</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Section 2: Budget & Strategy -->
-                        <div class="mb-5">
-                            <h6 class="text-uppercase text-muted fw-bold small mb-3 border-bottom pb-2">
-                                <i class="bi bi-piggy-bank me-2"></i>Budget & Strategy
-                            </h6>
-                            <div class="row g-4">
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Annual Savings Target</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-light text-muted">€</span>
-                                        {{ form.annual_savings_target }}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Monthly Budget</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-light text-muted">€</span>
-                                        {{ form.monthly_budget }}
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold">Savings Rate Target</label>
-                                    <div class="input-group">
-                                        {{ form.savings_rate_target }}
-                                        <span class="input-group-text bg-light text-muted">%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Section 3: System Preferences -->
-                        <div class="mb-4">
-                            <h6 class="text-uppercase text-muted fw-bold small mb-3 border-bottom pb-2">
-                                <i class="bi bi-gear me-2"></i>System Preferences
-                            </h6>
-                            <div class="row g-4">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Main Currency</label>
-                                    {{ form.main_currency }}
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Emergency Fund Size</label>
-                                    <div class="input-group">
-                                        {{ form.emergency_fund_months }}
-                                        <span class="input-group-text bg-light text-muted">Months</span>
-                                    </div>
-                                    {% for error in form.emergency_fund_months.errors %}
-                                        <div class="text-danger small mt-1"><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</div>
+                                    {% for error in form.retirement_age.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
                                     {% endfor %}
                                 </div>
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-end pt-3 border-top">
-                            <!-- <a href="{% url 'core:home' %}" class="btn btn-light me-2 rounded-5">Cancel</a> -->
-                            <button type="submit" class="btn btn-primary px-4 shadow-sm rounded-5">
-                                <i class="bi bi-check-lg me-2"></i>Save Changes
+                        <div class="settings-section mb-5">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="settings-section-icon"><i class="bi bi-piggy-bank"></i></span>
+                                <h2 class="h6 fw-bold mb-0">Budget & Strategy</h2>
+                            </div>
+                            <p class="text-muted small mb-3">Set realistic limits and annual savings goals.</p>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold" for="{{ form.annual_savings_target.id_for_label }}">Annual Savings Target</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">{{ currency_symbol }}</span>
+                                        {{ form.annual_savings_target }}
+                                    </div>
+                                    {% for error in form.annual_savings_target.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold" for="{{ form.monthly_budget.id_for_label }}">Monthly Budget</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">{{ currency_symbol }}</span>
+                                        {{ form.monthly_budget }}
+                                    </div>
+                                    {% for error in form.monthly_budget.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold" for="{{ form.savings_rate_target.id_for_label }}">Savings Rate Target</label>
+                                    <div class="input-group">
+                                        {{ form.savings_rate_target }}
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                    {% for error in form.savings_rate_target.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="settings-section">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="settings-section-icon"><i class="bi bi-gear"></i></span>
+                                <h2 class="h6 fw-bold mb-0">System Preferences</h2>
+                            </div>
+                            <p class="text-muted small mb-3">Update your operating currency and protection buffer.</p>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold" for="{{ form.main_currency.id_for_label }}">Main Currency</label>
+                                    {{ form.main_currency }}
+                                    {% for error in form.main_currency.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold" for="{{ form.financial_profile.id_for_label }}">Financial Profile</label>
+                                    {{ form.financial_profile }}
+                                    <div class="form-text">Adjust score logic and recommendation aggressiveness.</div>
+                                    {% for error in form.financial_profile.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold" for="{{ form.emergency_fund_months.id_for_label }}">Emergency Fund Size</label>
+                                    <div class="input-group">
+                                        {{ form.emergency_fund_months }}
+                                        <span class="input-group-text">Months</span>
+                                    </div>
+                                    {% for error in form.emergency_fund_months.errors %}
+                                        <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end pt-4 mt-4 border-top">
+                            <button type="submit" class="btn btn-primary rounded-pill px-4">
+                                <i class="bi bi-check-lg me-1"></i> Save Changes
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
+
+            <div class="card border-0 shadow-sm rounded-4 settings-card mt-4">
+                <div class="card-body p-4 p-lg-5">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="settings-section-icon"><i class="bi bi-rocket-takeoff"></i></span>
+                        <h2 class="h6 fw-bold mb-0">Goal Simulator</h2>
+                    </div>
+                    <p class="text-muted small mb-4">
+                        Estimate your net worth target date by adjusting monthly contribution.
+                    </p>
+
+                    <div
+                        class="goal-simulator"
+                        data-gap="{{ phase3.simulator.remaining_gap|unlocalize }}"
+                        data-target-date="{% if phase3.simulator.target_date %}{{ phase3.simulator.target_date|date:'Y-m-d' }}{% endif %}"
+                    >
+                        <div class="row g-3 align-items-end">
+                            <div class="col-12 col-lg-3">
+                                <label class="form-label fw-semibold">Current Net Worth</label>
+                                <div class="simulator-metric">{{ phase3.simulator.current_net_worth|floatformat:0 }}{{ currency_symbol }}</div>
+                            </div>
+                            <div class="col-12 col-lg-3">
+                                <label class="form-label fw-semibold">Target Net Worth</label>
+                                <div class="simulator-metric">{{ phase3.simulator.target_net_worth|floatformat:0 }}{{ currency_symbol }}</div>
+                            </div>
+                            <div class="col-12 col-lg-3">
+                                <label class="form-label fw-semibold" for="simulator-monthly-contribution">Monthly Contribution</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">{{ currency_symbol }}</span>
+                                    <input
+                                        id="simulator-monthly-contribution"
+                                        class="form-control"
+                                        type="number"
+                                        min="0"
+                                        step="50"
+                                        value="{{ phase3.simulator.suggested_monthly_contribution|unlocalize }}"
+                                    >
+                                </div>
+                            </div>
+                            <div class="col-12 col-lg-3">
+                                <label class="form-label fw-semibold">Remaining Gap</label>
+                                <div class="simulator-metric text-danger">{{ phase3.simulator.remaining_gap|floatformat:0 }}{{ currency_symbol }}</div>
+                            </div>
+                        </div>
+
+                        <div class="simulator-results mt-4">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="simulator-result-box">
+                                        <small class="text-muted d-block">Estimated months</small>
+                                        <strong id="simulator-months">
+                                            {% if phase3.simulator.months_to_goal is not None %}
+                                                {{ phase3.simulator.months_to_goal }}
+                                            {% else %}
+                                                --
+                                            {% endif %}
+                                        </strong>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="simulator-result-box">
+                                        <small class="text-muted d-block">Projected date</small>
+                                        <strong id="simulator-date">
+                                            {% if phase3.simulator.projected_date %}
+                                                {{ phase3.simulator.projected_date|date:"M d, Y" }}
+                                            {% else %}
+                                                --
+                                            {% endif %}
+                                        </strong>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="simulator-result-box">
+                                        <small class="text-muted d-block">Timeline status</small>
+                                        <strong id="simulator-status">
+                                            {% if phase3.simulator.is_target_reached %}
+                                                Target reached
+                                            {% elif phase3.simulator.target_date and phase3.simulator.on_track %}
+                                                On track
+                                            {% elif phase3.simulator.target_date %}
+                                                Behind schedule
+                                            {% else %}
+                                                No target date
+                                            {% endif %}
+                                        </strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-4">
+            <div class="settings-sidebar d-flex flex-column gap-4">
+                <div class="card border-0 shadow-sm rounded-4 settings-card">
+                    <div class="card-body p-4">
+                        <h2 class="h6 text-uppercase fw-bold text-muted mb-3">Financial Health Score</h2>
+                        <div class="small text-muted mb-2">Profile: <strong>{{ phase3.profile.label }}</strong></div>
+                        <div class="score-display text-center mb-3">
+                            <div class="score-value text-{{ phase3.score.tone }}">{{ phase3.score.value }}</div>
+                            <div class="score-label text-muted">{{ phase3.score.label }}</div>
+                        </div>
+                        <div class="progress mb-3 score-progress">
+                            <div
+                                class="progress-bar score-progress-bar js-score-bar bg-{{ phase3.score.tone }}"
+                                role="progressbar"
+                                aria-valuenow="{{ phase3.score.value }}"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                data-score="{{ phase3.score.value }}"
+                            ></div>
+                        </div>
+                        <div class="d-flex flex-column gap-2">
+                            {% for component in phase3.score.components %}
+                                <div class="score-component">
+                                    <div class="d-flex justify-content-between">
+                                        <span>{{ component.label }}</span>
+                                        <span class="fw-semibold text-{{ component.tone }}">{{ component.score }} <small class="text-muted">({{ component.weight }}%)</small></span>
+                                    </div>
+                                    <div class="progress mt-1">
+                                        <div
+                                            class="progress-bar score-component-bar js-score-bar bg-{{ component.tone }}"
+                                            role="progressbar"
+                                            aria-valuenow="{{ component.score }}"
+                                            aria-valuemin="0"
+                                            aria-valuemax="100"
+                                            data-score="{{ component.score }}"
+                                        ></div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4 settings-card">
+                    <div class="card-body p-4">
+                        <h2 class="h6 text-uppercase fw-bold text-muted mb-3">Smart Recommendations</h2>
+                        <div class="d-flex flex-column gap-3">
+                            {% for item in phase3.recommendations %}
+                                <div class="recommendation-item">
+                                    <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                                        <div class="fw-semibold">{{ item.label }}</div>
+                                        {% if item.is_aligned %}
+                                            <span class="badge rounded-pill text-bg-success">Aligned</span>
+                                        {% else %}
+                                            <span class="badge rounded-pill text-bg-warning">Adjust</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="small text-muted mb-2">{{ item.insight }}</div>
+                                    <div class="small recommendation-values">
+                                        <span>Current: <strong>{{ item.current_value|floatformat:0 }}</strong></span>
+                                        <span>Suggested: <strong>{{ item.suggested_value|floatformat:0 }}</strong></span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline-primary mt-2 js-apply-recommendation"
+                                        data-target-field="{{ item.key }}"
+                                        data-value="{{ item.suggested_value|unlocalize }}"
+                                    >
+                                        Apply to form
+                                    </button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-</div>
+
+</section>
 
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
     {% if messages %}
         {% for message in messages %}
             {% if "settings" in message.tags %}
-                <div class="toast align-items-center text-white 
-                    {% if 'success' in message.tags %}bg-success
-                    {% elif 'info' in message.tags %}bg-info
-                    {% else %}bg-danger{% endif %} border-0 shadow-lg" role="alert">
+                <div
+                    class="toast align-items-center text-white {% if 'success' in message.tags %}bg-success{% elif 'info' in message.tags %}bg-info{% else %}bg-danger{% endif %} border-0 shadow-lg"
+                    role="alert"
+                >
                     <div class="d-flex p-2">
                         <div class="toast-body">
-                            <i class="bi 
-                                {% if 'success' in message.tags %}bi-check-circle
-                                {% elif 'info' in message.tags %}bi-info-circle
-                                {% else %}bi-exclamation-triangle{% endif %} me-2"></i>
+                            <i class="bi {% if 'success' in message.tags %}bi-check-circle{% elif 'info' in message.tags %}bi-info-circle{% else %}bi-exclamation-triangle{% endif %} me-2"></i>
                             {{ message }}
                         </div>
                         <button type="button" class="btn-close btn-close-white m-auto me-2" data-bs-dismiss="toast"></button>
@@ -140,6 +380,7 @@
             {% endif %}
         {% endfor %}
     {% endif %}
+</div>
 {% endblock %}
 
 {% block scripts %}

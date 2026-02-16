@@ -73,17 +73,21 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 user-pill rounded-pill px-3" 
                        href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-person-circle"></i>
-                        <span class="d-inline">{{ user.first_name|capfirst }}</span>
+                        {% if user.avatar %}
+                            <img src="{{ user.avatar.url }}" alt="Avatar" class="rounded-circle border border-white border-opacity-25" style="width: 24px; height: 24px; object-fit: cover;">
+                        {% else %}
+                            <i class="bi bi-person-circle"></i>
+                        {% endif %}
+                        <span class="d-inline">{{ user.first_name|default:user.username|capfirst }}</span>
                     </a>
                     <ul class="dropdown-menu nav-dropdown-menu nav-user-menu dropdown-menu-end shadow-lg border-0 mt-lg-2" aria-labelledby="userDropdown">
                         <li>
                             <span class="dropdown-item-text small text-white text-lg-muted opacity-75">
-                                Signed in as <strong class="user-name-text">{{ user.first_name|capfirst }}</strong>
+                                Signed in as <strong class="user-name-text">{{ user.first_name|default:user.username|capfirst }}</strong>
                             </span>
                         </li>                        
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/admin/"><i class="bi bi-person me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="{% url 'users:profile' %}"><i class="bi bi-person me-2"></i>Profile</a></li>
                         <li><a class="dropdown-item" href="{% url 'manage_categories' %}"><i class="bi bi-tags me-2"></i>Categories</a></li>
                         <li><a class="dropdown-item" href="{% url 'settings:settings_home' %}"><i class="bi bi-gear me-2"></i>Settings</a></li>
                         <li><hr class="dropdown-divider"></li>
@@ -110,9 +114,61 @@
     </div>
 </main>
 
-<footer class="py-4 mt-auto">
-    <div class="container text-center">
-        <small>© 2025 FinOrbit App · Built by Diego del Barrio</small>
+<footer class="app-footer mt-auto">
+    <div class="container py-5">
+        <div class="row g-4 g-lg-5">
+            <div class="col-12 col-lg-4">
+                <a href="{% url 'core:home' %}" class="footer-brand d-inline-flex align-items-center text-decoration-none">
+                    <i class="bi bi-stars me-2"></i>
+                    <span>FinOrbit</span>
+                </a>
+                <p class="footer-description mt-3 mb-3">
+                    Financial command center for budgeting, investments, and reporting with one clean workflow.
+                </p>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="footer-tag"><i class="bi bi-shield-check me-1"></i>Secure by design</span>
+                    <span class="footer-tag"><i class="bi bi-graph-up-arrow me-1"></i>Portfolio analytics</span>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-4 col-lg-2">
+                <h6 class="footer-heading">Platform</h6>
+                <ul class="footer-links list-unstyled mb-0">
+                    <li><a class="footer-link" href="{% url 'investments:investment_dashboard' %}"><i class="bi bi-speedometer2"></i>Dashboard</a></li>
+                    <li><a class="footer-link" href="{% url 'summary' %}"><i class="bi bi-calendar-month"></i>Monthly Finances</a></li>
+                    <li><a class="footer-link" href="{% url 'manage_categories' %}"><i class="bi bi-tags"></i>Categories</a></li>
+                </ul>
+            </div>
+
+            <div class="col-6 col-md-4 col-lg-2">
+                <h6 class="footer-heading">Insights</h6>
+                <ul class="footer-links list-unstyled mb-0">
+                    <li><a class="footer-link" href="{% url 'core:market_data' %}"><i class="bi bi-activity"></i>Market Watch</a></li>
+                    <li><a class="footer-link" href="{% url 'reports:report_finance' %}"><i class="bi bi-file-earmark-text"></i>Reports</a></li>
+                    <li><a class="footer-link" href="{% url 'knowledge:index' %}"><i class="bi bi-journal-bookmark"></i>Knowledge</a></li>
+                </ul>
+            </div>
+
+            <div class="col-12 col-md-4 col-lg-4">
+                <div class="footer-panel">
+                    <h6 class="footer-heading mb-2">Your Workspace</h6>
+                    <p class="mb-3">Keep everything under control from your profile and settings panel.</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{% url 'users:profile' %}" class="btn btn-footer-action">
+                            <i class="bi bi-person-circle me-1"></i>Profile
+                        </a>
+                        <a href="{% url 'settings:settings_home' %}" class="btn btn-footer-secondary">
+                            <i class="bi bi-gear me-1"></i>Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom d-flex flex-column flex-md-row align-items-center justify-content-between gap-2">
+            <small>© {% now "Y" %} FinOrbit. All rights reserved.</small>
+            <small>Built by Diego del Barrio</small>
+        </div>
     </div>
 </footer>
 

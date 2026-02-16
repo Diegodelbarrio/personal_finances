@@ -358,15 +358,181 @@ main {
     padding-bottom: 2rem;
 }
 
-footer {
-    background-color: #ffffff;
-    border-top: 1px solid #e2e8f0;
-    /* padding: 2rem 0; */
+.app-footer {
+    position: relative;
+    overflow: hidden;
+    border-top: 1px solid rgba(148, 163, 184, 0.3);
+    background:
+        radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.22) 0px, transparent 45%),
+        radial-gradient(at 0% 100%, rgba(79, 70, 229, 0.24) 0px, transparent 58%),
+        linear-gradient(135deg, #0b1324 0%, #0f172a 55%, #111c34 100%);
+    color: rgba(226, 232, 240, 0.9);
 }
 
-footer small {
-    font-size: 0.8rem;
-    color: #7f7f7f;
+.app-footer::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(103, 232, 249, 0.85), transparent);
+}
+
+.app-footer .container {
+    position: relative;
+    z-index: 1;
+}
+
+.footer-brand {
+    color: #ffffff;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.footer-brand i {
+    color: #67e8f9;
+}
+
+.footer-description {
+    max-width: 34ch;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: rgba(203, 213, 225, 0.9);
+}
+
+.footer-tag {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.36rem 0.65rem;
+    border: 1px solid rgba(148, 163, 184, 0.36);
+    background: rgba(15, 23, 42, 0.36);
+    color: rgba(226, 232, 240, 0.92);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.footer-heading {
+    margin-bottom: 0.85rem;
+    font-size: 0.76rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(203, 213, 225, 0.94);
+}
+
+.footer-links li + li {
+    margin-top: 0.18rem;
+}
+
+.footer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.52rem;
+    padding: 0.3rem 0;
+    text-decoration: none;
+    color: rgba(203, 213, 225, 0.86);
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.footer-link i {
+    width: 1rem;
+    font-size: 0.9rem;
+    opacity: 0.85;
+    transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.footer-link:hover,
+.footer-link:focus-visible {
+    color: #ffffff;
+    transform: translateX(2px);
+}
+
+.footer-link:hover i,
+.footer-link:focus-visible i {
+    color: #67e8f9;
+    opacity: 1;
+}
+
+.footer-panel {
+    border-radius: 1rem;
+    border: 1px solid rgba(148, 163, 184, 0.32);
+    background: linear-gradient(155deg, rgba(15, 23, 42, 0.55), rgba(15, 23, 42, 0.22));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 1.2rem 1.25rem;
+}
+
+.footer-panel p {
+    color: rgba(203, 213, 225, 0.86);
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.btn-footer-action,
+.btn-footer-secondary {
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.45rem 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.btn-footer-action {
+    border: 1px solid transparent;
+    color: #ffffff;
+    background: linear-gradient(120deg, #2563eb 0%, #0891b2 100%);
+    box-shadow: 0 8px 18px rgba(8, 145, 178, 0.25);
+}
+
+.btn-footer-action:hover,
+.btn-footer-action:focus-visible {
+    color: #ffffff;
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+}
+
+.btn-footer-secondary {
+    border: 1px solid rgba(148, 163, 184, 0.42);
+    color: #e2e8f0;
+    background: rgba(15, 23, 42, 0.36);
+}
+
+.btn-footer-secondary:hover,
+.btn-footer-secondary:focus-visible {
+    color: #ffffff;
+    border-color: rgba(103, 232, 249, 0.56);
+    background: rgba(15, 23, 42, 0.56);
+}
+
+.footer-bottom {
+    margin-top: 2rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.26);
+    color: rgba(148, 163, 184, 0.95);
+}
+
+.footer-bottom small {
+    font-size: 0.78rem;
+}
+
+@media (max-width: 991.98px) {
+    .footer-description {
+        max-width: none;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .footer-panel {
+        margin-top: 0.2rem;
+    }
+
+    .footer-bottom {
+        text-align: center;
+    }
 }
 
 /* --- GLOBAL REUSABLE COMPONENTS --- */

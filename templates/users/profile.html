@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Profile{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'users/css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="profile-page">
+    <form method="post" enctype="multipart/form-data" novalidate id="profile-form">
+        {% csrf_token %}
+
+        <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden profile-hero">
+            <div class="card-body p-4 p-lg-5">
+                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-4">
+                    <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-3 gap-sm-4">
+                        {% if request.user.avatar %}
+                            <img
+                                src="{{ request.user.avatar.url }}"
+                                alt="Avatar"
+                                class="profile-hero-avatar"
+                            >
+                        {% else %}
+                            <div class="profile-hero-avatar profile-hero-avatar-fallback">
+                                <span>{{ request.user.username|slice:":1"|upper }}</span>
+                            </div>
+                        {% endif %}
+
+                        <div>
+                            <p class="profile-kicker mb-1">User Profile</p>
+                            <h1 class="h2 fw-bold mb-2 profile-hero-title">
+                                {{ request.user.first_name|default:request.user.username|capfirst }}
+                            </h1>
+                            <p class="text-muted mb-3 profile-hero-subtitle">
+                                Update your personal data, localization settings, and account security shortcuts.
+                            </p>
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="badge rounded-pill text-bg-light profile-pill">
+                                    <i class="bi bi-calendar-check me-1"></i>
+                                    Member since {{ profile_stats.member_since|date:"M d, Y" }}
+                                </span>
+                                <span class="badge rounded-pill text-bg-light profile-pill">
+                                    <i class="bi bi-currency-exchange me-1"></i>
+                                    {{ profile_stats.main_currency }}
+                                </span>
+                                <span class="badge rounded-pill text-bg-light profile-pill">
+                                    <i class="bi bi-clock-history me-1"></i>
+                                    {% if profile_stats.last_login %}
+                                        Last login {{ profile_stats.last_login|date:"M d, Y H:i" }}
+                                    {% else %}
+                                        No recent login
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-column flex-sm-row gap-2 profile-hero-actions">
+                        <button type="submit" class="btn btn-primary rounded-pill px-4">
+                            <i class="bi bi-check2-circle me-1"></i> Save All Changes
+                        </button>
+                        <a href="{% url 'users:profile' %}" class="btn btn-outline-secondary rounded-pill px-4">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+                        </a>
+                        <a href="{% url 'core:home' %}" class="btn btn-light border rounded-pill px-4">
+                            <i class="bi bi-arrow-left me-1"></i> Back
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                {% if "users_profile" in message.tags %}
+                    <div class="alert {% if 'success' in message.tags %}alert-success{% elif 'info' in message.tags %}alert-info{% elif 'warning' in message.tags %}alert-warning{% else %}alert-danger{% endif %} border-0 shadow-sm mb-3 profile-alert" role="alert">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-info-circle"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+
+        {% if profile_form.errors or preferences_form.errors %}
+            <div class="alert alert-danger border-0 shadow-sm mb-4" role="alert">
+                <div class="fw-semibold mb-2">Please review the following fields:</div>
+                <ul class="mb-0 ps-3 profile-error-list">
+                    {% for field in profile_form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for field in preferences_form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in profile_form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                    {% for error in preferences_form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <div class="row g-4 align-items-start">
+            <div class="col-12 col-xl-8">
+                <div class="card border-0 shadow-sm rounded-4 profile-card mb-4">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <span class="profile-section-icon"><i class="bi bi-person-badge"></i></span>
+                            <h2 class="h5 fw-bold mb-0">Personal Information</h2>
+                        </div>
+                        <p class="text-muted mb-4">Use your real data so reports and notifications stay accurate.</p>
+
+                        <div class="profile-avatar-block mb-4">
+                            <div class="profile-avatar-preview">
+                                {% if request.user.avatar %}
+                                    <img
+                                        src="{{ request.user.avatar.url }}"
+                                        alt="Avatar preview"
+                                        class="rounded-circle border"
+                                        style="width: 88px; height: 88px; object-fit: cover;"
+                                    >
+                                {% else %}
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center bg-light border"
+                                         style="width: 88px; height: 88px;">
+                                        <span class="fw-bold text-muted fs-3">
+                                            {{ request.user.username|slice:":1"|upper }}
+                                        </span>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="profile-avatar-form flex-grow-1">
+                                <label class="form-label fw-semibold mb-1" for="{{ profile_form.avatar.id_for_label }}">Avatar</label>
+                                {{ profile_form.avatar }}
+                                <div class="form-text">Accepted formats: PNG, JPG, WEBP, GIF. Max size: 3 MB.</div>
+                                {% for error in profile_form.avatar.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+
+                                {% if request.user.avatar %}
+                                    <div class="form-check mt-2">
+                                        {{ profile_form.remove_avatar }}
+                                        <label class="form-check-label" for="{{ profile_form.remove_avatar.id_for_label }}">
+                                            Remove current avatar
+                                        </label>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold" for="{{ profile_form.username.id_for_label }}">Username</label>
+                                {{ profile_form.username }}
+                                <div class="form-text">Used for sign in and account identity.</div>
+                                {% for error in profile_form.username.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-semibold" for="{{ profile_form.first_name.id_for_label }}">First Name</label>
+                                {{ profile_form.first_name }}
+                                {% for error in profile_form.first_name.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-semibold" for="{{ profile_form.last_name.id_for_label }}">Last Name</label>
+                                {{ profile_form.last_name }}
+                                {% for error in profile_form.last_name.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-semibold" for="{{ profile_form.email.id_for_label }}">Email</label>
+                                {{ profile_form.email }}
+                                <div class="form-text">Where account and verification notifications are sent.</div>
+                                {% for error in profile_form.email.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4 profile-card">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <span class="profile-section-icon"><i class="bi bi-globe2"></i></span>
+                            <h2 class="h5 fw-bold mb-0">Localization Preferences</h2>
+                        </div>
+                        <p class="text-muted mb-4">Control language and timezone used across dashboards and reports.</p>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-semibold" for="{{ preferences_form.language_code.id_for_label }}">Language</label>
+                                {{ preferences_form.language_code }}
+                                {% for error in preferences_form.language_code.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-semibold" for="{{ preferences_form.timezone.id_for_label }}">Time Zone</label>
+                                {{ preferences_form.timezone }}
+                                {% for error in preferences_form.timezone.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        {% for error in profile_form.non_field_errors %}
+                            <div class="invalid-feedback d-block mt-2">{{ error }}</div>
+                        {% endfor %}
+                        {% for error in preferences_form.non_field_errors %}
+                            <div class="invalid-feedback d-block mt-2">{{ error }}</div>
+                        {% endfor %}
+
+                        <div class="profile-submit-bar mt-4">
+                            <div class="small text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                All updates are saved with the <strong>Save All Changes</strong> button in the page header.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-xl-4">
+                <div class="profile-sidebar d-flex flex-column gap-4">
+                    <div class="card border-0 shadow-sm rounded-4 profile-card">
+                        <div class="card-body p-4">
+                            <h2 class="h6 text-uppercase fw-bold text-muted mb-3">Workspace Usage</h2>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="profile-metric">
+                                        <i class="bi bi-receipt"></i>
+                                        <small>Finance Tx</small>
+                                        <strong>{{ profile_stats.finances_transactions }}</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="profile-metric">
+                                        <i class="bi bi-diagram-3"></i>
+                                        <small>Assets</small>
+                                        <strong>{{ profile_stats.assets }}</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="profile-metric">
+                                        <i class="bi bi-graph-up-arrow"></i>
+                                        <small>Investment Tx</small>
+                                        <strong>{{ profile_stats.investment_transactions }}</strong>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="profile-metric">
+                                        <i class="bi bi-bank"></i>
+                                        <small>Bank Accounts</small>
+                                        <strong>{{ profile_stats.bank_accounts }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm rounded-4 profile-card">
+                        <div class="card-body p-4">
+                            <h2 class="h6 text-uppercase fw-bold text-muted mb-3">Security & Preferences</h2>
+                            <div class="d-flex flex-column gap-2">
+                                <a href="{% url 'account_change_password' %}" class="btn btn-light border rounded-3 text-start px-3 py-2 profile-action-link">
+                                    <i class="bi bi-shield-lock me-2"></i> Change Password
+                                </a>
+                                <a href="{% url 'account_email' %}" class="btn btn-light border rounded-3 text-start px-3 py-2 profile-action-link">
+                                    <i class="bi bi-envelope me-2"></i> Manage Email Addresses
+                                </a>
+                                <a href="{% url 'settings:settings_home' %}" class="btn btn-light border rounded-3 text-start px-3 py-2 profile-action-link">
+                                    <i class="bi bi-gear me-2"></i> Financial Settings
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-bottom-submit text-center mt-4 pt-2">
+            <button type="submit" class="btn btn-primary rounded-pill px-5">
+                <i class="bi bi-check2-circle me-1"></i> Save All Changes
+            </button>
+        </div>
+    </form>
+</section>
+{% endblock %}

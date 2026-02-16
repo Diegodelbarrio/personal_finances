@@ -14,6 +14,11 @@ try:
 except ImportError:  # pragma: no cover
     dj_database_url = None
 
+try:
+    import certifi
+except ImportError:  # pragma: no cover
+    certifi = None
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
@@ -29,6 +34,16 @@ def env_bool(name, default=False):
 def env_list(name, default=""):
     value = os.getenv(name, default)
     return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def env_int(name, default=0):
+    value = os.getenv(name)
+    if value is None or value.strip() == "":
+        return default
+    try:
+        return int(value)
+    except ValueError as exc:
+        raise ImproperlyConfigured(f"{name} must be an integer.") from exc
 
 
 DEBUG = env_bool("DEBUG", default=False)
@@ -85,6 +100,7 @@ MIDDLEWARE += [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "core.middleware.UserPreferencesMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
@@ -182,6 +198,10 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 LANGUAGE_CODE = "en-us"
+LANGUAGES = [
+    ("en-us", "English"),
+    ("es", "Spanish"),
+]
 TIME_ZONE = "Europe/Madrid"
 USE_I18N = True
 USE_TZ = True
@@ -190,6 +210,8 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 if IS_WHITENOISE_AVAILABLE:
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
@@ -226,6 +248,83 @@ ACCOUNT_LOGIN_METHODS = {"email", "username"}
 ACCOUNT_EMAIL_VERIFICATION = os.getenv("ACCOUNT_EMAIL_VERIFICATION", "none")
 ACCOUNT_UNIQUE_EMAIL = env_bool("ACCOUNT_UNIQUE_EMAIL", default=True)
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https" if not DEBUG else "http"
+ACCOUNT_EMAIL_SUBJECT_PREFIX = os.getenv("ACCOUNT_EMAIL_SUBJECT_PREFIX", "[FinOrbit] ")
+
+# Email delivery:
+# - In local development (DEBUG=True), default to console backend
+#   so email flows (allauth verification/reset) don't fail due to missing SMTP.
+# - In production, default to SMTP and configure via env vars.
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    (
+        "django.core.mail.backends.console.EmailBackend"
+        if DEBUG
+        else "django.core.mail.backends.smtp.EmailBackend"
+    ),
+)
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@finorbit.app")
+SERVER_EMAIL = os.getenv("SERVER_EMAIL", DEFAULT_FROM_EMAIL)
+EMAIL_SUBJECT_PREFIX = os.getenv("EMAIL_SUBJECT_PREFIX", "[FinOrbit] ")
+EMAIL_FAIL_SILENTLY = env_bool("EMAIL_FAIL_SILENTLY", default=False)
+
+# macOS + python.org builds may miss a system OpenSSL CA path.
+# If SMTP is enabled and SSL_CERT_FILE is not set, use certifi bundle.
+if EMAIL_BACKEND.endswith("smtp.EmailBackend") and "SSL_CERT_FILE" not in os.environ:
+    if certifi is not None:
+        os.environ["SSL_CERT_FILE"] = certifi.where()
+
+if EMAIL_BACKEND.endswith("smtp.EmailBackend"):
+    EMAIL_HOST = os.getenv("EMAIL_HOST", "localhost")
+    EMAIL_PORT = env_int("EMAIL_PORT", 25)
+    EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+    EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+    EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", default=False)
+    EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", default=False)
+    EMAIL_TIMEOUT = env_int("EMAIL_TIMEOUT", 10)
+
+# Transactional mail settings (verification, password reset, alerts)
+EMAIL_TRANSACTIONAL_FROM_EMAIL = os.getenv(
+    "EMAIL_TRANSACTIONAL_FROM_EMAIL",
+    DEFAULT_FROM_EMAIL,
+)
+EMAIL_TRANSACTIONAL_REPLY_TO = env_list("EMAIL_TRANSACTIONAL_REPLY_TO")
+
+# Marketing/bulk mail settings (newsletters, campaigns)
+EMAIL_MARKETING_ENABLED = env_bool("EMAIL_MARKETING_ENABLED", default=False)
+EMAIL_MARKETING_BACKEND = os.getenv("EMAIL_MARKETING_BACKEND", EMAIL_BACKEND)
+EMAIL_MARKETING_FROM_EMAIL = os.getenv(
+    "EMAIL_MARKETING_FROM_EMAIL",
+    EMAIL_TRANSACTIONAL_FROM_EMAIL,
+)
+EMAIL_MARKETING_REPLY_TO = env_list("EMAIL_MARKETING_REPLY_TO")
+EMAIL_MARKETING_BATCH_SIZE = env_int("EMAIL_MARKETING_BATCH_SIZE", 500)
+
+if EMAIL_MARKETING_BACKEND.endswith("smtp.EmailBackend"):
+    EMAIL_MARKETING_HOST = os.getenv("EMAIL_MARKETING_HOST", os.getenv("EMAIL_HOST", "localhost"))
+    EMAIL_MARKETING_PORT = env_int(
+        "EMAIL_MARKETING_PORT",
+        env_int("EMAIL_PORT", 25),
+    )
+    EMAIL_MARKETING_HOST_USER = os.getenv(
+        "EMAIL_MARKETING_HOST_USER",
+        os.getenv("EMAIL_HOST_USER", ""),
+    )
+    EMAIL_MARKETING_HOST_PASSWORD = os.getenv(
+        "EMAIL_MARKETING_HOST_PASSWORD",
+        os.getenv("EMAIL_HOST_PASSWORD", ""),
+    )
+    EMAIL_MARKETING_USE_TLS = env_bool(
+        "EMAIL_MARKETING_USE_TLS",
+        default=env_bool("EMAIL_USE_TLS", default=False),
+    )
+    EMAIL_MARKETING_USE_SSL = env_bool(
+        "EMAIL_MARKETING_USE_SSL",
+        default=env_bool("EMAIL_USE_SSL", default=False),
+    )
+    EMAIL_MARKETING_TIMEOUT = env_int(
+        "EMAIL_MARKETING_TIMEOUT",
+        env_int("EMAIL_TIMEOUT", 10),
+    )
 
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"

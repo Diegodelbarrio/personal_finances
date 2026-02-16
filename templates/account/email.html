@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}Manage Email Addresses{% endblock %}
+
+{% block content %}
+<style>
+    .email-manage-shell input[type="email"] {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #ced4da;
+        border-radius: 0.5rem;
+    }
+    .email-manage-shell input[type="email"]:focus {
+        outline: none;
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.2rem rgba(13,110,253,.15);
+    }
+</style>
+<div class="row justify-content-center">
+    <div class="col-12 col-xl-10">
+        <div class="d-flex justify-content-between align-items-center mb-4 gap-3">
+            <div>
+                <h1 class="h3 fw-bold mb-1">Manage Email Addresses</h1>
+                <p class="text-muted mb-0">Set your primary email and keep your recovery options updated.</p>
+            </div>
+            <a href="{% url 'users:profile' %}" class="btn btn-sm btn-light border rounded-pill px-3">
+                <i class="bi bi-arrow-left me-1"></i> Back
+            </a>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert {% if 'success' in message.tags %}alert-success{% elif 'info' in message.tags %}alert-info{% elif 'warning' in message.tags %}alert-warning{% else %}alert-danger{% endif %} border-0 shadow-sm mb-3" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="row g-4">
+            <div class="col-12 col-lg-7">
+                <div class="card border-0 shadow-sm rounded-4 h-100 email-manage-shell">
+                    <div class="card-body p-4">
+                        <h2 class="h5 fw-bold mb-3">Current Addresses</h2>
+                        {% if emailaddresses %}
+                            <form method="post" action="{% url 'account_email' %}" novalidate>
+                                {% csrf_token %}
+                                <div class="d-flex flex-column gap-2">
+                                    {% for radio in emailaddress_radios %}
+                                        {% with emailaddress=radio.emailaddress %}
+                                        <label class="d-flex align-items-center justify-content-between border rounded-3 px-3 py-2">
+                                            <span class="d-flex align-items-center gap-2">
+                                                <input
+                                                    type="radio"
+                                                    name="email"
+                                                    value="{{ emailaddress.email }}"
+                                                    {% if radio.checked or forloop.first %}checked{% endif %}
+                                                >
+                                                <span class="fw-medium">{{ emailaddress.email }}</span>
+                                            </span>
+                                            <span class="d-flex gap-2">
+                                                {% if emailaddress.primary %}
+                                                    <span class="badge text-bg-primary">Primary</span>
+                                                {% endif %}
+                                                {% if emailaddress.verified %}
+                                                    <span class="badge text-bg-success">Verified</span>
+                                                {% else %}
+                                                    <span class="badge text-bg-warning">Unverified</span>
+                                                {% endif %}
+                                            </span>
+                                        </label>
+                                        {% endwith %}
+                                    {% endfor %}
+                                </div>
+
+                                <div class="d-flex flex-wrap gap-2 mt-3">
+                                    <button class="btn btn-sm btn-primary rounded-pill px-3" type="submit" name="action_primary">
+                                        Make Primary
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" type="submit" name="action_send">
+                                        Re-send Verification
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger rounded-pill px-3" type="submit" name="action_remove">
+                                        Remove Selected
+                                    </button>
+                                </div>
+                            </form>
+                        {% else %}
+                            <div class="alert alert-warning border-0 mb-0">
+                                No email addresses are linked to your account yet.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-5">
+                <div class="card border-0 shadow-sm rounded-4 email-manage-shell">
+                    <div class="card-body p-4">
+                        <h2 class="h5 fw-bold mb-3">Add New Email</h2>
+                        <form method="post" action="{% url 'account_email' %}" novalidate>
+                            {% csrf_token %}
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold" for="{{ form.email.id_for_label }}">Email</label>
+                                {{ form.email }}
+                                {% for error in form.email.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            {% for error in form.non_field_errors %}
+                                <div class="invalid-feedback d-block mb-3">{{ error }}</div>
+                            {% endfor %}
+
+                            <button class="btn btn-primary rounded-pill px-4" type="submit" name="action_add">
+                                <i class="bi bi-plus-circle me-1"></i> Add Email
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -50,6 +50,47 @@ App local:
 - `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`.
 - `SECURE_HSTS_SECONDS`, `SECURE_HSTS_INCLUDE_SUBDOMAINS`, `SECURE_HSTS_PRELOAD`.
 
+## Configuracion profesional de email
+
+La app ya queda preparada para dos canales:
+
+- **Transaccional**: verificacion de email, reset/cambio de contrasena, alertas de cuenta.
+- **Marketing**: newsletters y envios masivos desacoplados del canal transaccional.
+
+### 1. Recomendado para produccion
+
+Define SMTP real por variables de entorno:
+
+- `EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`
+- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`
+- `EMAIL_USE_TLS` (normalmente `True`)
+- `EMAIL_TRANSACTIONAL_FROM_EMAIL`
+- `EMAIL_TRANSACTIONAL_REPLY_TO`
+
+Para separar newsletters del trafico critico:
+
+- `EMAIL_MARKETING_ENABLED=True`
+- `EMAIL_MARKETING_BACKEND=django.core.mail.backends.smtp.EmailBackend`
+- `EMAIL_MARKETING_FROM_EMAIL`
+- `EMAIL_MARKETING_REPLY_TO`
+- `EMAIL_MARKETING_*` (host/port/user/password/tls/ssl/timeout)
+- `EMAIL_MARKETING_BATCH_SIZE` (tamano de lote por envio)
+
+### 2. Entorno local
+
+Si `DEBUG=True` y no defines `EMAIL_BACKEND`, el sistema usa consola para evitar errores de SMTP.
+
+### 3. Prueba operativa
+
+Puedes validar la infraestructura con:
+
+```bash
+python manage.py send_test_email --to you@example.com --category transactional
+python manage.py send_test_email --to you@example.com --category marketing
+```
+
+Si el backend es de consola, veras el email impreso en la terminal. Con SMTP real se envia por red.
+
 ## Despliegue (general)
 
 1. Crear servicio web (Render, Railway, Fly.io, etc.).
