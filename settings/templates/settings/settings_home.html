@@ -194,49 +194,63 @@
                         <h2 class="h6 fw-bold mb-0">Goal Simulator</h2>
                     </div>
                     <p class="text-muted small mb-4">
-                        Estimate your net worth target date by adjusting monthly contribution.
+                        Estimate your net worth target date using an automatic potential savings model.
                     </p>
 
-                    <div
-                        class="goal-simulator"
-                        data-gap="{{ phase3.simulator.remaining_gap|unlocalize }}"
-                        data-target-date="{% if phase3.simulator.target_date %}{{ phase3.simulator.target_date|date:'Y-m-d' }}{% endif %}"
-                    >
-                        <div class="row g-3 align-items-end">
-                            <div class="col-12 col-lg-3">
-                                <label class="form-label fw-semibold">Current Net Worth</label>
-                                <div class="simulator-metric">{{ phase3.simulator.current_net_worth|floatformat:0 }}{{ currency_symbol }}</div>
+                    <div class="goal-simulator">
+                        <div class="simulator-progress mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="simulator-progress-label">Progress to net worth target</span>
+                                <span class="simulator-progress-value">{{ stats.nw_progress|floatformat:1 }}%</span>
                             </div>
-                            <div class="col-12 col-lg-3">
-                                <label class="form-label fw-semibold">Target Net Worth</label>
-                                <div class="simulator-metric">{{ phase3.simulator.target_net_worth|floatformat:0 }}{{ currency_symbol }}</div>
-                            </div>
-                            <div class="col-12 col-lg-3">
-                                <label class="form-label fw-semibold" for="simulator-monthly-contribution">Monthly Contribution</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">{{ currency_symbol }}</span>
-                                    <input
-                                        id="simulator-monthly-contribution"
-                                        class="form-control"
-                                        type="number"
-                                        min="0"
-                                        step="50"
-                                        value="{{ phase3.simulator.suggested_monthly_contribution|unlocalize }}"
-                                    >
-                                </div>
-                            </div>
-                            <div class="col-12 col-lg-3">
-                                <label class="form-label fw-semibold">Remaining Gap</label>
-                                <div class="simulator-metric text-danger">{{ phase3.simulator.remaining_gap|floatformat:0 }}{{ currency_symbol }}</div>
+                            <div class="progress simulator-progress-track">
+                                <div
+                                    class="progress-bar simulator-progress-bar"
+                                    role="progressbar"
+                                    style="width: {{ stats.nw_progress|floatformat:0 }}%;"
+                                    aria-valuenow="{{ stats.nw_progress|floatformat:0 }}"
+                                    aria-valuemin="0"
+                                    aria-valuemax="100"
+                                ></div>
                             </div>
                         </div>
 
-                        <div class="simulator-results mt-4">
+                        <div class="row g-3 align-items-start simulator-top-row">
+                            <div class="col-12 col-sm-6 col-xl-3 d-flex">
+                                <article class="simulator-kpi-card w-100">
+                                    <p class="simulator-kpi-label mb-2">Current Net Worth</p>
+                                    <p class="simulator-kpi-value mb-0">{{ phase3.simulator.current_net_worth|floatformat:0 }}{{ currency_symbol }}</p>
+                                </article>
+                            </div>
+                            <div class="col-12 col-sm-6 col-xl-3 d-flex">
+                                <article class="simulator-kpi-card w-100">
+                                    <p class="simulator-kpi-label mb-2">Target Net Worth</p>
+                                    <p class="simulator-kpi-value mb-0">{{ phase3.simulator.target_net_worth|floatformat:0 }}{{ currency_symbol }}</p>
+                                </article>
+                            </div>
+                            <div class="col-12 col-sm-6 col-xl-3 d-flex">
+                                <article class="simulator-kpi-card w-100">
+                                    <p class="simulator-kpi-label mb-2">Auto Monthly Contribution</p>
+                                    <p class="simulator-kpi-value mb-1 text-primary">{{ phase3.simulator.suggested_monthly_contribution|floatformat:0 }}{{ currency_symbol }}</p>
+                                    <p class="simulator-kpi-meta mb-0">
+                                        Scenario <strong>{{ phase3.simulator.selected_scenario_label }}</strong>
+                                    </p>
+                                </article>
+                            </div>
+                            <div class="col-12 col-sm-6 col-xl-3 d-flex">
+                                <article class="simulator-kpi-card w-100">
+                                    <p class="simulator-kpi-label mb-2">Remaining Gap</p>
+                                    <p class="simulator-kpi-value mb-0 text-danger">{{ phase3.simulator.remaining_gap|floatformat:0 }}{{ currency_symbol }}</p>
+                                </article>
+                            </div>
+                        </div>
+
+                        <div class="simulator-results">
                             <div class="row g-3">
-                                <div class="col-md-4">
-                                    <div class="simulator-result-box">
-                                        <small class="text-muted d-block">Estimated months</small>
-                                        <strong id="simulator-months">
+                                <div class="col-12 col-md-4 d-flex">
+                                    <div class="simulator-result-box w-100">
+                                        <small class="simulator-result-label d-block">Estimated months</small>
+                                        <strong class="simulator-result-value">
                                             {% if phase3.simulator.months_to_goal is not None %}
                                                 {{ phase3.simulator.months_to_goal }}
                                             {% else %}
@@ -245,10 +259,10 @@
                                         </strong>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="simulator-result-box">
-                                        <small class="text-muted d-block">Projected date</small>
-                                        <strong id="simulator-date">
+                                <div class="col-12 col-md-4 d-flex">
+                                    <div class="simulator-result-box w-100">
+                                        <small class="simulator-result-label d-block">Projected date</small>
+                                        <strong class="simulator-result-value">
                                             {% if phase3.simulator.projected_date %}
                                                 {{ phase3.simulator.projected_date|date:"M d, Y" }}
                                             {% else %}
@@ -257,22 +271,76 @@
                                         </strong>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="simulator-result-box">
-                                        <small class="text-muted d-block">Timeline status</small>
-                                        <strong id="simulator-status">
-                                            {% if phase3.simulator.is_target_reached %}
-                                                Target reached
-                                            {% elif phase3.simulator.target_date and phase3.simulator.on_track %}
-                                                On track
-                                            {% elif phase3.simulator.target_date %}
-                                                Behind schedule
-                                            {% else %}
-                                                No target date
-                                            {% endif %}
+                                <div class="col-12 col-md-4 d-flex">
+                                    <div class="simulator-result-box w-100">
+                                        <small class="simulator-result-label d-block">Timeline status</small>
+                                        <strong class="simulator-result-value text-{{ phase3.simulator.status_tone }}">
+                                            {{ phase3.simulator.status_label }}
                                         </strong>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="simulator-scenarios">
+                            <div class="simulator-scenarios-head">
+                                <div>
+                                    <h3 class="h6 fw-semibold mb-1">Potential Savings Scenarios</h3>
+                                    <small class="text-muted">Calculated from your savings behavior and current profile</small>
+                                </div>
+                                <span class="badge rounded-pill simulator-selected-badge">
+                                    Selected: {{ phase3.simulator.selected_scenario_label }}
+                                </span>
+                            </div>
+                            <div class="table-responsive simulator-scenarios-table-wrap">
+                                <table class="table table-sm align-middle mb-0 simulator-scenarios-table">
+                                    <colgroup>
+                                        <col class="simulator-col-situation">
+                                        <col class="simulator-col-monthly">
+                                        <col class="simulator-col-months">
+                                        <col class="simulator-col-date">
+                                        <col class="simulator-col-status">
+                                    </colgroup>
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" class="simulator-th-situation">Situation</th>
+                                            <th scope="col" class="text-end simulator-th-number">Monthly</th>
+                                            <th scope="col" class="text-end simulator-th-number">Months</th>
+                                            <th scope="col" class="simulator-th-date">Projected date</th>
+                                            <th scope="col" class="simulator-th-status">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for scenario in phase3.simulator.scenarios %}
+                                            <tr class="simulator-scenario-row {% if scenario.key == phase3.simulator.selected_scenario_key %}is-selected{% endif %}">
+                                                <td class="simulator-scenario-main">
+                                                    <div class="simulator-scenario-title">{{ scenario.label }}</div>
+                                                    <div class="simulator-scenario-copy">{{ scenario.insight }}</div>
+                                                </td>
+                                                <td class="text-end simulator-scenario-number">{{ scenario.monthly_contribution|floatformat:0 }}{{ currency_symbol }}</td>
+                                                <td class="text-end simulator-scenario-number">
+                                                    {% if scenario.months_to_goal is not None %}
+                                                        {{ scenario.months_to_goal }}
+                                                    {% else %}
+                                                        --
+                                                    {% endif %}
+                                                </td>
+                                                <td class="simulator-scenario-date">
+                                                    {% if scenario.projected_date %}
+                                                        {{ scenario.projected_date|date:"M d, Y" }}
+                                                    {% else %}
+                                                        --
+                                                    {% endif %}
+                                                </td>
+                                                <td class="simulator-scenario-status">
+                                                    <span class="simulator-status-pill simulator-status-{{ scenario.status_tone }}">
+                                                        {{ scenario.status_label }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>

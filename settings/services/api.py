@@ -6,7 +6,7 @@ from core.services.net_worth import calculate_net_worth
 from finances.services import metrics as finance_metrics
 from finances.services import queries as finance_queries
 from holdings.services.api import get_current_value
-from settings.models import UserSettings
+from settings.models import SavingsPotentialModel, UserSettings
 
 class SettingsService:
     PROFILE_CONFIG = {
@@ -62,10 +62,16 @@ class SettingsService:
             "low_savings_threshold": 8,
         },
     }
+    PROFILE_SCENARIO_MAP = {
+        "SECURITY": "conservative",
+        "BALANCED": "baseline",
+        "GROWTH": "optimistic",
+    }
 
     @staticmethod
     def get_settings(user):
         obj, _created = UserSettings.objects.get_or_create(user=user)
+        SavingsPotentialModel.objects.get_or_create(user_settings=obj)
         return obj
 
     @staticmethod
@@ -137,7 +143,12 @@ class SettingsService:
         simulator = SettingsService._build_goal_simulator(
             settings=user_settings,
             current_net_worth=current_net_worth,
+            avg_monthly_income=avg_monthly_income,
+            avg_monthly_expenses=avg_monthly_expenses,
             avg_monthly_savings=avg_monthly_savings,
+            actual_savings_rate=actual_savings_rate,
+            emergency_months_covered=emergency_months_covered,
+            expense_volatility=expense_volatility,
             today=today,
             profile_config=profile_config,
         )
@@ -187,44 +198,216 @@ class SettingsService:
         return std_dev / avg_monthly_expenses
 
     @staticmethod
-    def _build_goal_simulator(settings, current_net_worth, avg_monthly_savings, today, profile_config=None):
+    def _build_goal_simulator(
+        settings,
+        current_net_worth,
+        avg_monthly_income,
+        avg_monthly_expenses,
+        avg_monthly_savings,
+        actual_savings_rate,
+        emergency_months_covered,
+        expense_volatility,
+        today,
+        profile_config=None,
+    ):
         if profile_config is None:
             profile_config = SettingsService._get_profile_config(settings.financial_profile)
 
+        savings_model = SettingsService._get_savings_model(settings)
         target_net_worth = float(settings.net_worth_target or 0.0)
-        annual_target = float(settings.annual_savings_target or 0.0)
-        monthly_from_target = (annual_target / 12.0) if annual_target > 0 else 0.0
-        fallback_monthly = max(avg_monthly_savings, 0.0) * profile_config["simulator_multiplier"]
-        suggested_monthly_contribution = monthly_from_target if monthly_from_target > 0 else fallback_monthly
-
         remaining_gap = max(target_net_worth - current_net_worth, 0.0)
-        months_to_goal = None
-        projected_date = None
-        projected_days = None
-        if remaining_gap == 0:
-            months_to_goal = 0
-            projected_date = today
-            projected_days = 0
-        elif suggested_monthly_contribution > 0:
-            months_to_goal = math.ceil(remaining_gap / suggested_monthly_contribution)
-            projected_date = SettingsService._add_months(today, months_to_goal)
-            projected_days = (projected_date - today).days
-
         target_date = settings.target_date
-        on_track = bool(projected_date and target_date and projected_date <= target_date)
+        scenarios = SettingsService._build_potential_scenarios(
+            settings=settings,
+            savings_model=savings_model,
+            avg_monthly_income=avg_monthly_income,
+            avg_monthly_expenses=avg_monthly_expenses,
+            avg_monthly_savings=avg_monthly_savings,
+            actual_savings_rate=actual_savings_rate,
+            emergency_months_covered=emergency_months_covered,
+            expense_volatility=expense_volatility,
+            remaining_gap=remaining_gap,
+            target_date=target_date,
+            today=today,
+            profile_config=profile_config,
+        )
+
+        selected_scenario_key = SettingsService._resolve_default_scenario_key(settings.financial_profile)
+        selected_scenario = next(
+            (item for item in scenarios if item["key"] == selected_scenario_key),
+            scenarios[1] if len(scenarios) > 1 else scenarios[0],
+        )
 
         return {
             "current_net_worth": round(current_net_worth, 2),
             "target_net_worth": round(target_net_worth, 2),
             "remaining_gap": round(remaining_gap, 2),
-            "suggested_monthly_contribution": round(suggested_monthly_contribution, 2),
+            "suggested_monthly_contribution": selected_scenario["monthly_contribution"],
+            "months_to_goal": selected_scenario["months_to_goal"],
+            "projected_date": selected_scenario["projected_date"],
+            "projected_days": selected_scenario["projected_days"],
+            "target_date": target_date,
+            "on_track": selected_scenario["on_track"],
+            "is_target_reached": remaining_gap == 0,
+            "scenarios": scenarios,
+            "selected_scenario_key": selected_scenario["key"],
+            "selected_scenario_label": selected_scenario["label"],
+            "status_label": selected_scenario["status_label"],
+            "status_tone": selected_scenario["status_tone"],
+        }
+
+    @staticmethod
+    def _get_savings_model(settings):
+        savings_model, _created = SavingsPotentialModel.objects.get_or_create(
+            user_settings=settings,
+        )
+        return savings_model
+
+    @staticmethod
+    def _resolve_default_scenario_key(profile_code):
+        return SettingsService.PROFILE_SCENARIO_MAP.get(profile_code, "baseline")
+
+    @staticmethod
+    def _build_potential_scenarios(
+        settings,
+        savings_model,
+        avg_monthly_income,
+        avg_monthly_expenses,
+        avg_monthly_savings,
+        actual_savings_rate,
+        emergency_months_covered,
+        expense_volatility,
+        remaining_gap,
+        target_date,
+        today,
+        profile_config,
+    ):
+        annual_target = float(settings.annual_savings_target or 0.0)
+        monthly_from_target = (annual_target / 12.0) if annual_target > 0 else 0.0
+
+        savings_rate_target = float(settings.savings_rate_target or 0.0)
+        configured_rate = (savings_rate_target / 100.0) if savings_rate_target > 0 else 0.0
+        minimum_rate = profile_config["minimum_savings_rate"]
+        target_rate = max(configured_rate, minimum_rate)
+        monthly_from_rate = max(avg_monthly_income, 0.0) * target_rate
+
+        fallback_from_expenses = max(avg_monthly_expenses, 0.0) * minimum_rate
+        base_monthly_capacity = max(
+            max(avg_monthly_savings, 0.0),
+            monthly_from_target,
+            monthly_from_rate,
+            fallback_from_expenses,
+        )
+
+        volatility_factor = 1.0 - min(max(expense_volatility, 0.0), 1.0) * float(savings_model.volatility_impact)
+        volatility_factor = min(max(volatility_factor, 0.55), 1.0)
+
+        configured_emergency_months = max(int(settings.emergency_fund_months or 0), 1)
+        emergency_coverage_ratio = (
+            emergency_months_covered / configured_emergency_months
+            if configured_emergency_months > 0
+            else 1.0
+        )
+        emergency_shortfall = max(0.0, 1.0 - min(emergency_coverage_ratio, 1.0))
+        emergency_factor = 1.0 - (emergency_shortfall * float(savings_model.emergency_buffer_impact))
+        emergency_factor = min(max(emergency_factor, 0.60), 1.0)
+
+        if actual_savings_rate <= 0 and avg_monthly_savings <= 0:
+            discipline_factor = 0.85
+        elif actual_savings_rate < (minimum_rate * 100):
+            discipline_factor = 0.92
+        else:
+            discipline_factor = 1.0
+
+        profile_factor = profile_config["simulator_multiplier"]
+        base_projection = base_monthly_capacity * volatility_factor * emergency_factor * discipline_factor * profile_factor
+        base_projection = max(base_projection, 0.0)
+
+        scenario_definitions = [
+            {
+                "key": "conservative",
+                "label": "Conservative",
+                "factor": float(savings_model.conservative_factor),
+                "insight": "Preserves more cash buffer in unstable months.",
+            },
+            {
+                "key": "baseline",
+                "label": "Baseline",
+                "factor": float(savings_model.baseline_factor),
+                "insight": "Based on your current savings pace and targets.",
+            },
+            {
+                "key": "optimistic",
+                "label": "Optimistic",
+                "factor": float(savings_model.optimistic_factor),
+                "insight": "Assumes disciplined spending and stable income.",
+            },
+        ]
+
+        scenarios = []
+        for definition in scenario_definitions:
+            monthly_contribution = round(max(base_projection * definition["factor"], 0.0), 2)
+            projection = SettingsService._project_goal_timeline(
+                remaining_gap=remaining_gap,
+                monthly_contribution=monthly_contribution,
+                target_date=target_date,
+                today=today,
+            )
+            scenarios.append(
+                {
+                    "key": definition["key"],
+                    "label": definition["label"],
+                    "monthly_contribution": monthly_contribution,
+                    "insight": definition["insight"],
+                    **projection,
+                }
+            )
+
+        return scenarios
+
+    @staticmethod
+    def _project_goal_timeline(remaining_gap, monthly_contribution, target_date, today):
+        months_to_goal = None
+        projected_date = None
+        projected_days = None
+
+        if remaining_gap == 0:
+            months_to_goal = 0
+            projected_date = today
+            projected_days = 0
+        elif monthly_contribution > 0:
+            months_to_goal = math.ceil(remaining_gap / monthly_contribution)
+            projected_date = SettingsService._add_months(today, months_to_goal)
+            projected_days = (projected_date - today).days
+
+        on_track = bool(projected_date and target_date and projected_date <= target_date)
+        status_label, status_tone = SettingsService._get_timeline_status(
+            remaining_gap=remaining_gap,
+            monthly_contribution=monthly_contribution,
+            projected_date=projected_date,
+            target_date=target_date,
+        )
+
+        return {
             "months_to_goal": months_to_goal,
             "projected_date": projected_date,
             "projected_days": projected_days,
-            "target_date": target_date,
             "on_track": on_track,
-            "is_target_reached": remaining_gap == 0,
+            "status_label": status_label,
+            "status_tone": status_tone,
         }
+
+    @staticmethod
+    def _get_timeline_status(remaining_gap, monthly_contribution, projected_date, target_date):
+        if remaining_gap == 0:
+            return "Target reached", "success"
+        if monthly_contribution <= 0:
+            return "No savings capacity", "danger"
+        if not target_date:
+            return "No target date", "muted"
+        if projected_date and projected_date <= target_date:
+            return "On track", "success"
+        return "Behind schedule", "warning"
 
     @staticmethod
     def _calculate_financial_score(

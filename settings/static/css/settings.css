@@ -162,33 +162,271 @@
 }
 
 .settings-page .goal-simulator {
-    border: 1px solid #dbe7f3;
-    border-radius: 1rem;
-    background: linear-gradient(180deg, #fcfeff 0%, #f7fbff 100%);
-    padding: 1rem;
+    border: 1px solid #d3e0ef;
+    border-radius: 1.05rem;
+    background:
+        radial-gradient(circle at 100% 0%, rgba(148, 197, 255, 0.2), transparent 34%),
+        linear-gradient(180deg, #fcfeff 0%, #f5faff 100%);
+    padding: 1.1rem;
 }
 
-.settings-page .simulator-metric {
+.settings-page .simulator-progress-label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     font-weight: 700;
-    font-size: 1.1rem;
+    color: #64748b;
+}
+
+.settings-page .simulator-progress-value {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #1d4ed8;
+}
+
+.settings-page .simulator-progress-track {
+    height: 10px;
+    border-radius: 999px;
+    background-color: #e2ebf7;
+}
+
+.settings-page .simulator-progress-bar {
+    border-radius: 999px;
+    background: linear-gradient(90deg, #2563eb 0%, #0ea5e9 100%);
+}
+
+.settings-page .simulator-kpi-card {
+    border: 1px solid #dbe7f3;
+    border-radius: 0.9rem;
+    background: #ffffff;
+    padding: 0.9rem;
+    min-height: 122px;
+}
+
+.settings-page .simulator-kpi-label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.settings-page .simulator-kpi-value {
+    font-size: 1.85rem;
+    line-height: 1.12;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.settings-page .simulator-kpi-meta {
+    font-size: 0.86rem;
+    color: #475569;
 }
 
 .settings-page .simulator-results {
     border-top: 1px dashed #d9e6f3;
+    margin-top: 1rem;
     padding-top: 1rem;
 }
 
 .settings-page .simulator-result-box {
     height: 100%;
-    border: 1px solid #dbe7f3;
+    border: 1px solid #d5e4f3;
     border-radius: 0.85rem;
-    background: #ffffff;
-    padding: 0.85rem;
+    background: linear-gradient(180deg, #ffffff 0%, #f9fcff 100%);
+    padding: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 104px;
 }
 
-.settings-page .simulator-result-box strong {
-    font-size: 1.05rem;
+.settings-page .simulator-result-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.settings-page .simulator-result-value {
+    font-size: 1.4rem;
     color: var(--settings-ink);
+    line-height: 1.2;
+    font-weight: 800;
+}
+
+.settings-page .simulator-scenarios {
+    border-top: 1px dashed #d9e6f3;
+    margin-top: 1rem;
+    padding-top: 1rem;
+}
+
+.settings-page .simulator-scenarios-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.settings-page .simulator-selected-badge {
+    background: #e0ecff;
+    color: #1e40af;
+    border: 1px solid #bfd6ff;
+    font-weight: 700;
+}
+
+.settings-page .simulator-scenarios-table-wrap {
+    border: 1px solid #dbe7f3;
+    border-radius: 0.9rem;
+    overflow: hidden;
+    background: #ffffff;
+}
+
+.settings-page .simulator-scenarios-table {
+    width: 100%;
+    table-layout: auto;
+}
+
+.settings-page .simulator-col-situation {
+    width: 48%;
+}
+
+.settings-page .simulator-col-monthly {
+    width: 11%;
+}
+
+.settings-page .simulator-col-months {
+    width: 8%;
+}
+
+.settings-page .simulator-col-date {
+    width: 16%;
+}
+
+.settings-page .simulator-col-status {
+    width: 17%;
+}
+
+.settings-page .simulator-scenarios-table th {
+    font-size: 0.73rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    background: #f6f9ff;
+    padding-top: 0.8rem;
+    padding-bottom: 0.8rem;
+    line-height: 1.15;
+    border-bottom-color: #dbe7f3;
+    vertical-align: middle;
+}
+
+.settings-page .simulator-scenarios-table td {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    vertical-align: middle;
+    border-color: #edf2f7;
+}
+
+.settings-page .simulator-scenarios-table th:first-child,
+.settings-page .simulator-scenarios-table td:first-child {
+    padding-left: 1.15rem;
+}
+
+.settings-page .simulator-scenarios-table th:last-child,
+.settings-page .simulator-scenarios-table td:last-child {
+    padding-right: 1.15rem;
+}
+
+.settings-page .simulator-th-situation {
+    text-align: left;
+}
+
+.settings-page .simulator-th-number {
+    white-space: nowrap;
+}
+
+.settings-page .simulator-th-date,
+.settings-page .simulator-scenario-date {
+    white-space: nowrap;
+}
+
+.settings-page .simulator-th-status,
+.settings-page .simulator-scenario-status {
+    text-align: right;
+}
+
+.settings-page .simulator-scenario-row {
+    transition: background-color 0.2s ease-in-out;
+}
+
+.settings-page .simulator-scenario-row:hover {
+    background-color: #f8fbff;
+}
+
+.settings-page .simulator-scenario-row.is-selected {
+    background: linear-gradient(90deg, rgba(219, 234, 254, 0.85), rgba(239, 246, 255, 0.85));
+}
+
+.settings-page .simulator-scenario-title {
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: #0f172a;
+    line-height: 1.15;
+    margin-bottom: 0.25rem;
+}
+
+.settings-page .simulator-scenario-copy {
+    font-size: 0.92rem;
+    line-height: 1.35;
+    color: #475569;
+    max-width: 44ch;
+}
+
+.settings-page .simulator-scenario-number {
+    font-weight: 700;
+    color: #0f172a;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.settings-page .simulator-scenario-date {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.settings-page .simulator-status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 0.3rem 0.72rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+    margin-left: auto;
+    max-width: 100%;
+}
+
+.settings-page .simulator-status-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.settings-page .simulator-status-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.settings-page .simulator-status-danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.settings-page .simulator-status-muted {
+    background: #e2e8f0;
+    color: #334155;
 }
 
 @media (min-width: 1200px) {
@@ -212,5 +450,38 @@
 
     .settings-page .goal-simulator {
         padding: 0.85rem;
+    }
+
+    .settings-page .simulator-kpi-value {
+        font-size: 1.55rem;
+    }
+
+    .settings-page .simulator-result-value {
+        font-size: 1.25rem;
+    }
+
+    .settings-page .simulator-scenarios-head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .settings-page .simulator-scenarios-table th:first-child,
+    .settings-page .simulator-scenarios-table td:first-child {
+        padding-left: 0.8rem;
+    }
+
+    .settings-page .simulator-scenarios-table th:last-child,
+    .settings-page .simulator-scenarios-table td:last-child {
+        padding-right: 0.8rem;
+    }
+
+    .settings-page .simulator-scenario-copy {
+        max-width: none;
+    }
+}
+
+@media (max-width: 1199.98px) {
+    .settings-page .simulator-scenarios-table {
+        min-width: 840px;
     }
 }

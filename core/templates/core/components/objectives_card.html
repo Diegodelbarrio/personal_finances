@@ -1,71 +1,160 @@
 {% load l10n %}
-<div class="card card-rounded border-0 shadow-sm h-100">
-    <div class="card-body p-4 d-flex flex-column justify-content-between">
-        
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="fw-bold mb-0 text-dark">
-                <i class="bi bi-rocket-takeoff me-2 text-primary"></i>Financial Goals
-            </h5>
-            {% if stats.days_left is not None %}
-                <span class="badge {% if stats.days_left < 30 %}bg-danger-subtle text-danger{% else %}bg-light text-muted{% endif %} rounded-pill px-3">
-                    <i class="bi bi-calendar-event me-1"></i>{{ stats.days_left }} days left
-                </span>
+<div class="card goals-card card-rounded border-0 h-100">
+    <div class="card-body p-4 goals-card-body d-flex flex-column">
+        <div class="goals-header">
+            <span class="goals-header-icon">
+                <i class="bi bi-bullseye"></i>
+            </span>
+            <div class="goals-header-copy">
+                <p class="goals-kicker mb-1">Target Center</p>
+                <h5 class="goals-title fw-bold mb-1 text-dark">Financial Objectives</h5>
+                <p class="goals-subtitle mb-0">Track your progress and keep your plan on course.</p>
+            </div>
+            <span class="goals-active-badge">
+                {% if stats.settings.net_worth_target > 0 and stats.settings.annual_savings_target > 0 %}
+                    <i class="bi bi-bullseye me-1"></i>2 Active
+                {% else %}
+                    <i class="bi bi-bullseye me-1"></i>1 Active
+                {% endif %}
+            </span>
+        </div>
+
+        <div class="goals-deadline{% if stats.is_date_passed %} is-passed{% elif stats.days_left is not None and stats.days_left < 30 %} is-critical{% endif %}">
+            <span class="goals-deadline-icon">
+                <i class="bi bi-calendar-event"></i>
+            </span>
+            <div class="goals-deadline-copy">
+                {% if stats.settings.target_date %}
+                    <div class="goals-deadline-title">Target date: {{ stats.settings.target_date|date:"M d, Y" }}</div>
+                    <small>
+                        {% if stats.is_date_passed %}
+                            Deadline reached. Review your targets for a new cycle.
+                        {% elif stats.days_left is not None %}
+                            {{ stats.days_left }} days left to complete your objectives.
+                        {% endif %}
+                    </small>
+                {% else %}
+                    <div class="goals-deadline-title">No deadline defined yet</div>
+                    <small>Add a target date to improve focus and urgency.</small>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="goals-grid">
+            {% if stats.settings.net_worth_target > 0 %}
+                <article class="goal-block">
+                    <div class="goal-block-head">
+                        <div>
+                            <p class="goal-label mb-1">Net Worth</p>
+                            <h6 class="goal-current mb-0">{{ current_net_worth|floatformat:0 }}€</h6>
+                        </div>
+                        <span class="goal-state
+                            {% if stats.nw_progress >= 100 %}is-done
+                            {% elif stats.nw_progress >= 70 %}is-track
+                            {% else %}is-risk{% endif %}">
+                            {% if stats.nw_progress >= 100 %}
+                                Completed
+                            {% elif stats.nw_progress >= 70 %}
+                                On track
+                            {% else %}
+                                Needs attention
+                            {% endif %}
+                        </span>
+                    </div>
+                    <p class="goal-target mb-2">Target {{ stats.settings.net_worth_target|floatformat:0 }}€</p>
+                    <div class="progress goal-progress">
+                        <div class="progress-bar goal-progress-bar goal-progress-bar-nw js-progress"
+                             role="progressbar"
+                             data-value="{% if stats.nw_progress < 0 %}0{% elif stats.nw_progress > 100 %}100{% else %}{{ stats.nw_progress|floatformat:0 }}{% endif %}">
+                        </div>
+                    </div>
+                    <div class="goal-meta">
+                        <span class="goal-percent">
+                            {% if stats.nw_progress < 0 %}0.0{% else %}{{ stats.nw_progress|floatformat:1 }}{% endif %}%
+                        </span>
+                        <span class="goal-ratio">{{ current_net_worth|floatformat:0 }} / {{ stats.settings.net_worth_target|floatformat:0 }}€</span>
+                    </div>
+                    <p class="goal-insight mb-0">
+                        {% if stats.nw_progress >= 100 %}
+                            Objective completed. Keep consistency to hold this level.
+                        {% elif stats.nw_progress >= 70 %}
+                            Good momentum. Stay on this pace to close the cycle strong.
+                        {% else %}
+                            Off pace. Prioritize contributions to reduce the gap.
+                        {% endif %}
+                    </p>
+                </article>
+            {% else %}
+                <article class="goal-block goal-block-empty">
+                    <span class="goal-empty-icon"><i class="bi bi-graph-up"></i></span>
+                    <div>
+                        <p class="goal-label mb-1">Net Worth</p>
+                        <p class="goal-empty-copy mb-0">No target configured yet.</p>
+                        <a href="{% url 'settings:settings_home' %}" class="goal-empty-link">Configure target</a>
+                    </div>
+                </article>
+            {% endif %}
+
+            {% if stats.settings.annual_savings_target > 0 %}
+                <article class="goal-block">
+                    <div class="goal-block-head">
+                        <div>
+                            <p class="goal-label mb-1">Annual Savings</p>
+                            <h6 class="goal-current mb-0">{{ total_annual_savings|floatformat:0 }}€</h6>
+                        </div>
+                        <span class="goal-state
+                            {% if stats.sav_progress >= 100 %}is-done
+                            {% elif stats.sav_progress >= 60 %}is-track
+                            {% else %}is-risk{% endif %}">
+                            {% if stats.sav_progress >= 100 %}
+                                Completed
+                            {% elif stats.sav_progress >= 60 %}
+                                On track
+                            {% else %}
+                                Needs attention
+                            {% endif %}
+                        </span>
+                    </div>
+                    <p class="goal-target mb-2">Target {{ stats.settings.annual_savings_target|floatformat:0 }}€</p>
+                    <div class="progress goal-progress">
+                        <div class="progress-bar goal-progress-bar goal-progress-bar-sav js-progress"
+                             role="progressbar"
+                             data-value="{% if stats.sav_progress < 0 %}0{% elif stats.sav_progress > 100 %}100{% else %}{{ stats.sav_progress|floatformat:0 }}{% endif %}">
+                        </div>
+                    </div>
+                    <div class="goal-meta">
+                        <span class="goal-percent">
+                            {% if stats.sav_progress < 0 %}0.0{% else %}{{ stats.sav_progress|floatformat:1 }}{% endif %}%
+                        </span>
+                        <span class="goal-ratio">{{ total_annual_savings|floatformat:0 }} / {{ stats.settings.annual_savings_target|floatformat:0 }}€</span>
+                    </div>
+                    <p class="goal-insight mb-0">
+                        {% if stats.sav_progress >= 100 %}
+                            Annual target reached. Extra savings now strengthen next year.
+                        {% elif stats.sav_progress >= 60 %}
+                            Stable progress. Keep your monthly discipline.
+                        {% else %}
+                            Savings are behind plan. Increase allocation this quarter.
+                        {% endif %}
+                    </p>
+                </article>
+            {% else %}
+                <article class="goal-block goal-block-empty">
+                    <span class="goal-empty-icon"><i class="bi bi-piggy-bank"></i></span>
+                    <div>
+                        <p class="goal-label mb-1">Annual Savings</p>
+                        <p class="goal-empty-copy mb-0">No target configured yet.</p>
+                        <a href="{% url 'settings:settings_home' %}" class="goal-empty-link">Configure target</a>
+                    </div>
+                </article>
             {% endif %}
         </div>
 
-        <div class="mb-5">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="text-muted small fw-bold text-uppercase ls-1">Net Worth Progress</span>
-                <span class="display-6 fw-bold text-primary" style="font-size: 1.8rem;">
-                    {{ stats.nw_progress|floatformat:1 }}%
-                </span>
-            </div>
-            
-            <div class="progress mb-2" style="height: 10px; background-color: #f0f2f5;">
-                <div class="progress-bar bg-primary rounded-pill shadow-sm js-progress" 
-                     role="progressbar" 
-                     data-value="{{ stats.nw_progress|floatformat:0 }}"></div>
-            </div>
-
-            <div class="d-flex justify-content-between">
-                <small class="text-dark fw-bold">{{ current_net_worth|floatformat:0 }}€ <span class="text-muted fw-normal">current</span></small>
-                <small class="text-muted">Target: {{ stats.settings.net_worth_target|floatformat:0 }}€</small>
-            </div>
-        </div>
-
-        <div class="mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="text-muted small fw-bold text-uppercase ls-1">Annual Savings Progress</span>
-                <span class="display-6 fw-bold text-success" style="font-size: 1.8rem;">
-                    {{ stats.sav_progress|floatformat:1 }}%
-                </span>
-            </div>
-            
-            <div class="progress mb-2" style="height: 10px; background-color: #f0f2f5;">
-                <div class="progress-bar bg-success rounded-pill shadow-sm js-progress" 
-                     role="progressbar" 
-                     data-value="{{ stats.sav_progress|floatformat:0 }}"></div>
-            </div>
-
-            <div class="d-flex justify-content-between">
-                <small class="text-dark fw-bold">{{ total_annual_savings|floatformat:0 }}€ <span class="text-muted fw-normal">current</span></small>
-                <small class="text-muted">Target: {{ stats.settings.annual_savings_target|floatformat:0 }}€</small>
-            </div>
-        </div>
-    </div>
-
-    <div class="card-footer bg-transparent border-0 pt-0 pb-4 px-4 text-center">
-        <div class="mx-auto" style="width: 60%;">
-            <a href="{% url 'settings:settings_home' %}" class="btn btn-light btn-sm w-100 rounded-pill text-muted fw-bold border-0 py-2">
+        <div class="goals-footer">
+            <small class="goals-footer-note">Keep targets updated to keep your dashboard actionable.</small>
+            <a href="{% url 'settings:settings_home' %}" class="btn btn-sm btn-dark rounded-pill px-3 goals-footer-btn">
                 Update Targets <i class="bi bi-pencil-square ms-1"></i>
             </a>
         </div>
     </div>
 </div>
-
-<script>
-    document.querySelectorAll('.js-progress').forEach(function(bar) {
-        const value = bar.getAttribute('data-value');
-        bar.style.width = value + '%';
-    });
-</script>

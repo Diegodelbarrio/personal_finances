@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserSettings
+from .models import SavingsPotentialModel, UserSettings
 
 @admin.register(UserSettings)
 class UserSettingsAdmin(admin.ModelAdmin):
@@ -32,3 +32,15 @@ class UserSettingsAdmin(admin.ModelAdmin):
         if obj: # If the object already exists
             return ('user',)
         return ()
+
+
+@admin.register(SavingsPotentialModel)
+class SavingsPotentialModelAdmin(admin.ModelAdmin):
+    list_display = (
+        "user_settings",
+        "conservative_factor",
+        "baseline_factor",
+        "optimistic_factor",
+        "updated_at",
+    )
+    search_fields = ("user_settings__user__username", "user_settings__user__email")

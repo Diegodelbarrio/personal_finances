@@ -85,9 +85,10 @@
 
     <div class="row g-4">
         <div class="col-lg-7">
-            <div class="section-card card-rounded h-100 position-relative">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <div>
+            <div class="section-card card-rounded h-100 nw-panel">
+                <div class="nw-top">
+                    <div class="nw-top-main">
+                        <p class="nw-kicker mb-1">Capital Overview</p>
                         <h6 class="fw-bold text-muted text-uppercase mb-1 nw-label">Global Net Worth</h6>
                         <div class="d-flex align-items-baseline">
                             <h1 class="fw-bold mb-0 text-dark display-amount">
@@ -96,50 +97,108 @@
                         </div>
                     </div>
 
-                    <div class="status-badge js-net-worth-status {% if data_status == 'danger' %}status-danger{% elif data_status == 'warning' %}status-warning{% else %}status-updated{% endif %}"
-                         data-bs-toggle="tooltip"
-                         data-bs-placement="top"
-                         title="{% if data_status == 'danger' %}Data is old (>30 days). Update required{% elif data_status == 'warning' %}Partial update: Some assets are still pending for this month{% else %}All data is up to date.{% endif %}">
-                        <i class="bi {% if data_status == 'danger' %}bi-exclamation-circle{% elif data_status == 'warning' %}bi-hourglass-split{% else %}bi-check-circle{% endif %} me-1"></i>
-                        {% if last_market_date %}{{ last_market_date|date:"d/m/Y" }}{% else %}--/--/--{% endif %}
+                    <div class="nw-top-aside">
+                        <div class="status-badge js-net-worth-status {% if data_status == 'danger' %}status-danger{% elif data_status == 'warning' %}status-warning{% else %}status-updated{% endif %}"
+                             data-bs-toggle="tooltip"
+                             data-bs-placement="top"
+                             title="{% if data_status == 'danger' %}Data is old (>30 days). Update required{% elif data_status == 'warning' %}Partial update: Some assets are still pending for this month{% else %}All data is up to date.{% endif %}">
+                            <i class="bi {% if data_status == 'danger' %}bi-exclamation-circle{% elif data_status == 'warning' %}bi-hourglass-split{% else %}bi-check-circle{% endif %} me-1"></i>
+                            {% if last_market_date %}{{ last_market_date|date:"d/m/Y" }}{% else %}--/--/--{% endif %}
+                        </div>
                     </div>
                 </div>
 
-                <div class="mb-2">
-                    <span class="badge bg-light text-secondary border-0 fw-medium px-2 py-1 nw-evolution-badge">
-                        <i class="bi bi-graph-up me-1"></i>Total Assets Evolution
-                    </span>
+                <div class="nw-metrics-grid">
+                    <div class="nw-metric-card">
+                        <span class="nw-metric-label">Monthly Delta</span>
+                        <strong id="nw-monthly-delta" class="nw-metric-value">--</strong>
+                        <small id="nw-monthly-delta-rate" class="nw-metric-meta">No prior record</small>
+                    </div>
+                    <div class="nw-metric-card">
+                        <span class="nw-metric-label">Period Performance</span>
+                        <strong id="nw-period-delta" class="nw-metric-value">--</strong>
+                        <small id="nw-period-delta-rate" class="nw-metric-meta">Based on visible range</small>
+                    </div>
+                    <div class="nw-metric-card">
+                        <span class="nw-metric-label">Dominant Asset</span>
+                        <strong id="nw-dominant-asset" class="nw-metric-value">--</strong>
+                        <small id="nw-dominant-share" class="nw-metric-meta">--</small>
+                    </div>
                 </div>
 
-                <div class="nw-breakdown-container mb-4">
-                    <div class="progress mb-1 nw-progress-container">
-                        <div id="cash-bar" class="progress-bar bg-success" role="progressbar" data-bs-toggle="tooltip" data-bs-placement="top" title="Cash"></div>
-                        <div id="investments-bar" class="progress-bar bg-primary" role="progressbar" data-bs-toggle="tooltip" data-bs-placement="top" title="Investments"></div>
+                <div class="nw-breakdown-card">
+                    <div class="nw-breakdown-head">
+                        <span class="nw-breakdown-title"><i class="bi bi-pie-chart me-1"></i>Asset Mix</span>
+                        <span id="nw-total-value" class="nw-breakdown-total">-- €</span>
                     </div>
-                    <div class="d-flex justify-content-between nw-breakdown-labels">
-                        <span class="text-muted">Cash: <span id="cash-percentage" class="fw-bold text-dark">--%</span></span>
-                        <span class="text-muted">Investments: <span id="investments-percentage" class="fw-bold text-dark">--%</span></span>
+                    <div class="progress mb-2 nw-progress-container">
+                        <div id="cash-bar" class="progress-bar" role="progressbar" data-bs-toggle="tooltip" data-bs-placement="top" title="Cash"></div>
+                        <div id="investments-bar" class="progress-bar" role="progressbar" data-bs-toggle="tooltip" data-bs-placement="top" title="Investments"></div>
+                    </div>
+                    <div class="nw-breakdown-legend">
+                        <div class="nw-legend-item nw-legend-cash">
+                            <span class="nw-legend-dot"></span>
+                            <span class="nw-legend-label">Cash</span>
+                            <span id="nw-cash-value" class="nw-legend-value">-- €</span>
+                            <span id="cash-percentage" class="nw-legend-share">--%</span>
+                        </div>
+                        <div class="nw-legend-item nw-legend-investments">
+                            <span class="nw-legend-dot"></span>
+                            <span class="nw-legend-label">Investments</span>
+                            <span id="nw-investments-value" class="nw-legend-value">-- €</span>
+                            <span id="investments-percentage" class="nw-legend-share">--%</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="chart-container nw-chart-wrapper">
-                    <canvas id="netWorthChart"></canvas>
+                <div class="nw-chart-card">
+                    <div class="nw-chart-head">
+                        <span class="nw-chart-title"><i class="bi bi-graph-up-arrow me-1"></i>Net Worth Evolution</span>
+                        <span id="nw-range-label" class="nw-chart-range">--</span>
+                    </div>
+                    <div class="chart-container nw-chart-wrapper">
+                        <canvas id="netWorthChart"></canvas>
+                    </div>
+                    <div class="nw-range-slider-block js-nw-range-slider-block">
+                        <div class="nw-range-slider-head">
+                            <span class="nw-range-slider-title">Visible Window</span>
+                            <span id="nw-range-window" class="nw-range-slider-value">--</span>
+                        </div>
+                        <div class="nw-range-slider">
+                            <span class="nw-range-track"></span>
+                            <span id="nw-range-fill" class="nw-range-fill"></span>
+                            <input id="nw-range-start" class="nw-range-input nw-range-input-start" type="range" min="0" max="0" value="0" step="1" aria-label="Start range for net worth chart">
+                            <input id="nw-range-end" class="nw-range-input nw-range-input-end" type="range" min="0" max="0" value="0" step="1" aria-label="End range for net worth chart">
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-5">
+        <div class="col-lg-5 goals-column">
             {% if stats.settings.net_worth_target > 0 or stats.settings.annual_savings_target > 0 %}
-                <div class="goals-shell h-100">
+                <div class="goals-shell">
                     {% include "core/components/objectives_card.html" %}
                 </div>
             {% else %}
-                <div class="card card-rounded h-100 card-empty-goals d-flex align-items-center justify-content-center p-5">
-                    <div class="text-center">
-                        <i class="bi bi-plus-circle text-muted mb-3 empty-state-icon"></i>
-                        <h6 class="fw-bold">No Objectives Set</h6>
-                        <p class="small text-muted mb-3">Define your targets to track progress.</p>
-                        <a href="{% url 'settings:settings_home' %}" class="btn btn-sm btn-outline-primary rounded-pill px-4">Setup Now</a>
+                <div class="card card-rounded h-100 card-empty-goals goals-empty-state p-4 p-md-5">
+                    <div class="goals-empty-content">
+                        <span class="goals-empty-icon mb-3">
+                            <i class="bi bi-bullseye"></i>
+                        </span>
+                        <div class="goals-empty-copy">
+                            <h5 class="fw-bold mb-2">Turn Objectives Into Action</h5>
+                            <p class="small text-muted mb-3">
+                                Set your first milestones to monitor progress directly from this dashboard.
+                            </p>
+                            <div class="goals-empty-points mb-3">
+                                <span class="goals-point"><i class="bi bi-graph-up-arrow"></i> Net worth target</span>
+                                <span class="goals-point"><i class="bi bi-piggy-bank"></i> Annual savings target</span>
+                            </div>
+                            <a href="{% url 'settings:settings_home' %}" class="btn btn-dark rounded-pill px-4 goals-empty-cta">
+                                Set Objectives <i class="bi bi-arrow-right-short ms-1"></i>
+                            </a>
+                        </div>
                     </div>
                 </div>
             {% endif %}
@@ -170,8 +229,9 @@
                     <div class="quick-action-content">
                         <div class="fw-bold quick-action-title">Add Expense/Income</div>
                         <small class="quick-action-meta">Finances</small>
+                        <span class="quick-action-note">Primary daily flow</span>
                     </div>
-                    <i class="bi bi-arrow-up-right quick-action-chevron"></i>
+                    
                 </a>
 
                 <div class="quick-actions-grid mt-1">
@@ -181,7 +241,7 @@
                             <div class="fw-bold quick-action-title">Investment</div>
                             <small class="quick-action-meta d-block">Portfolio</small>
                         </div>
-                        <i class="bi bi-arrow-up-right quick-action-chevron"></i>
+                        
                     </a>
                     <a href="{% url 'investments:create_asset_history' %}?next={{ request.get_full_path|urlencode }}" class="quick-action-tile quick-action-small text-decoration-none text-dark">
                         <div class="quick-action-icon text-info"><i class="bi bi-camera"></i></div>
@@ -189,8 +249,11 @@
                             <div class="fw-bold quick-action-title">Snapshot</div>
                             <small class="quick-action-meta d-block">Asset Value</small>
                         </div>
-                        <i class="bi bi-arrow-up-right quick-action-chevron"></i>
+                        
                     </a>
+                </div>
+                <div class="quick-actions-footer mt-auto">
+                    <small>Log finances and portfolio movements without leaving your current context.</small>
                 </div>
             </div>
         </div>
@@ -201,7 +264,7 @@
                     <div class="execution-head-icon text-primary"><i class="bi bi-grid-1x2"></i></div>
                     <div>
                         <h6 class="fw-bold mb-0">Tools Hub</h6>
-                        <small class="text-muted">All tools with equal priority</small>
+                        <small class="text-muted">Analysis and control utilities</small>
                     </div>
                 </div>
 
@@ -212,7 +275,7 @@
                             <span class="compound-tool-title">Compound Interest</span>
                             <small class="compound-tool-meta">Projection</small>
                         </span>
-                        <i class="bi bi-arrow-up-right compound-tool-arrow"></i>
+                        
                     </a>
                     <a href="{% url 'core:market_data' %}" class="compound-tool-link text-decoration-none">
                         <span class="compound-tool-icon text-info"><i class="bi bi-activity"></i></span>
@@ -220,7 +283,7 @@
                             <span class="compound-tool-title">Market Watch</span>
                             <small class="compound-tool-meta">Live data</small>
                         </span>
-                        <i class="bi bi-arrow-up-right compound-tool-arrow"></i>
+                        
                     </a>
                     <a href="{% url 'manage_categories' %}" class="compound-tool-link text-decoration-none">
                         <span class="compound-tool-icon text-success"><i class="bi bi-tags"></i></span>
@@ -228,7 +291,7 @@
                             <span class="compound-tool-title">Categories</span>
                             <small class="compound-tool-meta">Organize</small>
                         </span>
-                        <i class="bi bi-arrow-up-right compound-tool-arrow"></i>
+                        
                     </a>
                     <a href="{% url 'knowledge:index' %}" class="compound-tool-link text-decoration-none">
                         <span class="compound-tool-icon text-warning"><i class="bi bi-journal-bookmark"></i></span>
@@ -236,8 +299,11 @@
                             <span class="compound-tool-title">Knowledge</span>
                             <small class="compound-tool-meta">Learn</small>
                         </span>
-                        <i class="bi bi-arrow-up-right compound-tool-arrow"></i>
+                        
                     </a>
+                </div>
+                <div class="compound-footer mt-2">
+                    <small>Planning, market signals and organization in one compact workspace.</small>
                 </div>
             </div>
         </div>
@@ -245,9 +311,28 @@
         <div class="col-lg-4">
             {% if emergency_fund %}
                 <div class="card card-rounded h-100 card-emergency p-4 execution-card execution-card-fund">
+                    <div class="execution-card-head fund-head">
+                        <div class="execution-head-icon {% if emergency_fund.is_ready %}text-success{% else %}text-primary{% endif %}">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-0">Emergency Fund</h6>
+                            <small class="text-muted">
+                                {% if emergency_fund.is_ready %}
+                                    Protection target reached
+                                {% else %}
+                                    Building your safety buffer
+                                {% endif %}
+                            </small>
+                        </div>
+                        <span class="fund-status-chip {% if emergency_fund.is_ready %}is-ready{% else %}is-building{% endif %}">
+                            {% if emergency_fund.is_ready %}Ready{% else %}In progress{% endif %}
+                        </span>
+                    </div>
+
                     <div class="d-flex justify-content-between align-items-start mb-3 fund-top">
                         <div>
-                            <h6 class="fw-bold text-muted text-uppercase small mb-1 fund-title">Emergency Fund</h6>
+                            <p class="fw-bold text-muted text-uppercase small mb-1 fund-title">Coverage</p>
                             <div class="d-flex align-items-baseline">
                                 <h2 class="fw-bold mb-0 text-dark fund-months">{{ emergency_fund.months_covered|floatformat:1 }}</h2>
                                 <span class="text-muted ms-1 small fund-months-label">months</span>
@@ -263,6 +348,13 @@
                     </div>
 
                     <div class="mt-auto fund-progress-block">
+                        <p class="fund-guidance mb-2">
+                            {% if emergency_fund.is_ready %}
+                                Your reserve can already absorb your planned emergency window.
+                            {% else %}
+                                Keep increasing liquid cash to secure your full target coverage.
+                            {% endif %}
+                        </p>
                         <div class="d-flex justify-content-between align-items-end mb-1">
                             <span class="badge {% if emergency_fund.is_ready %}bg-success{% else %}bg-primary{% endif %} rounded-pill badge-status">
                                 {{ emergency_fund.progress|floatformat:0 }}% Ready
@@ -290,13 +382,13 @@
                     </div>
                 </div>
             {% else %}
-                <div class="card card-rounded h-100 card-emergency card-emergency-empty p-4 d-flex flex-column justify-content-center align-items-center text-center position-relative execution-card execution-card-fund">
+                <div class="card card-rounded h-100 card-emergency card-emergency-empty p-4 d-flex flex-column justify-content-center align-items-center text-center execution-card execution-card-fund">
                     <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mb-3 icon-box-lg">
                         <i class="bi bi-shield-plus text-muted fs-4"></i>
                     </div>
                     <h6 class="fw-bold text-dark mb-1">Emergency Fund</h6>
-                    <p class="text-muted small mb-0">Not configured yet</p>
-                    <a href="{% url 'settings:settings_home' %}" class="stretched-link"></a>
+                    <p class="text-muted small mb-3">Not configured yet. Define your target months and yearly baseline.</p>
+                    <a href="{% url 'settings:settings_home' %}" class="btn btn-sm btn-outline-dark rounded-pill px-3">Configure</a>
                 </div>
             {% endif %}
         </div>

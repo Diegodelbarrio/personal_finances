@@ -2,6 +2,26 @@
  * Lógica para el Dashboard principal (Index)
  */
 document.addEventListener('DOMContentLoaded', () => {
+    const formatEuro = (value, digits = 0) => {
+        const amount = Number(value) || 0;
+        return `${amount.toLocaleString('de-DE', {
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits
+        })} €`;
+    };
+
+    const formatSignedEuro = (value) => {
+        const amount = Number(value) || 0;
+        const sign = amount >= 0 ? '+' : '-';
+        return `${sign}${Math.abs(amount).toLocaleString('de-DE', { maximumFractionDigits: 0 })} €`;
+    };
+
+    const updateDeltaTone = (node, value) => {
+        if (!node) return;
+        node.classList.remove('is-positive', 'is-negative');
+        if (value > 0) node.classList.add('is-positive');
+        if (value < 0) node.classList.add('is-negative');
+    };
     
     // --- 1. GRÁFICO DE NET WORTH ---
     const chartCanvas = document.getElementById('netWorthChart');
@@ -14,80 +34,108 @@ document.addEventListener('DOMContentLoaded', () => {
             const ctx = chartCanvas.getContext('2d');
             const rawData = JSON.parse(dataContainer.textContent);
             if (rawData && rawData.length > 0) {
-                
-                // --- CÁLCULO DE PORCENTAJES (Breakdown) con Fallback ---
+                const normalizedData = rawData.map(item => ({
+                    label: item.label || '',
+                    savings: Number(item.savings) || 0,
+                    investments: Number(item.investments) || 0
+                }));
+
                 // Detectamos si el estado global no es "ok" (warning o danger)
                 const badge = document.querySelector('.js-net-worth-status');
                 const isNotOk = badge?.classList.contains('status-danger') || badge?.classList.contains('status-warning');
-                
-                let breakdownEntry = rawData[rawData.length - 1];
-                
-                // Si hay historial y el mes actual parece incompleto o está marcado como stale,
-                // usamos los datos del mes anterior para el indicador de porcentajes.
-                if (rawData.length > 1) {
-                    const prevEntry = rawData[rawData.length - 2];
-                    const isIncomplete = (breakdownEntry.savings === 0 && prevEntry.savings > 0) || 
-                                        (breakdownEntry.investments === 0 && prevEntry.investments > 0);
-                    
-                    if (isNotOk || isIncomplete) {
-                        breakdownEntry = prevEntry;
+
+                const cashBar = document.getElementById('cash-bar');
+                const invBar = document.getElementById('investments-bar');
+                const cashText = document.getElementById('cash-percentage');
+                const invText = document.getElementById('investments-percentage');
+                const totalText = document.getElementById('nw-total-value');
+                const cashValueText = document.getElementById('nw-cash-value');
+                const invValueText = document.getElementById('nw-investments-value');
+                const rangeLabel = document.getElementById('nw-range-label');
+                const monthlyDeltaNode = document.getElementById('nw-monthly-delta');
+                const monthlyRateNode = document.getElementById('nw-monthly-delta-rate');
+                const periodDeltaNode = document.getElementById('nw-period-delta');
+                const periodRateNode = document.getElementById('nw-period-delta-rate');
+                const dominantAssetNode = document.getElementById('nw-dominant-asset');
+                const dominantShareNode = document.getElementById('nw-dominant-share');
+                const rangeWindowNode = document.getElementById('nw-range-window');
+                const rangeStartInput = document.getElementById('nw-range-start');
+                const rangeEndInput = document.getElementById('nw-range-end');
+                const rangeFill = document.getElementById('nw-range-fill');
+                const rangeSliderBlock = document.querySelector('.js-nw-range-slider-block');
+
+                const maxIndex = normalizedData.length - 1;
+                const minGap = maxIndex > 0 ? 1 : 0;
+
+                const updateRangeFill = (startIndex, endIndex) => {
+                    if (!rangeFill) return;
+                    if (maxIndex <= 0) {
+                        rangeFill.style.left = '0%';
+                        rangeFill.style.width = '100%';
+                        return;
                     }
-                }
 
-                const total = breakdownEntry.savings + breakdownEntry.investments;
-                
-                if (total > 0) {
-                    const cashPct = ((breakdownEntry.savings / total) * 100).toFixed(1);
-                    const invPct = (100 - parseFloat(cashPct)).toFixed(1); // Para que sumen 100 exacto
+                    const left = (startIndex / maxIndex) * 100;
+                    const right = (endIndex / maxIndex) * 100;
+                    rangeFill.style.left = `${left}%`;
+                    rangeFill.style.width = `${Math.max(right - left, 0)}%`;
+                };
 
-                    const cashBar = document.getElementById('cash-bar');
-                    const invBar = document.getElementById('investments-bar');
-                    const cashText = document.getElementById('cash-percentage');
-                    const invText = document.getElementById('investments-percentage');
+                const legendBottomSpacingPlugin = {
+                    id: 'legendBottomSpacingPlugin',
+                    beforeUpdate: (chart) => {
+                        const legend = chart.legend;
+                        if (!legend || legend.$extraBottomSpaceApplied) return;
+                        const originalFit = legend.fit;
+                        legend.fit = function fit() {
+                            originalFit.bind(this)();
+                            this.height += 18;
+                        };
+                        legend.$extraBottomSpaceApplied = true;
+                    }
+                };
 
-                    if (cashBar) cashBar.style.width = cashPct + '%';
-                    if (invBar) invBar.style.width = invPct + '%';
-                    if (cashText) cashText.textContent = cashPct + '%';
-                    if (invText) invText.textContent = invPct + '%';
+                const gradientHeight = chartCanvas.clientHeight || 320;
+                const savingsGradient = ctx.createLinearGradient(0, 0, 0, gradientHeight);
+                savingsGradient.addColorStop(0, 'rgba(16, 185, 129, 0.22)');
+                savingsGradient.addColorStop(1, 'rgba(16, 185, 129, 0.02)');
 
-                    // Actualizamos el atributo title para que el tooltip muestre el valor real en euros
-                    if (cashBar) cashBar.title = `Cash: ${breakdownEntry.savings.toLocaleString('de-DE')} €`;
-                    if (invBar) invBar.title = `Investments: ${breakdownEntry.investments.toLocaleString('de-DE')} €`;
-                }
+                const investmentsGradient = ctx.createLinearGradient(0, 0, 0, gradientHeight);
+                investmentsGradient.addColorStop(0, 'rgba(59, 130, 246, 0.24)');
+                investmentsGradient.addColorStop(1, 'rgba(59, 130, 246, 0.03)');
 
-                const labels = rawData.map(item => item.label);
-                const savingsValues = rawData.map(item => item.savings);
-                const investmentValues = rawData.map(item => item.investments);
-
-                new Chart(ctx, {
+                const netWorthChart = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels,
+                        labels: normalizedData.map(item => item.label),
                         datasets: [
                             {
-                                label: ' Savings & Cash',
-                                data: savingsValues,
+                                label: 'Cash',
+                                data: normalizedData.map(item => item.savings),
+                                stack: 'networth',
                                 fill: true,
-                                backgroundColor: 'rgba(25, 135, 84, 0.15)',
-                                borderColor: '#198754',
+                                backgroundColor: savingsGradient,
+                                borderColor: '#059669',
                                 borderWidth: 2,
-                                tension: 0.4,
+                                tension: 0.35,
                                 pointRadius: 0,
-                                pointHoverRadius: 6,
+                                pointHoverRadius: 4,
                             },
                             {
-                                label: ' Investments',
-                                data: investmentValues,
-                                fill: true,
-                                backgroundColor: 'rgba(13, 110, 253, 0.15)',
-                                borderColor: '#0d6efd',
+                                label: 'Investments',
+                                data: normalizedData.map(item => item.investments),
+                                stack: 'networth',
+                                fill: '-1',
+                                backgroundColor: investmentsGradient,
+                                borderColor: '#2563eb',
                                 borderWidth: 2,
-                                tension: 0.4,
+                                tension: 0.35,
                                 pointRadius: 0,
-                                pointHoverRadius: 6,
+                                pointHoverRadius: 4,
                             }
                         ]
                     },
+                    plugins: [legendBottomSpacingPlugin],
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
@@ -96,38 +144,214 @@ document.addEventListener('DOMContentLoaded', () => {
                             legend: {
                                 display: true,
                                 position: 'top',
-                                align: 'end',
+                                align: 'start',
                                 labels: {
-                                    boxWidth: 8,
+                                    boxWidth: 9,
                                     usePointStyle: true,
                                     pointStyle: 'circle',
-                                    font: { size: 11, weight: 'bold' }
+                                    color: '#475569',
+                                    padding: 12,
+                                    font: { size: 10, weight: 'bold' }
                                 }
                             },
                             tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                                borderColor: 'rgba(148, 163, 184, 0.32)',
+                                borderWidth: 1,
                                 padding: 12,
                                 callbacks: {
-                                    label: (context) => ` ${context.dataset.label}: ${context.parsed.y.toLocaleString('de-DE')} €`,
+                                    label: (context) => ` ${context.dataset.label}: ${formatEuro(context.raw)}`,
                                     footer: (tooltipItems) => {
-                                        let sum = 0;
-                                        tooltipItems.forEach(i => sum += i.parsed.y);
-                                        return 'TOTAL: ' + sum.toLocaleString('de-DE') + ' €';
+                                        const dataIndex = tooltipItems?.[0]?.dataIndex;
+                                        const tooltipChart = tooltipItems?.[0]?.chart;
+                                        if (typeof dataIndex === 'number' && tooltipChart) {
+                                            const cash = Number(tooltipChart.data.datasets[0].data[dataIndex]) || 0;
+                                            const investments = Number(tooltipChart.data.datasets[1].data[dataIndex]) || 0;
+                                            return `TOTAL: ${formatEuro(cash + investments)}`;
+                                        }
+                                        return '';
                                     }
                                 }
                             }
                         },
                         scales: {
-                            x: { grid: { display: false } },
+                            x: {
+                                grid: { display: false },
+                                ticks: {
+                                    color: '#64748b',
+                                    maxRotation: 0,
+                                    autoSkip: true,
+                                    font: { size: 10 }
+                                }
+                            },
                             y: {
                                 stacked: true,
                                 beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(148, 163, 184, 0.2)',
+                                    drawBorder: false
+                                },
                                 ticks: {
-                                    callback: v => v.toLocaleString('de-DE') + ' €'
+                                    color: '#64748b',
+                                    font: { size: 10 },
+                                    callback: v => formatEuro(v)
                                 }
                             }
                         }
                     }
                 });
+
+                const renderWindow = (startIndex, endIndex) => {
+                    const windowData = normalizedData.slice(startIndex, endIndex + 1);
+                    if (!windowData.length) return;
+
+                    const labels = windowData.map(item => item.label);
+                    const savingsValues = windowData.map(item => item.savings);
+                    const investmentValues = windowData.map(item => item.investments);
+                    const totalValues = windowData.map(item => item.savings + item.investments);
+
+                    let breakdownIndex = windowData.length - 1;
+                    if (windowData.length > 1) {
+                        const currentEntry = windowData[breakdownIndex];
+                        const prevEntry = windowData[breakdownIndex - 1];
+                        const isIncomplete = (currentEntry.savings === 0 && prevEntry.savings > 0) ||
+                            (currentEntry.investments === 0 && prevEntry.investments > 0);
+                        const shouldApplyStaleFallback = isNotOk && endIndex === maxIndex;
+                        if (shouldApplyStaleFallback || isIncomplete) {
+                            breakdownIndex -= 1;
+                        }
+                    }
+
+                    breakdownIndex = Math.max(0, breakdownIndex);
+                    const breakdownEntry = windowData[breakdownIndex];
+                    const selectedTotal = (breakdownEntry.savings + breakdownEntry.investments) || 0;
+
+                    let cashPctValue = 0;
+                    let invPctValue = 0;
+                    if (selectedTotal > 0) {
+                        cashPctValue = (breakdownEntry.savings / selectedTotal) * 100;
+                        invPctValue = 100 - cashPctValue;
+                    }
+
+                    if (cashBar) {
+                        cashBar.style.width = `${cashPctValue}%`;
+                        cashBar.title = `Cash: ${formatEuro(breakdownEntry.savings)}`;
+                        cashBar.setAttribute('aria-valuemin', '0');
+                        cashBar.setAttribute('aria-valuemax', '100');
+                        cashBar.setAttribute('aria-valuenow', cashPctValue.toFixed(1));
+                    }
+
+                    if (invBar) {
+                        invBar.style.width = `${invPctValue}%`;
+                        invBar.title = `Investments: ${formatEuro(breakdownEntry.investments)}`;
+                        invBar.setAttribute('aria-valuemin', '0');
+                        invBar.setAttribute('aria-valuemax', '100');
+                        invBar.setAttribute('aria-valuenow', invPctValue.toFixed(1));
+                    }
+
+                    if (cashText) cashText.textContent = `${cashPctValue.toFixed(1)}%`;
+                    if (invText) invText.textContent = `${invPctValue.toFixed(1)}%`;
+                    if (totalText) totalText.textContent = formatEuro(selectedTotal);
+                    if (cashValueText) cashValueText.textContent = formatEuro(breakdownEntry.savings);
+                    if (invValueText) invValueText.textContent = formatEuro(breakdownEntry.investments);
+
+                    const rangeText = labels.length > 1
+                        ? `${labels[0]} - ${labels[labels.length - 1]}`
+                        : (labels[0] || 'Single data point');
+
+                    if (rangeLabel) rangeLabel.textContent = rangeText;
+                    if (rangeWindowNode) rangeWindowNode.textContent = rangeText;
+
+                    if (breakdownIndex > 0) {
+                        const prevTotal = totalValues[breakdownIndex - 1];
+                        const monthlyDelta = selectedTotal - prevTotal;
+                        updateDeltaTone(monthlyDeltaNode, monthlyDelta);
+                        if (monthlyDeltaNode) monthlyDeltaNode.textContent = formatSignedEuro(monthlyDelta);
+                        if (monthlyRateNode) {
+                            if (prevTotal !== 0) {
+                                const monthlyRate = (monthlyDelta / prevTotal) * 100;
+                                monthlyRateNode.textContent = `${monthlyRate >= 0 ? '+' : ''}${monthlyRate.toFixed(1)}% vs previous point`;
+                            } else {
+                                monthlyRateNode.textContent = 'Previous point is 0';
+                            }
+                        }
+                    } else {
+                        updateDeltaTone(monthlyDeltaNode, 0);
+                        if (monthlyDeltaNode) monthlyDeltaNode.textContent = '--';
+                        if (monthlyRateNode) monthlyRateNode.textContent = 'No prior record';
+                    }
+
+                    const startTotal = totalValues[0] || 0;
+                    const periodDelta = selectedTotal - startTotal;
+                    updateDeltaTone(periodDeltaNode, periodDelta);
+                    if (periodDeltaNode) periodDeltaNode.textContent = formatSignedEuro(periodDelta);
+                    if (periodRateNode) {
+                        if (startTotal !== 0) {
+                            const periodRate = (periodDelta / startTotal) * 100;
+                            periodRateNode.textContent = `${periodRate >= 0 ? '+' : ''}${periodRate.toFixed(1)}% since ${labels[0]}`;
+                        } else {
+                            periodRateNode.textContent = `Since ${labels[0] || 'start'}`;
+                        }
+                    }
+
+                    if (selectedTotal > 0) {
+                        const dominantAsset = breakdownEntry.savings >= breakdownEntry.investments ? 'Cash' : 'Investments';
+                        const dominantShare = Math.max(cashPctValue, invPctValue);
+                        if (dominantAssetNode) dominantAssetNode.textContent = dominantAsset;
+                        if (dominantShareNode) dominantShareNode.textContent = `${dominantShare.toFixed(1)}% of current allocation`;
+                    } else {
+                        if (dominantAssetNode) dominantAssetNode.textContent = '--';
+                        if (dominantShareNode) dominantShareNode.textContent = 'No data available';
+                    }
+
+                    netWorthChart.data.labels = labels;
+                    netWorthChart.data.datasets[0].data = savingsValues;
+                    netWorthChart.data.datasets[1].data = investmentValues;
+                    netWorthChart.update('none');
+
+                    updateRangeFill(startIndex, endIndex);
+                };
+
+                if (rangeStartInput && rangeEndInput) {
+                    rangeStartInput.min = '0';
+                    rangeEndInput.min = '0';
+                    rangeStartInput.max = String(maxIndex);
+                    rangeEndInput.max = String(maxIndex);
+                    rangeStartInput.value = '0';
+                    rangeEndInput.value = String(maxIndex);
+
+                    if (maxIndex <= 0) {
+                        rangeStartInput.disabled = true;
+                        rangeEndInput.disabled = true;
+                        if (rangeSliderBlock) {
+                            rangeSliderBlock.classList.add('is-disabled');
+                        }
+                    }
+
+                    rangeStartInput.addEventListener('input', () => {
+                        let start = Number(rangeStartInput.value);
+                        const end = Number(rangeEndInput.value);
+                        if (end - start < minGap) {
+                            start = end - minGap;
+                        }
+                        start = Math.max(0, start);
+                        rangeStartInput.value = String(start);
+                        renderWindow(start, end);
+                    });
+
+                    rangeEndInput.addEventListener('input', () => {
+                        const start = Number(rangeStartInput.value);
+                        let end = Number(rangeEndInput.value);
+                        if (end - start < minGap) {
+                            end = start + minGap;
+                        }
+                        end = Math.min(maxIndex, end);
+                        rangeEndInput.value = String(end);
+                        renderWindow(start, end);
+                    });
+                }
+
+                renderWindow(0, maxIndex);
             }
         } catch (e) {
             console.error("Error rendering Chart.js:", e);
@@ -139,12 +363,22 @@ document.addEventListener('DOMContentLoaded', () => {
     progressBars.forEach(bar => {
         // Leemos el valor del atributo data-value que viene de Django
         const targetValue = bar.getAttribute('data-value');
-        
-        if (targetValue) {
+
+        if (targetValue !== null) {
+            const parsedValue = Number.parseFloat(targetValue);
+            if (!Number.isFinite(parsedValue)) {
+                return;
+            }
+
+            const boundedValue = Math.max(0, Math.min(parsedValue, 100));
+            bar.setAttribute('aria-valuemin', '0');
+            bar.setAttribute('aria-valuemax', '100');
+            bar.setAttribute('aria-valuenow', boundedValue.toFixed(0));
+
             // Mantenemos el timeout para que se vea la animación al cargar
             setTimeout(() => {
-                bar.style.width = targetValue + '%';
-            }, 150); 
+                bar.style.width = boundedValue + '%';
+            }, 150);
         }
     });
 

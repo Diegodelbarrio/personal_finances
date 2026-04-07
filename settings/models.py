@@ -52,3 +52,49 @@ class UserSettings(models.Model):
 
     def __str__(self):
         return f"Settings of: {self.user.username}"
+
+
+class SavingsPotentialModel(models.Model):
+    user_settings = models.OneToOneField(
+        UserSettings,
+        on_delete=models.CASCADE,
+        related_name="savings_potential_model",
+    )
+    conservative_factor = models.DecimalField(
+        _("Conservative Factor"),
+        max_digits=4,
+        decimal_places=2,
+        default=0.80,
+    )
+    baseline_factor = models.DecimalField(
+        _("Baseline Factor"),
+        max_digits=4,
+        decimal_places=2,
+        default=1.00,
+    )
+    optimistic_factor = models.DecimalField(
+        _("Optimistic Factor"),
+        max_digits=4,
+        decimal_places=2,
+        default=1.20,
+    )
+    volatility_impact = models.DecimalField(
+        _("Volatility Impact"),
+        max_digits=4,
+        decimal_places=2,
+        default=0.35,
+    )
+    emergency_buffer_impact = models.DecimalField(
+        _("Emergency Buffer Impact"),
+        max_digits=4,
+        decimal_places=2,
+        default=0.30,
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Savings Potential Model")
+        verbose_name_plural = _("Savings Potential Models")
+
+    def __str__(self):
+        return f"Savings potential model for {self.user_settings.user.username}"

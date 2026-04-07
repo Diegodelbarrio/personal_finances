@@ -92,6 +92,12 @@ class SettingsPhase3InsightsTests(TestCase):
         self.assertEqual(len(insights["recommendations"]), 3)
         self.assertGreaterEqual(insights["snapshot"]["months_sampled"], 1)
         self.assertGreater(insights["simulator"]["remaining_gap"], 0)
+        self.assertEqual(len(insights["simulator"]["scenarios"]), 3)
+        self.assertEqual(insights["simulator"]["selected_scenario_key"], "baseline")
+        self.assertEqual(
+            [item["key"] for item in insights["simulator"]["scenarios"]],
+            ["conservative", "baseline", "optimistic"],
+        )
 
     def test_goal_simulator_marks_target_reached_when_gap_is_zero(self):
         self.user.settings.net_worth_target = Decimal("5000")
@@ -156,6 +162,8 @@ class SettingsPhase3InsightsTests(TestCase):
             security["recommendations"][2]["suggested_value"],
             growth["recommendations"][2]["suggested_value"],
         )
+        self.assertEqual(security["simulator"]["selected_scenario_key"], "conservative")
+        self.assertEqual(growth["simulator"]["selected_scenario_key"], "optimistic")
 
 
 class SettingsHomeViewPhase3Tests(TestCase):
@@ -174,3 +182,5 @@ class SettingsHomeViewPhase3Tests(TestCase):
         self.assertContains(response, "Financial Health Score")
         self.assertContains(response, "Smart Recommendations")
         self.assertContains(response, "Goal Simulator")
+        self.assertContains(response, "Potential Savings Scenarios")
+        self.assertNotContains(response, 'id="simulator-monthly-contribution"')
