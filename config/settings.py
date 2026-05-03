@@ -268,10 +268,11 @@ EMAIL_SUBJECT_PREFIX = os.getenv("EMAIL_SUBJECT_PREFIX", "[FinOrbit] ")
 EMAIL_FAIL_SILENTLY = env_bool("EMAIL_FAIL_SILENTLY", default=False)
 
 # macOS + python.org builds may miss a system OpenSSL CA path.
-# If SMTP is enabled and SSL_CERT_FILE is not set, use certifi bundle.
+# If SMTP is enabled and SSL_CERT_FILE is not set, use certifi bundle when available.
 if EMAIL_BACKEND.endswith("smtp.EmailBackend") and "SSL_CERT_FILE" not in os.environ:
-    if certifi is not None:
-        os.environ["SSL_CERT_FILE"] = certifi.where()
+    certifi_where = getattr(certifi, "where", None) if certifi is not None else None
+    if callable(certifi_where):
+        os.environ["SSL_CERT_FILE"] = certifi_where()
 
 if EMAIL_BACKEND.endswith("smtp.EmailBackend"):
     EMAIL_HOST = os.getenv("EMAIL_HOST", "localhost")

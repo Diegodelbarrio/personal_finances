@@ -62,12 +62,33 @@ def _create_subcategories_for_category(user, category, subcategories_data):
         if isinstance(item, dict):
             name = (item.get("name") or "").strip()
             is_essential = bool(item.get("is_essential"))
+            budget_group = item.get("budget_group") or SubCategory.BudgetGroup.NOT_APPLICABLE
+            expense_nature = item.get("expense_nature") or SubCategory.ExpenseNature.NOT_APPLICABLE
         else:
             name = str(item).strip()
             is_essential = False
+            budget_group = SubCategory.BudgetGroup.NOT_APPLICABLE
+            expense_nature = SubCategory.ExpenseNature.NOT_APPLICABLE
 
         if not name:
             continue
+
+        if category.transaction_type == Category.TransactionType.INCOME:
+            budget_group = SubCategory.BudgetGroup.NOT_APPLICABLE
+            expense_nature = SubCategory.ExpenseNature.NOT_APPLICABLE
+        else:
+            if budget_group == SubCategory.BudgetGroup.NOT_APPLICABLE:
+                budget_group = SubCategory.infer_budget_group(
+                    category=category,
+                    name=name,
+                    is_essential=is_essential,
+                )
+            if expense_nature == SubCategory.ExpenseNature.NOT_APPLICABLE:
+                expense_nature = (
+                    SubCategory.ExpenseNature.FIXED
+                    if category.expense_type == Category.ExpenseType.FIXED
+                    else SubCategory.ExpenseNature.VARIABLE
+                )
 
         normalized = name.casefold()
         if normalized in existing_names:
@@ -78,6 +99,8 @@ def _create_subcategories_for_category(user, category, subcategories_data):
                 user=user,
                 parent_category=category,
                 name=name,
+                budget_group=budget_group,
+                expense_nature=expense_nature,
                 is_essential=is_essential,
             )
         )
@@ -92,22 +115,34 @@ def _build_default_setup_state(form):
         selected_categories = set(form.data.getlist("category_keys"))
         selected_subcategories = set(form.data.getlist("subcategory_keys"))
     else:
-        selected_categories = {category["key"] for category in form.blueprints}
-        selected_subcategories = {
-            subcategory["key"]
-            for category in form.blueprints
-            for subcategory in category["subcategories"]
-        }
+        selected_categories, selected_subcategories = form.get_initial_selection()
 
     return selected_categories, selected_subcategories
 
 
 def _create_default_categories(user, payload):
-    created_categories = 0
-    created_subcategories = 0
+    result = {
+        "created_categories": 0,
+        "updated_categories": 0,
+        "created_subcategories": 0,
+        "skipped_categories": [],
+    }
 
     for category_data in payload:
-        if Category.objects.filter(user=user, name__iexact=category_data["name"]).exists():
+        category = Category.objects.filter(user=user, name__iexact=category_data["name"]).first()
+        if category:
+            if category.transaction_type != category_data["transaction_type"]:
+                result["skipped_categories"].append(category_data["name"])
+                continue
+
+            created_subcategories = _create_subcategories_for_category(
+                user,
+                category,
+                category_data["subcategories"],
+            )
+            result["created_subcategories"] += created_subcategories
+            if created_subcategories:
+                result["updated_categories"] += 1
             continue
 
         category = Category.objects.create(
@@ -117,14 +152,106 @@ def _create_default_categories(user, payload):
             expense_type=category_data["expense_type"],
             is_housing=category_data["is_housing"],
         )
-        created_categories += 1
-        created_subcategories += _create_subcategories_for_category(
+        result["created_categories"] += 1
+        result["created_subcategories"] += _create_subcategories_for_category(
             user,
             category,
             category_data["subcategories"],
         )
 
-    return created_categories, created_subcategories
+    return result
+
+
+def _delete_categories_batch(user, category_ids):
+    result = {"deleted": 0, "protected": [], "missing": 0}
+    normalized_ids = {item for item in category_ids if item}
+    if not normalized_ids:
+        return result
+
+    categories = list(
+        Category.objects.filter(user=user, id__in=normalized_ids).order_by("name")
+    )
+    result["missing"] = len(normalized_ids) - len(categories)
+
+    for category in categories:
+        try:
+            category.delete()
+            result["deleted"] += 1
+        except ProtectedError:
+            result["protected"].append(category.name)
+
+    return result
+
+
+def _delete_subcategories_batch(user, subcategory_ids):
+    result = {"deleted": 0, "protected": [], "missing": 0}
+    normalized_ids = {item for item in subcategory_ids if item}
+    if not normalized_ids:
+        return result
+
+    subcategories = list(
+        SubCategory.objects.filter(user=user, id__in=normalized_ids)
+        .select_related("parent_category")
+        .order_by("parent_category__name", "name")
+    )
+    result["missing"] = len(normalized_ids) - len(subcategories)
+
+    for subcategory in subcategories:
+        label = f"{subcategory.parent_category.name} -> {subcategory.name}"
+        try:
+            subcategory.delete()
+            result["deleted"] += 1
+        except ProtectedError:
+            result["protected"].append(label)
+
+    return result
+
+
+def _pluralize(noun, count):
+    if count == 1:
+        return noun
+    if noun.endswith("y"):
+        return noun[:-1] + "ies"
+    return noun + "s"
+
+
+def _add_batch_delete_messages(request, result, noun):
+    if result["deleted"]:
+        messages.success(
+            request,
+            f'Deleted {result["deleted"]} {_pluralize(noun, result["deleted"])}.',
+            extra_tags="finances_categories",
+        )
+
+    if result["protected"]:
+        protected_count = len(result["protected"])
+        messages.warning(
+            request,
+            (
+                f"Skipped {protected_count} protected "
+                f"{_pluralize(noun, protected_count)}: "
+                + ", ".join(result["protected"])
+                + "."
+            ),
+            extra_tags="finances_categories",
+        )
+
+    if result["missing"]:
+        messages.info(
+            request,
+            (
+                f'{result["missing"]} selected {_pluralize(noun, result["missing"])} '
+                f'{"were" if result["missing"] != 1 else "was"} not found.'
+            ),
+            extra_tags="finances_categories",
+        )
+
+    if not result["deleted"] and not result["protected"] and not result["missing"]:
+        messages.warning(
+            request,
+            f"Select at least one {noun} to delete.",
+            extra_tags="finances_categories",
+        )
 
 
 @login_required
@@ -145,7 +272,7 @@ def summary(request):
 @login_required
 def manage_categories(request):
     user_has_categories = Category.objects.filter(user=request.user).exists()
-    default_setup_form = DefaultCategoryPresetForm()
+    default_setup_form = DefaultCategoryPresetForm(user=request.user)
 
     if request.method == "POST":
         action = request.POST.get("action")
@@ -165,6 +292,10 @@ def manage_categories(request):
                     "This category cannot be deleted because it has subcategories with linked transactions.",
                     extra_tags="finances_categories",
                 )
+            return redirect("manage_categories")
+        elif action == "delete_categories_batch":
+            result = _delete_categories_batch(request.user, request.POST.getlist("category_ids"))
+            _add_batch_delete_messages(request, result, "category")
             return redirect("manage_categories")
         elif action == "delete_subcategory":
             subcategory_id = request.POST.get("subcategory_id")
@@ -187,36 +318,51 @@ def manage_categories(request):
                     extra_tags="finances_categories",
                 )
             return redirect("manage_categories")
+        elif action == "delete_subcategories_batch":
+            result = _delete_subcategories_batch(
+                request.user,
+                request.POST.getlist("subcategory_ids"),
+            )
+            _add_batch_delete_messages(request, result, "subcategory")
+            return redirect("manage_categories")
         elif action == "create_default_categories":
-            if user_has_categories:
-                messages.warning(
-                    request,
-                    "Default categories can only be created when your category list is empty.",
-                    extra_tags="finances_categories",
-                )
-                return redirect("manage_categories")
-
-            default_setup_form = DefaultCategoryPresetForm(request.POST)
+            default_setup_form = DefaultCategoryPresetForm(request.POST, user=request.user)
             if default_setup_form.is_valid():
                 with db_transaction.atomic():
-                    created_categories, created_subcategories = _create_default_categories(
+                    result = _create_default_categories(
                         request.user,
                         default_setup_form.get_creation_payload(),
                     )
 
-                if created_categories:
+                if result["created_categories"] or result["created_subcategories"]:
+                    summary_bits = [
+                        f'{result["created_categories"]} categories created',
+                        f'{result["created_subcategories"]} subcategories created',
+                    ]
+                    if result["updated_categories"]:
+                        summary_bits.append(
+                            f'{result["updated_categories"]} existing categories completed'
+                        )
                     messages.success(
                         request,
-                        (
-                            "Default categories created successfully: "
-                            f"{created_categories} categories and {created_subcategories} subcategories."
-                        ),
+                        "Default categories applied: " + ", ".join(summary_bits) + ".",
                         extra_tags="finances_categories",
                     )
                 else:
                     messages.info(
                         request,
-                        "No categories were created because matching names already exist.",
+                        "No defaults were added because the selected categories already exist.",
+                        extra_tags="finances_categories",
+                    )
+                if result["skipped_categories"]:
+                    messages.warning(
+                        request,
+                        (
+                            "Some default categories were skipped because a category with the same "
+                            "name uses a different transaction type: "
+                            + ", ".join(result["skipped_categories"])
+                            + "."
+                        ),
                         extra_tags="finances_categories",
                     )
                 return redirect("manage_categories")
@@ -255,6 +401,7 @@ def manage_categories(request):
         "default_setup_form": default_setup_form,
         "default_category_options": default_setup_form.blueprints,
         "default_required_category_keys": default_setup_form.required_category_keys,
+        "default_locked_category_keys": default_setup_form.locked_category_keys,
         "default_selected_category_keys": selected_category_keys,
         "default_selected_subcategory_keys": selected_subcategory_keys,
         "current_path": request.get_full_path(),

@@ -4,6 +4,9 @@
         <th class="text-center">Income</th>
         <th class="text-center">Fixed Exp.</th>
         <th class="text-center">Var. Exp.</th>
+        <th class="text-center">Needs</th>
+        <th class="text-center">Wants</th>
+        <th class="text-center">50-30-20 Savings</th>
         <th class="text-center">Net Savings</th>
         <th class="text-center">Savings %</th>
     </tr>
@@ -26,6 +29,18 @@
 
     <td class="num-align text-muted small text-center">
         {{ m.variable|floatformat:2 }} €
+    </td>
+
+    <td class="num-align text-muted small text-center">
+        {{ m.needs|floatformat:2 }} €
+    </td>
+
+    <td class="num-align text-muted small text-center">
+        {{ m.wants|floatformat:2 }} €
+    </td>
+
+    <td class="num-align text-muted small text-center">
+        {{ m.rule_savings|floatformat:2 }} €
     </td>
 
     <td class="num-align text-center fw-bold {% if m.savings >= 0 %}text-success{% else %}text-danger{% endif %}">
@@ -55,6 +70,9 @@
         <td class="num-align">{{ report.annual_stats.income|floatformat:2 }} €</td>
         <td class="num-align">{{ report.annual_stats.fixed_total|floatformat:2 }} €</td>
         <td class="num-align">{{ report.annual_stats.variable_total|floatformat:2 }} €</td>
+        <td class="num-align">{{ report.annual_stats.needs_total|floatformat:2 }} €</td>
+        <td class="num-align">{{ report.annual_stats.wants_total|floatformat:2 }} €</td>
+        <td class="num-align">{{ report.annual_stats.rule_savings_total|floatformat:2 }} €</td>
         <td class="num-align fw-bold">{{ report.annual_stats.savings|floatformat:2 }} €</td>
         <td class="text-center">
             <span class="badge bg-white text-dark fw-bold px-3">
@@ -67,6 +85,9 @@
         <td class="num-align text-muted small">{{ report.annual_stats.avg_income|floatformat:2 }} €</td>
         <td class="num-align text-muted small">{{ report.annual_stats.avg_fixed|floatformat:2 }} €</td>
         <td class="num-align text-muted small">{{ report.annual_stats.avg_variable|floatformat:2 }} €</td>
+        <td class="num-align text-muted small">{{ report.annual_stats.avg_needs|floatformat:2 }} €</td>
+        <td class="num-align text-muted small">{{ report.annual_stats.avg_wants|floatformat:2 }} €</td>
+        <td class="num-align text-muted small">{{ report.annual_stats.avg_rule_savings|floatformat:2 }} €</td>
         <td class="num-align text-muted small">{{ report.annual_stats.avg_savings|floatformat:2 }} €</td>
         <td></td>
     </tr>

@@ -33,7 +33,7 @@ const SummaryModule = {
                 "savingsLegendContainer",
                 savLabels,
                 savValues,
-                ["#10b981", "#6366f1", "#f59e0b"]
+                ["#3b82f6", "#f59e0b", "#10b981"]
             );
         }
     },

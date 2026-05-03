@@ -164,10 +164,14 @@ class SubCategoryAdmin(UserOwnedAdmin):
     list_display = (
         'name',
         'parent_category',
+        'budget_group',
+        'expense_nature',
         'is_essential',
         'user',
     )
     list_filter = (
+        'budget_group',
+        'expense_nature',
         'is_essential',
         'parent_category',
     )

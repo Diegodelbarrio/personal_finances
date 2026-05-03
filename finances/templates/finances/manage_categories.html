@@ -34,18 +34,23 @@
             Transactions are protected and remain untouched.
         </div>
 
-        {% if not has_categories %}
-            <div class="card border-0 shadow-sm rounded-4 manager-card setup-card mb-4" id="categoryOnboarding">
+        <div class="card border-0 shadow-sm rounded-4 manager-card setup-card mb-4" id="categoryOnboarding">
                 <div class="card-body p-4 p-lg-5">
                     <div class="d-flex flex-column flex-md-row justify-content-between gap-3 mb-4">
                         <div>
-                            <h5 class="fw-bold mb-1">Start Your Category Setup</h5>
+                            <h5 class="fw-bold mb-1">
+                                {% if has_categories %}Default Category Presets{% else %}Start Your Category Setup{% endif %}
+                            </h5>
                             <p class="text-muted mb-0">
-                                You do not have categories yet. Choose one of these two options to begin.
+                                {% if has_categories %}
+                                    Add missing default categories or complete existing categories with missing subcategories.
+                                {% else %}
+                                    You do not have categories yet. Choose one of these two options to begin.
+                                {% endif %}
                             </p>
                         </div>
                         <span class="badge rounded-pill text-bg-light align-self-start setup-badge">
-                            Required default category: Income
+                            {% if "income" in default_locked_category_keys %}Required default category: Income{% else %}Reusable defaults{% endif %}
                         </span>
                     </div>
 
@@ -67,16 +72,16 @@
 
                         <div class="col-12 col-lg-8">
                             <div class="setup-option-card h-100">
-                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
-                                    <div>
-                                        <h6 class="fw-bold mb-1">Option 2: Use Default Categories</h6>
-                                        <p class="text-muted small mb-0">
-                                            Multi-select categories and choose which default subcategories to include.
-                                        </p>
-                                    </div>
-                                </div>
+	                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+	                                    <div>
+	                                        <h6 class="fw-bold mb-1">Option 2: Use Default Categories</h6>
+	                                        <p class="text-muted small mb-0">
+	                                            Multi-select categories and subcategories for a balanced 50-30-20 setup.
+	                                        </p>
+	                                    </div>
+	                                </div>
 
-                                <form method="post" id="defaultCategoriesForm" novalidate>
+	                                <form method="post" id="defaultCategoriesForm" novalidate>
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="create_default_categories">
 
@@ -86,85 +91,144 @@
                                     {% for error in default_setup_form.category_keys.errors %}
                                         <div class="invalid-feedback d-block mb-2">{{ error }}</div>
                                     {% endfor %}
-                                    {% for error in default_setup_form.subcategory_keys.errors %}
-                                        <div class="invalid-feedback d-block mb-2">{{ error }}</div>
-                                    {% endfor %}
+	                                    {% for error in default_setup_form.subcategory_keys.errors %}
+	                                        <div class="invalid-feedback d-block mb-2">{{ error }}</div>
+	                                    {% endfor %}
 
-                                    <div class="preset-category-grid">
-                                        {% for category in default_category_options %}
-                                            <article class="preset-category-card">
-                                                <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                                        <div class="preset-toolbar d-flex flex-wrap align-items-center gap-2 mb-3">
+                                            <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-preset-action="recommended">
+                                                Recommended
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-preset-action="all">
+                                                Select All
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-preset-action="clear">
+                                                Clear Optional
+                                            </button>
+                                        </div>
+
+	                                    <div class="preset-category-grid">
+	                                        {% for category in default_category_options %}
+	                                            <article class="preset-category-card">
+	                                                <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
                                                     <label class="form-check d-flex align-items-center gap-2 m-0">
                                                         <input
                                                             class="form-check-input preset-category-toggle"
                                                             type="checkbox"
-                                                            name="category_keys"
-                                                            value="{{ category.key }}"
-                                                            data-category-key="{{ category.key }}"
-                                                            {% if category.key in default_selected_category_keys or category.key in default_required_category_keys %}checked{% endif %}
-                                                            {% if category.key in default_required_category_keys %}disabled{% endif %}
-                                                        >
-                                                        <span class="fw-semibold">{{ category.name }}</span>
-                                                    </label>
-                                                    {% if category.key in default_required_category_keys %}
-                                                        <span class="badge rounded-pill bg-primary-subtle text-primary">Required</span>
-                                                        <input type="hidden" name="category_keys" value="{{ category.key }}">
-                                                    {% endif %}
-                                                </div>
-                                                <div class="preset-subcategory-group" data-subcategory-group="{{ category.key }}">
-                                                    {% for subcategory in category.subcategories %}
-                                                        <label class="form-check preset-subcategory-item">
-                                                            <input
-                                                                class="form-check-input"
+	                                                            name="category_keys"
+	                                                            value="{{ category.key }}"
+	                                                            data-category-key="{{ category.key }}"
+                                                                data-default-selected="{{ category.selected_by_default|yesno:'true,false' }}"
+	                                                            {% if category.key in default_selected_category_keys or category.key in default_locked_category_keys %}checked{% endif %}
+	                                                            {% if category.key in default_locked_category_keys %}disabled{% endif %}
+	                                                        >
+	                                                        <span class="fw-semibold">{{ category.name }}</span>
+	                                                    </label>
+	                                                    {% if category.key in default_locked_category_keys %}
+	                                                        <span class="badge rounded-pill bg-primary-subtle text-primary">Required</span>
+	                                                        <input type="hidden" name="category_keys" value="{{ category.key }}">
+                                                    {% elif category.required %}
+                                                        <span class="badge rounded-pill bg-light text-dark">Core</span>
+	                                                    {% endif %}
+	                                                </div>
+                                                    <p class="preset-category-description mb-2">{{ category.description }}</p>
+	                                                <div class="preset-subcategory-group" data-subcategory-group="{{ category.key }}">
+	                                                    {% for subcategory in category.subcategories %}
+	                                                        <label class="form-check preset-subcategory-item">
+	                                                            <input
+	                                                                class="form-check-input"
                                                                 type="checkbox"
-                                                                name="subcategory_keys"
-                                                                value="{{ subcategory.key }}"
-                                                                data-category-key="{{ category.key }}"
-                                                                {% if subcategory.key in default_selected_subcategory_keys %}checked{% endif %}
-                                                            >
-                                                            <span class="form-check-label">{{ subcategory.name }}</span>
-                                                        </label>
-                                                    {% endfor %}
-                                                </div>
-                                            </article>
-                                        {% endfor %}
+	                                                                name="subcategory_keys"
+	                                                                value="{{ subcategory.key }}"
+	                                                                data-category-key="{{ category.key }}"
+                                                                    data-default-selected="{{ subcategory.selected_by_default|yesno:'true,false' }}"
+	                                                                {% if subcategory.key in default_selected_subcategory_keys %}checked{% endif %}
+	                                                            >
+	                                                            <span class="form-check-label">
+                                                                    <span class="d-block">{{ subcategory.name }}</span>
+                                                                    <span class="preset-subcategory-meta">
+                                                                        {% if subcategory.budget_group != "N/A" %}
+                                                                            {{ subcategory.budget_group|title }}
+                                                                        {% endif %}
+                                                                        {% if subcategory.expense_nature != "N/A" %}
+                                                                            <span>{{ subcategory.expense_nature|title }}</span>
+                                                                        {% endif %}
+                                                                    </span>
+                                                                </span>
+	                                                        </label>
+	                                                    {% endfor %}
+	                                                </div>
+	                                            </article>
+	                                        {% endfor %}
                                     </div>
 
-                                    <div class="d-flex justify-content-end mt-3">
-                                        <button type="submit" class="btn btn-primary rounded-pill px-4">
-                                            <i class="bi bi-magic me-2"></i>Create Selected Defaults
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        {% endif %}
+	                                    <div class="d-flex justify-content-end mt-3">
+	                                        <button type="submit" class="btn btn-primary rounded-pill px-4">
+	                                            <i class="bi bi-magic me-2"></i>{% if has_categories %}Apply Selected Defaults{% else %}Create Selected Defaults{% endif %}
+	                                        </button>
+	                                    </div>
+	                                </form>
+	                            </div>
+	                        </div>
+	                    </div>
+	                </div>
+	            </div>
 
-        <div class="card border-0 shadow-sm rounded-4 manager-card mb-4">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
-                    <h5 class="fw-bold mb-0">Your Categories</h5>
-                    <div class="d-flex align-items-center gap-2">
+	        <div class="card border-0 shadow-sm rounded-4 manager-card mb-4">
+	            <div class="card-body p-4">
+	                <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+	                    <h5 class="fw-bold mb-0">Your Categories</h5>
+	                    <div class="d-flex align-items-center gap-2">
                         <a href="{% url 'create_category' %}?next={{ current_path|urlencode }}" class="btn btn-sm btn-primary rounded-pill px-3">
                             <i class="bi bi-plus-circle me-1"></i>New Category
                         </a>
                         <span class="badge bg-light text-dark rounded-pill px-3 py-2">
                             <span id="categoriesVisibleCount">{{ categories|length }}</span> shown
-                        </span>
-                    </div>
-                </div>
+	                        </span>
+	                    </div>
+	                </div>
 
-                <div class="table-responsive manager-table-responsive">
-                    <table class="table align-middle mb-0 manager-table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>
-                                    <button type="button" class="sortable-header" data-table="categories" data-sort="name">
-                                        Name <i class="bi bi-arrow-down-up sort-icon"></i>
-                                    </button>
+                    <form method="post" id="categoryBatchDeleteForm" class="batch-action-bar" data-batch-target="categories">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete_categories_batch">
+                        <div id="categoryBatchIds"></div>
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                            <span class="batch-selection-summary">
+                                <span id="categorySelectedCount">0</span> selected
+                            </span>
+                            <button id="categoryBatchDeleteButton" type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 d-none" disabled>
+                                <i class="bi bi-trash3 me-1"></i>Delete Selected
+                            </button>
+                        </div>
+                    </form>
+
+	                <div class="table-responsive manager-table-responsive">
+                    <table class="table align-middle mb-0 manager-table manager-category-table table-hover">
+                        <colgroup>
+                            <col class="manager-col-select">
+                            <col class="manager-col-category-name">
+                            <col class="manager-col-type">
+                            <col class="manager-col-expense-type">
+                            <col class="manager-col-flag">
+                            <col class="manager-col-count">
+                            <col class="manager-col-count">
+                            <col class="manager-col-actions">
+                        </colgroup>
+	                        <thead class="table-light">
+	                            <tr>
+                                    <th class="manager-select-col">
+                                        <input
+                                            id="selectVisibleCategories"
+                                            class="form-check-input table-select-all"
+                                            type="checkbox"
+                                            aria-label="Select visible categories"
+                                            data-selection-table="categories"
+                                        >
+                                    </th>
+	                                <th>
+	                                    <button type="button" class="sortable-header" data-table="categories" data-sort="name">
+	                                        Name <i class="bi bi-arrow-down-up sort-icon"></i>
+	                                    </button>
                                 </th>
                                 <th>
                                     <button type="button" class="sortable-header" data-table="categories" data-sort="transaction_type">
@@ -192,11 +256,12 @@
                                     </button>
                                 </th>
                                 <th class="text-end">Actions</th>
-                            </tr>
-                            <tr class="table-filters-row">
-                                <th>
-                                    <input id="categoryNameFilter" type="text" class="form-control form-control-sm table-filter-input" placeholder="Filter name">
-                                </th>
+	                            </tr>
+	                            <tr class="table-filters-row">
+                                    <th></th>
+	                                <th>
+	                                    <input id="categoryNameFilter" type="text" class="form-control form-control-sm table-filter-input" placeholder="Filter name">
+	                                </th>
                                 <th>
                                     <select id="categoryTypeFilter" class="form-select form-select-sm table-filter-select">
                                         <option value="">All</option>
@@ -236,16 +301,26 @@
                                     data-is-housing="{{ category.is_housing|yesno:'yes,no' }}"
                                     data-subcategories-count="{{ category.subcategories_count }}"
                                     data-transactions-count="{{ category.transactions_count }}"
-                                >
-                                    <td class="fw-semibold">{{ category.name }}</td>
-                                    <td>
+	                                >
+                                        <td class="manager-select-col">
+                                            <input
+                                                class="form-check-input row-select category-row-select"
+                                                type="checkbox"
+                                                value="{{ category.id }}"
+                                                aria-label="Select category {{ category.name }}"
+                                            >
+                                        </td>
+                                    <td class="manager-name-cell fw-semibold">
+                                        <span class="manager-cell-primary">{{ category.name }}</span>
+                                    </td>
+	                                    <td>
                                         {% if category.transaction_type == "INCOME" %}
                                             <span class="badge rounded-pill bg-success-subtle text-success">Income</span>
                                         {% else %}
                                             <span class="badge rounded-pill bg-danger-subtle text-danger">Expense</span>
                                         {% endif %}
                                     </td>
-                                    <td>{{ category.get_expense_type_display }}</td>
+                                    <td class="manager-compact-cell">{{ category.get_expense_type_display }}</td>
                                     <td>
                                         {% if category.is_housing %}
                                             <span class="badge rounded-pill bg-primary-subtle text-primary">Yes</span>
@@ -289,11 +364,11 @@
                                         </div>
                                     </td>
                                 </tr>
-                            {% empty %}
-                                <tr class="category-empty-row">
-                                    <td colspan="7" class="text-center py-4 text-muted">You do not have categories yet.</td>
-                                </tr>
-                            {% endfor %}
+	                            {% empty %}
+	                                <tr class="category-empty-row">
+	                                    <td colspan="8" class="text-center py-4 text-muted">You do not have categories yet.</td>
+	                                </tr>
+	                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -304,32 +379,75 @@
             </div>
         </div>
 
-        <div class="card border-0 shadow-sm rounded-4 manager-card">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
-                    <h5 class="fw-bold mb-0">Your Subcategories</h5>
-                    <div class="d-flex align-items-center gap-2">
+	        <div class="card border-0 shadow-sm rounded-4 manager-card">
+	            <div class="card-body p-4">
+	                <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+	                    <h5 class="fw-bold mb-0">Your Subcategories</h5>
+	                    <div class="d-flex align-items-center gap-2">
                         <a href="{% url 'create_subcategory' %}?next={{ current_path|urlencode }}" class="btn btn-sm btn-primary rounded-pill px-3">
                             <i class="bi bi-plus-circle me-1"></i>New Subcategory
                         </a>
                         <span class="badge bg-light text-dark rounded-pill px-3 py-2">
                             <span id="subcategoriesVisibleCount">{{ subcategories|length }}</span> shown
-                        </span>
-                    </div>
-                </div>
+	                        </span>
+	                    </div>
+	                </div>
 
-                <div class="table-responsive manager-table-responsive">
-                    <table class="table align-middle mb-0 manager-table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>
-                                    <button type="button" class="sortable-header" data-table="subcategories" data-sort="name">
-                                        Subcategory <i class="bi bi-arrow-down-up sort-icon"></i>
+                    <form method="post" id="subcategoryBatchDeleteForm" class="batch-action-bar" data-batch-target="subcategories">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete_subcategories_batch">
+                        <div id="subcategoryBatchIds"></div>
+                        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                            <span class="batch-selection-summary">
+                                <span id="subcategorySelectedCount">0</span> selected
+                            </span>
+                            <button id="subcategoryBatchDeleteButton" type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 d-none" disabled>
+                                <i class="bi bi-trash3 me-1"></i>Delete Selected
+                            </button>
+                        </div>
+                    </form>
+
+	                <div class="table-responsive manager-table-responsive">
+                    <table class="table align-middle mb-0 manager-table manager-subcategory-table table-hover">
+                        <colgroup>
+                            <col class="manager-col-select">
+                            <col class="manager-col-subcategory-name">
+                            <col class="manager-col-parent-category">
+                            <col class="manager-col-budget">
+                            <col class="manager-col-nature">
+                            <col class="manager-col-flag">
+                            <col class="manager-col-count">
+                            <col class="manager-col-actions">
+                        </colgroup>
+	                        <thead class="table-light">
+	                            <tr>
+                                    <th class="manager-select-col">
+                                        <input
+                                            id="selectVisibleSubcategories"
+                                            class="form-check-input table-select-all"
+                                            type="checkbox"
+                                            aria-label="Select visible subcategories"
+                                            data-selection-table="subcategories"
+                                        >
+                                    </th>
+	                                <th>
+	                                    <button type="button" class="sortable-header" data-table="subcategories" data-sort="name">
+	                                        Subcategory <i class="bi bi-arrow-down-up sort-icon"></i>
                                     </button>
                                 </th>
                                 <th>
                                     <button type="button" class="sortable-header" data-table="subcategories" data-sort="parent_category">
                                         Category <i class="bi bi-arrow-down-up sort-icon"></i>
+                                    </button>
+                                </th>
+                                <th>
+                                    <button type="button" class="sortable-header" data-table="subcategories" data-sort="budget_group">
+                                        Budget <i class="bi bi-arrow-down-up sort-icon"></i>
+                                    </button>
+                                </th>
+                                <th>
+                                    <button type="button" class="sortable-header" data-table="subcategories" data-sort="expense_nature">
+                                        Nature <i class="bi bi-arrow-down-up sort-icon"></i>
                                     </button>
                                 </th>
                                 <th>
@@ -343,17 +461,35 @@
                                     </button>
                                 </th>
                                 <th class="text-end">Actions</th>
-                            </tr>
-                            <tr class="table-filters-row">
-                                <th>
-                                    <input id="subcategoryNameFilter" type="text" class="form-control form-control-sm table-filter-input" placeholder="Filter name">
-                                </th>
+	                            </tr>
+	                            <tr class="table-filters-row">
+                                    <th></th>
+	                                <th>
+	                                    <input id="subcategoryNameFilter" type="text" class="form-control form-control-sm table-filter-input" placeholder="Filter name">
+	                                </th>
                                 <th>
                                     <select id="subcategoryCategoryFilter" class="form-select form-select-sm table-filter-select">
                                         <option value="">All</option>
                                         {% for category_item in category_filter_choices %}
                                             <option value="{{ category_item.id }}">{{ category_item.name }}</option>
                                         {% endfor %}
+                                    </select>
+                                </th>
+                                <th>
+                                    <select id="subcategoryBudgetGroupFilter" class="form-select form-select-sm table-filter-select">
+                                        <option value="">All</option>
+                                        <option value="NEEDS">Needs</option>
+                                        <option value="WANTS">Wants</option>
+                                        <option value="SAVINGS">Savings</option>
+                                        <option value="N/A">N/A</option>
+                                    </select>
+                                </th>
+                                <th>
+                                    <select id="subcategoryExpenseNatureFilter" class="form-select form-select-sm table-filter-select">
+                                        <option value="">All</option>
+                                        <option value="FIXED">Fixed</option>
+                                        <option value="VARIABLE">Variable</option>
+                                        <option value="N/A">N/A</option>
                                     </select>
                                 </th>
                                 <th>
@@ -376,11 +512,27 @@
                                     data-name="{{ subcategory.name|lower }}"
                                     data-parent-category-id="{{ subcategory.parent_category_id }}"
                                     data-parent-category-name="{{ subcategory.parent_category.name|lower }}"
-                                    data-is-essential="{{ subcategory.is_essential|yesno:'yes,no' }}"
-                                    data-transactions-count="{{ subcategory.transactions_count }}"
-                                >
-                                    <td class="fw-semibold">{{ subcategory.name }}</td>
-                                    <td>{{ subcategory.parent_category.name }}</td>
+                                    data-budget-group="{{ subcategory.budget_group }}"
+                                    data-expense-nature="{{ subcategory.expense_nature }}"
+	                                    data-is-essential="{{ subcategory.is_essential|yesno:'yes,no' }}"
+	                                    data-transactions-count="{{ subcategory.transactions_count }}"
+	                                >
+                                        <td class="manager-select-col">
+                                            <input
+                                                class="form-check-input row-select subcategory-row-select"
+                                                type="checkbox"
+                                                value="{{ subcategory.id }}"
+                                                aria-label="Select subcategory {{ subcategory.name }}"
+                                            >
+                                        </td>
+                                    <td class="manager-name-cell fw-semibold">
+                                        <span class="manager-cell-primary">{{ subcategory.name }}</span>
+                                    </td>
+                                    <td class="manager-related-cell">
+                                        <span class="manager-cell-secondary">{{ subcategory.parent_category.name }}</span>
+                                    </td>
+                                    <td><span class="badge rounded-pill bg-primary-subtle text-primary">{{ subcategory.get_budget_group_display }}</span></td>
+                                    <td><span class="badge rounded-pill bg-light text-dark">{{ subcategory.get_expense_nature_display }}</span></td>
                                     <td>
                                         {% if subcategory.is_essential %}
                                             <span class="badge rounded-pill bg-success-subtle text-success">Yes</span>
@@ -423,11 +575,11 @@
                                         </div>
                                     </td>
                                 </tr>
-                            {% empty %}
-                                <tr class="subcategory-empty-row">
-                                    <td colspan="5" class="text-center py-4 text-muted">You do not have subcategories yet.</td>
-                                </tr>
-                            {% endfor %}
+	                            {% empty %}
+	                                <tr class="subcategory-empty-row">
+	                                    <td colspan="8" class="text-center py-4 text-muted">You do not have subcategories yet.</td>
+	                                </tr>
+	                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -442,5 +594,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'finances/js/category_manager.js' %}?v=20260214-onboarding"></script>
+<script src="{% static 'finances/js/category_manager.js' %}?v=20260503-table-layout"></script>
 {% endblock %}

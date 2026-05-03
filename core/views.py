@@ -76,7 +76,11 @@ def investment_dashboard(request):
     selected_period = request.GET.get("period", "1y")
     force_refresh = request.GET.get("refresh") == "1"
 
-    context = get_market_watch_context(selected_period, force_refresh=force_refresh)
+    context = get_market_watch_context(
+        selected_period,
+        force_refresh=force_refresh,
+        user=request.user,
+    )
     context["period_options"] = period_options()
     return render(request, "core/market_data.html", context)
 

@@ -1,6 +1,7 @@
 from datetime import date
 from decimal import Decimal
 
+from django.contrib.messages import get_messages
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -361,6 +362,14 @@ class ManageCategoriesViewTests(TestCase):
                 name="Groceries",
             ).exists()
         )
+        groceries = SubCategory.objects.get(
+            user=self.user,
+            parent_category=food_category,
+            name="Groceries",
+        )
+        self.assertEqual(groceries.budget_group, SubCategory.BudgetGroup.NEEDS)
+        self.assertEqual(groceries.expense_nature, SubCategory.ExpenseNature.VARIABLE)
+        self.assertTrue(groceries.is_essential)
         self.assertContains(response, "Default categories created successfully")
 
     def test_default_categories_setup_requires_income_category(self):
@@ -380,25 +389,37 @@ class ManageCategoriesViewTests(TestCase):
         self.assertContains(response, "The category Income is required.")
         self.assertFalse(Category.objects.filter(user=self.user, name="Food").exists())
 
-    def test_default_categories_setup_is_blocked_if_user_already_has_categories(self):
+    def test_default_categories_setup_completes_existing_categories(self):
         self.client.login(username="diego", password="testpass123")
 
         response = self.client.post(
             self.manage_url,
             {
                 "action": "create_default_categories",
-                "category_keys": ["income"],
-                "subcategory_keys": ["income_salary"],
+                "category_keys": ["income", "food"],
+                "subcategory_keys": ["income_salary", "food_grocery", "food_restaurants"],
             },
             follow=True,
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(
-            response,
-            "Default categories can only be created when your category list is empty.",
+        self.assertEqual(Category.objects.filter(user=self.user, name="Food").count(), 1)
+        self.assertTrue(Category.objects.filter(user=self.user, name="Income").exists())
+        self.assertTrue(
+            SubCategory.objects.filter(
+                user=self.user,
+                parent_category=self.my_category,
+                name="Groceries",
+            ).exists()
         )
-        self.assertFalse(Category.objects.filter(user=self.user, name="Income").exists())
+        self.assertTrue(
+            SubCategory.objects.filter(
+                user=self.user,
+                parent_category=self.my_category,
+                name="Restaurants",
+            ).exists()
+        )
+        self.assertContains(response, "Default categories applied")
 
     def test_edit_rejects_foreign_category(self):
         self.client.login(username="diego", password="testpass123")
@@ -475,6 +496,130 @@ class ManageCategoriesViewTests(TestCase):
             response,
             "This subcategory cannot be deleted because it has linked transactions.",
         )
+
+    def test_batch_delete_categories_deletes_only_current_user_selection(self):
+        utilities = Category.objects.create(
+            user=self.user,
+            name="Utilities",
+            transaction_type="EXPENSE",
+            expense_type="FIXED",
+        )
+        self.client.login(username="diego", password="testpass123")
+
+        response = self.client.post(
+            self.manage_url,
+            {
+                "action": "delete_categories_batch",
+                "category_ids": [self.my_category.id, utilities.id, self.other_category.id],
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Category.objects.filter(id=self.my_category.id).exists())
+        self.assertFalse(Category.objects.filter(id=utilities.id).exists())
+        self.assertTrue(Category.objects.filter(id=self.other_category.id).exists())
+
+    def test_batch_delete_categories_skips_protected_categories(self):
+        protected_subcategory = SubCategory.objects.create(
+            user=self.user,
+            parent_category=self.my_category,
+            name="Groceries",
+        )
+        Transaction.objects.create(
+            user=self.user,
+            date=date(2025, 1, 10),
+            amount=100,
+            description="Supermarket",
+            subcategory=protected_subcategory,
+        )
+        utilities = Category.objects.create(
+            user=self.user,
+            name="Utilities",
+            transaction_type="EXPENSE",
+            expense_type="FIXED",
+        )
+        self.client.login(username="diego", password="testpass123")
+
+        response = self.client.post(
+            self.manage_url,
+            {
+                "action": "delete_categories_batch",
+                "category_ids": [self.my_category.id, utilities.id],
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Category.objects.filter(id=self.my_category.id).exists())
+        self.assertFalse(Category.objects.filter(id=utilities.id).exists())
+        messages = [message.message for message in get_messages(response.wsgi_request)]
+        self.assertTrue(any("Deleted 1 category." in message for message in messages))
+        self.assertTrue(any("Skipped 1 protected category" in message for message in messages))
+
+    def test_batch_delete_subcategories_deletes_only_current_user_selection(self):
+        groceries = SubCategory.objects.create(
+            user=self.user,
+            parent_category=self.my_category,
+            name="Groceries",
+        )
+        restaurants = SubCategory.objects.create(
+            user=self.user,
+            parent_category=self.my_category,
+            name="Restaurants",
+        )
+        other_subcategory = SubCategory.objects.create(
+            user=self.other_user,
+            parent_category=self.other_category,
+            name="Main Job",
+        )
+        self.client.login(username="diego", password="testpass123")
+
+        response = self.client.post(
+            self.manage_url,
+            {
+                "action": "delete_subcategories_batch",
+                "subcategory_ids": [groceries.id, restaurants.id, other_subcategory.id],
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(SubCategory.objects.filter(id=groceries.id).exists())
+        self.assertFalse(SubCategory.objects.filter(id=restaurants.id).exists())
+        self.assertTrue(SubCategory.objects.filter(id=other_subcategory.id).exists())
+
+    def test_batch_delete_subcategories_skips_protected_subcategories(self):
+        groceries = SubCategory.objects.create(
+            user=self.user,
+            parent_category=self.my_category,
+            name="Groceries",
+        )
+        restaurants = SubCategory.objects.create(
+            user=self.user,
+            parent_category=self.my_category,
+            name="Restaurants",
+        )
+        Transaction.objects.create(
+            user=self.user,
+            date=date(2025, 1, 10),
+            amount=100,
+            description="Supermarket",
+            subcategory=groceries,
+        )
+        self.client.login(username="diego", password="testpass123")
+
+        response = self.client.post(
+            self.manage_url,
+            {
+                "action": "delete_subcategories_batch",
+                "subcategory_ids": [groceries.id, restaurants.id],
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(SubCategory.objects.filter(id=groceries.id).exists())
+        self.assertFalse(SubCategory.objects.filter(id=restaurants.id).exists())
+        messages = [message.message for message in get_messages(response.wsgi_request)]
+        self.assertTrue(any("Deleted 1 subcategory." in message for message in messages))
+        self.assertTrue(any("Skipped 1 protected subcategory" in message for message in messages))
 
     def test_change_category_transaction_type_updates_related_transactions(self):
         subcategory = SubCategory.objects.create(

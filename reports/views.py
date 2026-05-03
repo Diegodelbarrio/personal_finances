@@ -11,12 +11,13 @@ def financial_report(request):
     # 1. Determinar el año (por defecto el actual)
     now = timezone.now()
     try:
-        current_year = int(request.GET.get('year', now.year))
+        requested_year = int(request.GET.get('year', now.year))
     except ValueError:
-        current_year = now.year
+        requested_year = now.year
 
     # 2. Obtener lista de años para el selector
-    available_years = services.get_available_years(request.user)
+    available_years = services.get_available_years(request.user, report_type='finance')
+    current_year = services.resolve_selected_year(requested_year, available_years, now.year)
     
     # 3. Llamar al servicio orquestador
     report_data = services.get_financial_annual_report(request.user, current_year)
@@ -37,11 +38,12 @@ def investment_report(request):
     """
     now = timezone.now()
     try:
-        current_year = int(request.GET.get('year', now.year))
+        requested_year = int(request.GET.get('year', now.year))
     except ValueError:
-        current_year = now.year
+        requested_year = now.year
 
-    available_years = services.get_available_years(request.user)
+    available_years = services.get_available_years(request.user, report_type='investments')
+    current_year = services.resolve_selected_year(requested_year, available_years, now.year)
     
     report_data = services.get_investment_annual_report(request.user, current_year)
 
@@ -57,8 +59,13 @@ def investment_report(request):
 @login_required
 def holdings_report(request):
     now = timezone.now()
-    current_year = int(request.GET.get('year', now.year))
-    available_years = services.get_available_years(request.user)
+    try:
+        requested_year = int(request.GET.get('year', now.year))
+    except ValueError:
+        requested_year = now.year
+
+    available_years = services.get_available_years(request.user, report_type='holdings')
+    current_year = services.resolve_selected_year(requested_year, available_years, now.year)
     
     report_data = services.get_holdings_annual_report(request.user, current_year)
 

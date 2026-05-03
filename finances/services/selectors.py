@@ -28,6 +28,9 @@ def get_summary_page_data(user, year, month):
         {'label': 'Fixed Expenses', 'value': stats["fixed"], 'class': 'soft-secondary'},
         {'label': 'Variable Expenses', 'value': stats["variable"], 'class': 'soft-warning'},
         {'label': 'No Housing', 'value': stats["no_housing"], 'class': 'soft-info'},
+        {'label': 'Needs', 'value': stats["needs"], 'class': 'soft-secondary'},
+        {'label': 'Wants', 'value': stats["wants"], 'class': 'soft-warning'},
+        {'label': '50-30-20 Savings', 'value': stats["rule_savings"], 'class': 'soft-primary'},
     ]
 
     return {
@@ -41,12 +44,24 @@ def get_summary_page_data(user, year, month):
         'chart_data': exp_chart["data"],
         'is_incomplete': stats["is_incomplete"],
         'savings_val': stats["savings"],
+        'budget_alerts': stats["budget_alerts"],
+        'budget_rule': {
+            'needs': stats["needs"],
+            'wants': stats["wants"],
+            'savings': stats["rule_savings"],
+            'needs_pct': stats["needs_pct"],
+            'wants_pct': stats["wants_pct"],
+            'savings_pct': stats["savings_pct"],
+            'needs_target': stats["needs_target"],
+            'wants_target': stats["wants_target"],
+            'savings_target': stats["savings_target"],
+        },
         'kpis': kpis,
-        'savings_rule_labels': ['Savings', 'Fixed', 'Variable'],
+        'savings_rule_labels': ['Needs', 'Wants', 'Savings'],
         'savings_rule_data': [
-            max(0, float(stats["savings"])), 
-            float(stats["fixed"]), 
-            float(stats["variable"])
+            float(stats["needs"]),
+            float(stats["wants"]),
+            float(stats["rule_savings"]),
         ]
     }
 

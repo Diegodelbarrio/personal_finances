@@ -1,11 +1,9 @@
 # finances/services/api.py
-from . import queries, metrics
 from datetime import date
+
+from django.db.models import Max, Min, Q, Sum
 from django.utils import timezone
 
-from django.db.models import Max, Min, Sum
-from django.utils import timezone
-from datetime import date
 from . import queries, metrics
 
 def get_annual_cashflow_summary(user, year):
@@ -58,13 +56,17 @@ def get_annual_cashflow_summary(user, year):
 
         category_breakdown = metrics.get_category_breakdown(period_qs, transaction_type='EXPENSE')
         subcategory_breakdown = metrics.get_subcategory_breakdown(period_qs, transaction_type='EXPENSE')
+        budget_group_breakdown = metrics.get_budget_group_breakdown(period_qs)
         
         income_category_breakdown = metrics.get_category_breakdown(period_qs, transaction_type='INCOME')
         income_subcategory_breakdown = metrics.get_subcategory_breakdown(period_qs, transaction_type='INCOME')
         
         # Breakdown by location for Travel (Trip expenses)
         travel_breakdown = {}
-        travel_qs = period_qs.filter(subcategory__name="Travel").exclude(location__isnull=True)
+        travel_qs = period_qs.filter(
+            Q(subcategory__name="Travel")
+            | Q(subcategory__parent_category__name="Travel")
+        ).exclude(location__isnull=True)
         if travel_qs.exists():
             loc_stats = travel_qs.values('location__name').annotate(total=Sum('amount'))
             travel_breakdown = {item['location__name']: item['total'] for item in loc_stats}
@@ -79,10 +81,19 @@ def get_annual_cashflow_summary(user, year):
             "expenses": stats["expenses"],
             "fixed": stats["fixed"],
             "variable": stats["variable"],
+            "needs": stats["needs"],
+            "wants": stats["wants"],
+            "allocated_savings": stats["allocated_savings"],
+            "rule_savings": stats["rule_savings"],
+            "needs_pct": stats["needs_pct"],
+            "wants_pct": stats["wants_pct"],
+            "savings_pct": stats["savings_pct"],
+            "budget_alerts": stats["budget_alerts"],
             "savings": stats["savings"],
             "savings_rate": savings_rate,
             "categories": category_breakdown,
             "subcategories": subcategory_breakdown,
+            "budget_groups": budget_group_breakdown,
             "income_categories": income_category_breakdown,
             "income_subcategories": income_subcategory_breakdown,
             "travel_breakdown": travel_breakdown,

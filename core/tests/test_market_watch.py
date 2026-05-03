@@ -115,5 +115,5 @@ class MarketWatchViewTests(TestCase):
         response = self.client.get(reverse("core:market_data"), {"period": "5d", "refresh": "1"})
 
         self.assertEqual(response.status_code, 200)
-        mocked_context.assert_called_once_with("5d", force_refresh=True)
+        mocked_context.assert_called_once_with("5d", force_refresh=True, user=self.user)
         self.assertEqual(response.context["period_options"], [("5d", "1W")])

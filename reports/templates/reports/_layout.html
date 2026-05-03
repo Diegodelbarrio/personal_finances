@@ -25,6 +25,8 @@
             <ul class="dropdown-menu dropdown-compact shadow-lg rounded-3 border-0">
                 {% for y in years %}
                 <li><a class="dropdown-item {% if y == selected_year %}active{% endif %}" href="?year={{ y }}">{{ y }}</a></li>
+                {% empty %}
+                <li><span class="dropdown-item-text px-3 py-2">No years available</span></li>
                 {% endfor %}
             </ul>
         </div>

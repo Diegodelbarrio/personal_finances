@@ -134,14 +134,20 @@ class DefaultCategoryPresetForm(forms.Form):
         widget=forms.CheckboxSelectMultiple,
     )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.user = user
         self.blueprints = get_default_category_blueprints()
         self.category_map = {item["key"]: item for item in self.blueprints}
         self.required_category_keys = {
             item["key"] for item in self.blueprints if item.get("required")
         }
+        self.existing_categories_by_name = self._get_existing_categories_by_name()
+        self.locked_category_keys = self._get_locked_category_keys()
         self.subcategory_to_category = {}
+        self.existing_subcategory_names_by_category_key = (
+            self._get_existing_subcategory_names_by_category_key()
+        )
 
         category_choices = []
         subcategory_choices = []
@@ -159,13 +165,79 @@ class DefaultCategoryPresetForm(forms.Form):
         self.fields["category_keys"].choices = category_choices
         self.fields["subcategory_keys"].choices = subcategory_choices
 
+    def _get_existing_categories_by_name(self):
+        if not self.user or not getattr(self.user, "is_authenticated", False):
+            return {}
+
+        return {
+            category.name.casefold(): category
+            for category in Category.objects.filter(user=self.user)
+        }
+
+    def _get_locked_category_keys(self):
+        locked = set()
+        for category in self.blueprints:
+            if not category.get("required"):
+                continue
+            if category["name"].casefold() not in self.existing_categories_by_name:
+                locked.add(category["key"])
+        return locked
+
+    def _get_existing_subcategory_names_by_category_key(self):
+        if not self.user or not getattr(self.user, "is_authenticated", False):
+            return {}
+
+        data = {}
+        for category in self.blueprints:
+            existing_category = self.existing_categories_by_name.get(category["name"].casefold())
+            if not existing_category:
+                data[category["key"]] = set()
+                continue
+            data[category["key"]] = {
+                name.casefold()
+                for name in SubCategory.objects.filter(
+                    user=self.user,
+                    parent_category=existing_category,
+                ).values_list("name", flat=True)
+            }
+        return data
+
+    def get_initial_selection(self):
+        selected_categories = set()
+        selected_subcategories = set()
+
+        for category in self.blueprints:
+            category_key = category["key"]
+            existing_category = self.existing_categories_by_name.get(category["name"].casefold())
+            existing_subcategory_names = self.existing_subcategory_names_by_category_key.get(
+                category_key,
+                set(),
+            )
+            category_selected = category.get("selected_by_default", True) or (
+                category_key in self.locked_category_keys
+            )
+            selected_category_subcategories = []
+
+            for subcategory in category["subcategories"]:
+                if not subcategory.get("selected_by_default", True):
+                    continue
+                if existing_category and subcategory["name"].casefold() in existing_subcategory_names:
+                    continue
+                selected_category_subcategories.append(subcategory["key"])
+
+            if category_selected and (selected_category_subcategories or not existing_category):
+                selected_categories.add(category_key)
+                selected_subcategories.update(selected_category_subcategories)
+
+        return selected_categories, selected_subcategories
+
     def clean_category_keys(self):
         selected = self.cleaned_data.get("category_keys", [])
         if not selected:
             raise forms.ValidationError("Select at least one default category.")
 
         selected_set = set(selected)
-        missing_required = self.required_category_keys - selected_set
+        missing_required = self.locked_category_keys - selected_set
         if missing_required:
             raise forms.ValidationError("The category Income is required.")
         return selected
@@ -212,7 +284,7 @@ class DefaultCategoryPresetForm(forms.Form):
 class SubCategoryForm(forms.ModelForm):
     class Meta:
         model = SubCategory
-        fields = ["parent_category", "name", "is_essential"]
+        fields = ["parent_category", "name", "budget_group", "expense_nature", "is_essential"]
         widgets = {
             "parent_category": forms.Select(attrs={"class": "form-select"}),
             "name": forms.TextInput(
@@ -222,6 +294,8 @@ class SubCategoryForm(forms.ModelForm):
                     "maxlength": "100",
                 }
             ),
+            "budget_group": forms.Select(attrs={"class": "form-select"}),
+            "expense_nature": forms.Select(attrs={"class": "form-select"}),
             "is_essential": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
@@ -235,7 +309,11 @@ class SubCategoryForm(forms.ModelForm):
         self.fields["parent_category"].label_from_instance = lambda obj: obj.name
         self.fields["parent_category"].label = "Parent Category"
         self.fields["name"].label = "Name"
+        self.fields["budget_group"].label = "Budget Group"
+        self.fields["expense_nature"].label = "Expense Nature"
         self.fields["is_essential"].label = "Essential Subcategory"
+        self.fields["budget_group"].required = False
+        self.fields["expense_nature"].required = False
         if self.lock_name and self.instance.pk:
             self.fields["name"].disabled = True
             self.fields["name"].help_text = "Name cannot be edited."
@@ -265,6 +343,39 @@ class SubCategoryForm(forms.ModelForm):
         if parent_category.user_id != self.user.id:
             raise forms.ValidationError("Invalid parent category.")
         return parent_category
+
+    def clean(self):
+        cleaned_data = super().clean()
+        parent = cleaned_data.get("parent_category")
+        if not parent:
+            return cleaned_data
+
+        if parent.transaction_type == Category.TransactionType.INCOME:
+            cleaned_data["budget_group"] = SubCategory.BudgetGroup.NOT_APPLICABLE
+            cleaned_data["expense_nature"] = SubCategory.ExpenseNature.NOT_APPLICABLE
+            return cleaned_data
+
+        if (
+            not cleaned_data.get("budget_group")
+            or cleaned_data.get("budget_group") == SubCategory.BudgetGroup.NOT_APPLICABLE
+        ):
+            cleaned_data["budget_group"] = SubCategory.infer_budget_group(
+                category=parent,
+                name=cleaned_data.get("name", ""),
+                is_essential=cleaned_data.get("is_essential", False),
+            )
+
+        if (
+            not cleaned_data.get("expense_nature")
+            or cleaned_data.get("expense_nature") == SubCategory.ExpenseNature.NOT_APPLICABLE
+        ):
+            cleaned_data["expense_nature"] = (
+                SubCategory.ExpenseNature.FIXED
+                if parent.expense_type == Category.ExpenseType.FIXED
+                else SubCategory.ExpenseNature.VARIABLE
+            )
+
+        return cleaned_data
 
     def save(self, commit=True):
         instance = super().save(commit=False)

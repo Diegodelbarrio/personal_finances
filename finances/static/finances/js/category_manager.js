@@ -196,6 +196,7 @@ const CategoryManagerModule = {
         }
 
         const categoryToggles = Array.from(form.querySelectorAll(".preset-category-toggle"));
+        const subcategoryChecks = Array.from(form.querySelectorAll('input[name="subcategory_keys"]'));
 
         const syncState = () => {
             categoryToggles.forEach((toggle) => {
@@ -223,8 +224,61 @@ const CategoryManagerModule = {
             });
         };
 
+        const findCategoryToggle = (categoryKey) => (
+            categoryToggles.find((toggle) => toggle.dataset.categoryKey === categoryKey)
+        );
+
+        const isRecommended = (checkbox) => checkbox.dataset.defaultSelected === "true";
+
+        const applyPresetAction = (action) => {
+            categoryToggles.forEach((toggle) => {
+                if (toggle.disabled) {
+                    return;
+                }
+                if (action === "all") {
+                    toggle.checked = true;
+                    return;
+                }
+                if (action === "recommended") {
+                    toggle.checked = isRecommended(toggle);
+                    return;
+                }
+                if (action === "clear") {
+                    toggle.checked = false;
+                }
+            });
+
+            subcategoryChecks.forEach((checkbox) => {
+                if (action === "all") {
+                    checkbox.checked = true;
+                    return;
+                }
+                if (action === "recommended") {
+                    const categoryToggle = findCategoryToggle(checkbox.dataset.categoryKey);
+                    checkbox.checked = Boolean(
+                        categoryToggle
+                        && categoryToggle.checked
+                        && isRecommended(checkbox)
+                    );
+                    return;
+                }
+                if (action === "clear") {
+                    checkbox.checked = false;
+                }
+            });
+
+            syncState();
+        };
+
         categoryToggles.forEach((toggle) => {
             toggle.addEventListener("change", syncState);
+        });
+
+        form.querySelectorAll("[data-preset-action]").forEach((button) => {
+            button.addEventListener("click", (event) => {
+                event.preventDefault();
+                applyPresetAction(button.dataset.presetAction);
+            });
         });
 
         syncState();
@@ -268,13 +322,23 @@ const CategoryManagerModule = {
             currentPage: 1,
             rowsPerPage: 10,
             sortState: { column: null, ascending: true },
-            emptyColspan: 7,
+            emptyColspan: 8,
             visibleCountId: "categoriesVisibleCount",
             noDataMessage: "No categories match current filters.",
             pagination: {
                 wrapperId: "categoriesPaginationWrapper",
                 infoId: "categoriesPaginationInfo",
                 controlsId: "categoriesPaginationControls",
+            },
+            selection: {
+                rowCheckboxSelector: ".category-row-select",
+                selectAllId: "selectVisibleCategories",
+                selectedCountId: "categorySelectedCount",
+                batchFormId: "categoryBatchDeleteForm",
+                batchIdsContainerId: "categoryBatchIds",
+                batchInputName: "category_ids",
+                deleteButtonId: "categoryBatchDeleteButton",
+                itemLabel: "category",
             },
         };
 
@@ -315,6 +379,7 @@ const CategoryManagerModule = {
             });
         });
 
+        this.initSelectionControls(this.categoryState);
         this.applyCategoryFilters();
     },
 
@@ -332,7 +397,7 @@ const CategoryManagerModule = {
             currentPage: 1,
             rowsPerPage: 10,
             sortState: { column: null, ascending: true },
-            emptyColspan: 5,
+            emptyColspan: 8,
             visibleCountId: "subcategoriesVisibleCount",
             noDataMessage: "No subcategories match current filters.",
             pagination: {
@@ -340,14 +405,26 @@ const CategoryManagerModule = {
                 infoId: "subcategoriesPaginationInfo",
                 controlsId: "subcategoriesPaginationControls",
             },
+            selection: {
+                rowCheckboxSelector: ".subcategory-row-select",
+                selectAllId: "selectVisibleSubcategories",
+                selectedCountId: "subcategorySelectedCount",
+                batchFormId: "subcategoryBatchDeleteForm",
+                batchIdsContainerId: "subcategoryBatchIds",
+                batchInputName: "subcategory_ids",
+                deleteButtonId: "subcategoryBatchDeleteButton",
+                itemLabel: "subcategory",
+            },
         };
 
         const nameFilter = document.getElementById("subcategoryNameFilter");
         const categoryFilter = document.getElementById("subcategoryCategoryFilter");
+        const budgetGroupFilter = document.getElementById("subcategoryBudgetGroupFilter");
+        const expenseNatureFilter = document.getElementById("subcategoryExpenseNatureFilter");
         const essentialFilter = document.getElementById("subcategoryEssentialFilter");
         const clearButton = document.getElementById("clearSubcategoryFilters");
 
-        [nameFilter, categoryFilter, essentialFilter].forEach((field) => {
+        [nameFilter, categoryFilter, budgetGroupFilter, expenseNatureFilter, essentialFilter].forEach((field) => {
             if (!field) {
                 return;
             }
@@ -362,6 +439,8 @@ const CategoryManagerModule = {
             clearButton.addEventListener("click", () => {
                 if (nameFilter) nameFilter.value = "";
                 if (categoryFilter) categoryFilter.value = "";
+                if (budgetGroupFilter) budgetGroupFilter.value = "";
+                if (expenseNatureFilter) expenseNatureFilter.value = "";
                 if (essentialFilter) essentialFilter.value = "";
                 this.subcategoryState.sortState = { column: null, ascending: true };
                 this.subcategoryState.currentPage = 1;
@@ -377,7 +456,117 @@ const CategoryManagerModule = {
             });
         });
 
+        this.initSelectionControls(this.subcategoryState);
         this.applySubcategoryFilters();
+    },
+
+    initSelectionControls: function(state) {
+        const selection = state.selection;
+        const selectAll = document.getElementById(selection.selectAllId);
+        const form = document.getElementById(selection.batchFormId);
+        const idsContainer = document.getElementById(selection.batchIdsContainerId);
+
+        state.tableBody.addEventListener("change", (event) => {
+            const checkbox = event.target;
+            if (!checkbox.matches(selection.rowCheckboxSelector)) {
+                return;
+            }
+            this.updateSelectionState(state);
+        });
+
+        if (selectAll) {
+            selectAll.addEventListener("change", () => {
+                this.getRenderedSelectionCheckboxes(state).forEach((checkbox) => {
+                    checkbox.checked = selectAll.checked;
+                });
+                this.updateSelectionState(state);
+            });
+        }
+
+        if (form && idsContainer) {
+            form.addEventListener("submit", (event) => {
+                const selectedIds = this.getSelectedRowIds(state);
+                idsContainer.innerHTML = "";
+
+                if (!selectedIds.length) {
+                    event.preventDefault();
+                    this.updateSelectionState(state);
+                    return;
+                }
+
+                const noun = this.pluralizeItemLabel(selection.itemLabel, selectedIds.length);
+                if (!window.confirm(`Delete ${selectedIds.length} selected ${noun}? This action cannot be undone.`)) {
+                    event.preventDefault();
+                    return;
+                }
+
+                selectedIds.forEach((id) => {
+                    const input = document.createElement("input");
+                    input.type = "hidden";
+                    input.name = selection.batchInputName;
+                    input.value = id;
+                    idsContainer.appendChild(input);
+                });
+            });
+        }
+    },
+
+    pluralizeItemLabel: function(label, count) {
+        if (count === 1) {
+            return label;
+        }
+        if (label.endsWith("y")) {
+            return `${label.slice(0, -1)}ies`;
+        }
+        return `${label}s`;
+    },
+
+    getRenderedSelectionCheckboxes: function(state) {
+        return Array.from(state.tableBody.querySelectorAll(state.selection.rowCheckboxSelector));
+    },
+
+    getAllSelectionCheckboxes: function(state) {
+        return state.rows
+            .map((row) => row.querySelector(state.selection.rowCheckboxSelector))
+            .filter(Boolean);
+    },
+
+    getSelectedRowIds: function(state) {
+        return this.getAllSelectionCheckboxes(state)
+            .filter((checkbox) => checkbox.checked)
+            .map((checkbox) => checkbox.value);
+    },
+
+    updateSelectionState: function(state) {
+        const selection = state.selection;
+        const allCheckboxes = this.getAllSelectionCheckboxes(state);
+        const selectedCheckboxes = allCheckboxes.filter((checkbox) => checkbox.checked);
+        const renderedCheckboxes = this.getRenderedSelectionCheckboxes(state);
+        const renderedChecked = renderedCheckboxes.filter((checkbox) => checkbox.checked);
+        const selectAll = document.getElementById(selection.selectAllId);
+        const selectedCount = document.getElementById(selection.selectedCountId);
+        const deleteButton = document.getElementById(selection.deleteButtonId);
+
+        state.rows.forEach((row) => {
+            const checkbox = row.querySelector(selection.rowCheckboxSelector);
+            row.classList.toggle("is-selected", Boolean(checkbox && checkbox.checked));
+        });
+
+        if (selectedCount) {
+            selectedCount.textContent = String(selectedCheckboxes.length);
+        }
+        if (deleteButton) {
+            const hasSelection = selectedCheckboxes.length > 0;
+            deleteButton.disabled = !hasSelection;
+            deleteButton.classList.toggle("d-none", !hasSelection);
+        }
+        if (selectAll) {
+            selectAll.checked = renderedCheckboxes.length > 0
+                && renderedChecked.length === renderedCheckboxes.length;
+            selectAll.indeterminate = renderedChecked.length > 0
+                && renderedChecked.length < renderedCheckboxes.length;
+            selectAll.disabled = renderedCheckboxes.length === 0;
+        }
     },
 
     sortRows: function(state, column) {
@@ -434,18 +623,24 @@ const CategoryManagerModule = {
 
         const nameFilter = (document.getElementById("subcategoryNameFilter")?.value || "").toLowerCase();
         const categoryFilter = document.getElementById("subcategoryCategoryFilter")?.value || "";
+        const budgetGroupFilter = document.getElementById("subcategoryBudgetGroupFilter")?.value || "";
+        const expenseNatureFilter = document.getElementById("subcategoryExpenseNatureFilter")?.value || "";
         const essentialFilter = document.getElementById("subcategoryEssentialFilter")?.value || "";
 
         this.subcategoryState.filteredRows = this.subcategoryState.rows.filter((row) => {
             const matchesName = row.dataset.name.includes(nameFilter);
             const matchesCategory = !categoryFilter || row.dataset.parentCategoryId === categoryFilter;
+            const matchesBudgetGroup = !budgetGroupFilter || row.dataset.budgetGroup === budgetGroupFilter;
+            const matchesExpenseNature = !expenseNatureFilter || row.dataset.expenseNature === expenseNatureFilter;
             const matchesEssential = !essentialFilter || row.dataset.isEssential === essentialFilter;
-            return matchesName && matchesCategory && matchesEssential;
+            return matchesName && matchesCategory && matchesBudgetGroup && matchesExpenseNature && matchesEssential;
         });
 
         this.sortFilteredRows(this.subcategoryState, (row, column) => {
             if (column === "name") return row.dataset.name;
             if (column === "parent_category") return row.dataset.parentCategoryName;
+            if (column === "budget_group") return row.dataset.budgetGroup;
+            if (column === "expense_nature") return row.dataset.expenseNature;
             if (column === "is_essential") return row.dataset.isEssential === "yes" ? 1 : 0;
             if (column === "transactions_count") return parseInt(row.dataset.transactionsCount || "0", 10);
             return row.dataset.name;
@@ -531,6 +726,7 @@ const CategoryManagerModule = {
         }
 
         this.renderPagination(state, totalRows, totalPages, start, end);
+        this.updateSelectionState(state);
     },
 
     renderPagination: function(state, totalRows, totalPages, start, end) {

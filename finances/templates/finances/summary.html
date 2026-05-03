@@ -56,6 +56,8 @@
                         <ul class="dropdown-menu dropdown-compact shadow-lg rounded-3 border-0">
                             {% for y in years %}
                             <li><a class="dropdown-item {% if y == sel_year %}active{% endif %}" href="?year={{ y }}&month={{ sel_month }}">{{ y }}</a></li>
+                            {% empty %}
+                            <li><span class="dropdown-item-text px-3 py-2">No years available</span></li>
                             {% endfor %}
                         </ul>
                     </div>
@@ -67,6 +69,8 @@
                         <ul class="dropdown-menu dropdown-compact shadow-lg rounded-3 border-0">
                             {% for num, name in months %}
                             <li><a class="dropdown-item text-capitalize {% if num == sel_month %}active{% endif %}" href="?year={{ sel_year }}&month={{ num }}">{{ name }}</a></li>
+                            {% empty %}
+                            <li><span class="dropdown-item-text px-3 py-2">No months available</span></li>
                             {% endfor %}
                         </ul>
                     </div>
@@ -281,8 +285,8 @@
             <div class="card card-rounded border-0 shadow-sm p-4 h-100 bg-white d-flex flex-column chart-panel">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
-                        <h5 class="fw-bold mb-1">Savings Rule</h5>
-                        <p class="chart-subtitle mb-0">Balance among savings, fixed costs, and variable spending.</p>
+                        <h5 class="fw-bold mb-1">50-30-20 Rule</h5>
+                        <p class="chart-subtitle mb-0">Needs, wants, and savings measured from subcategory classification.</p>
                     </div>
                     <i class="bi bi-pie-chart text-muted"></i>
                 </div>
@@ -299,6 +303,20 @@
                         </div>
                     </div>
                 </div>
+
+                {% if budget_alerts %}
+                <div class="mt-4 p-3 rounded-4 warning-box">
+                    <div class="d-flex align-items-start">
+                        <i class="bi bi-exclamation-triangle-fill text-warning me-2 mt-1"></i>
+                        <div class="small text-muted warning-text">
+                            <strong class="text-dark">50-30-20 alerts:</strong>
+                            {% for alert in budget_alerts %}
+                                <span class="d-block">{{ alert.message }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
 
                 {% if is_incomplete %}
                 <div class="mt-4 p-3 rounded-4 warning-box">

@@ -2,17 +2,81 @@
 
 from calendar import monthrange
 from datetime import date
+from django.db.models import Max, Min
+from django.utils import timezone
+from finances.models import Transaction as FinanceTransaction
 from finances.services.api import get_annual_cashflow_summary, get_available_transaction_years
+from holdings.models import AccountBalanceSnapshot
 from investments.services.api import (
     get_annual_portfolio_evolution,
     get_investment_detailed_evolution,
     get_family_investment_performance,
     get_money_weighted_return,
 )
+from investments.models import AssetHistory, Transaction as InvestmentTransaction
 from holdings.services.api import get_annual_balance_evolution
 
-def get_available_years(user):
+def _build_year_range(first_year, last_year):
+    if first_year is None or last_year is None or first_year > last_year:
+        return []
+    return list(range(last_year, first_year - 1, -1))
+
+
+def get_available_years(user, report_type="finance"):
+    """
+    Return the selectable years for each report based on the data source that
+    powers that specific report.
+    """
+    now_year = timezone.now().year
+
+    if report_type == "finance":
+        limits = FinanceTransaction.objects.filter(user=user).aggregate(
+            first_date=Min("date"),
+            last_date=Max("date"),
+        )
+        first_date = limits["first_date"]
+        last_date = limits["last_date"]
+        if not first_date:
+            return []
+        return _build_year_range(
+            first_date.year,
+            max(now_year, last_date.year if last_date else first_date.year),
+        )
+
+    if report_type == "investments":
+        tx_limits = InvestmentTransaction.objects.filter(asset__user=user).aggregate(
+            first_date=Min("date"),
+        )
+        history_limits = AssetHistory.objects.filter(asset__user=user).aggregate(
+            first_date=Min("date"),
+        )
+        first_year_candidates = [
+            first_date.year
+            for first_date in (tx_limits["first_date"], history_limits["first_date"])
+            if first_date is not None
+        ]
+        if not first_year_candidates:
+            return []
+        return _build_year_range(min(first_year_candidates), now_year)
+
+    if report_type == "holdings":
+        limits = AccountBalanceSnapshot.objects.filter(account__user=user).aggregate(
+            first_date=Min("date"),
+        )
+        first_date = limits["first_date"]
+        if not first_date:
+            return []
+        return _build_year_range(first_date.year, now_year)
+
     return get_available_transaction_years(user)
+
+
+def resolve_selected_year(requested_year, available_years, fallback_year=None):
+    if requested_year in available_years:
+        return requested_year
+    if available_years:
+        return available_years[0]
+    return fallback_year if fallback_year is not None else timezone.now().year
 
 # 1. REPORTE FINANCIERO (Flujo de caja)
 def get_financial_annual_report(user, year):
@@ -50,6 +114,10 @@ def get_financial_annual_report(user, year):
         "expenses": sum(m["expenses"] for m in monthly_data),
         "fixed_total": sum(m["fixed"] for m in monthly_data),
         "variable_total": sum(m["variable"] for m in monthly_data),
+        "needs_total": sum(m["needs"] for m in monthly_data),
+        "wants_total": sum(m["wants"] for m in monthly_data),
+        "allocated_savings_total": sum(m["allocated_savings"] for m in monthly_data),
+        "rule_savings_total": sum(m["rule_savings"] for m in monthly_data),
         "savings": sum(m["savings"] for m in monthly_data),
     }
 
@@ -58,10 +126,25 @@ def get_financial_annual_report(user, year):
     annual_stats["avg_expenses"] = annual_stats["expenses"] / divisor
     annual_stats["avg_fixed"] = annual_stats["fixed_total"] / divisor
     annual_stats["avg_variable"] = annual_stats["variable_total"] / divisor
+    annual_stats["avg_needs"] = annual_stats["needs_total"] / divisor
+    annual_stats["avg_wants"] = annual_stats["wants_total"] / divisor
+    annual_stats["avg_rule_savings"] = annual_stats["rule_savings_total"] / divisor
     annual_stats["avg_savings"] = annual_stats["savings"] / divisor
 
     annual_stats["avg_savings_rate"] = (
         (annual_stats["savings"] / annual_stats["income"] * 100) 
+        if annual_stats["income"] > 0 else 0
+    )
+    annual_stats["needs_rate"] = (
+        (annual_stats["needs_total"] / annual_stats["income"] * 100)
+        if annual_stats["income"] > 0 else 0
+    )
+    annual_stats["wants_rate"] = (
+        (annual_stats["wants_total"] / annual_stats["income"] * 100)
+        if annual_stats["income"] > 0 else 0
+    )
+    annual_stats["rule_savings_rate"] = (
+        (annual_stats["rule_savings_total"] / annual_stats["income"] * 100)
         if annual_stats["income"] > 0 else 0
     )
 
@@ -171,11 +254,11 @@ def get_financial_annual_report(user, year):
         "detailed_categories": detailed_categories, 
         "detailed_income": detailed_income,
         "active_months": active_months_count,
-        'annual_savings_rule_labels': ['Savings', 'Fixed', 'Variable'],
+        'annual_savings_rule_labels': ['Needs', 'Wants', 'Savings'],
         'annual_savings_rule_data': [
-            max(0, float(annual_stats["savings"])), 
-            float(annual_stats["fixed_total"]), 
-            float(annual_stats["variable_total"])
+            float(annual_stats["needs_total"]),
+            float(annual_stats["wants_total"]),
+            float(annual_stats["rule_savings_total"]),
         ],
         "annual_category_labels": [c["name"] for c in detailed_categories if c["total_ytd"] != 0],
         "annual_category_data": [abs(float(c["total_ytd"])) for c in detailed_categories if c["total_ytd"] != 0],

@@ -54,6 +54,24 @@
                         {% endfor %}
                     </div>
 
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <label for="{{ form.budget_group.id_for_label }}" class="form-label fw-semibold">{{ form.budget_group.label }}</label>
+                            {{ form.budget_group }}
+                            {% for error in form.budget_group.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label for="{{ form.expense_nature.id_for_label }}" class="form-label fw-semibold">{{ form.expense_nature.label }}</label>
+                            {{ form.expense_nature }}
+                            {% for error in form.expense_nature.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
                     <div class="form-check mb-3">
                         {{ form.is_essential }}
                         <label for="{{ form.is_essential.id_for_label }}" class="form-check-label">{{ form.is_essential.label }}</label>

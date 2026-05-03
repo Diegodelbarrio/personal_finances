@@ -1,4 +1,5 @@
 import csv
+import copy
 import json
 import logging
 import math
@@ -11,7 +12,10 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
 from django.core.cache import cache
+from django.db.models import Q
 from django.utils import timezone
+
+from investments.models import AssetHistory
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +97,7 @@ def period_options() -> List[Tuple[str, str]]:
     return [(value, config["label"]) for value, config in PERIOD_CONFIG.items()]
 
 
-def get_market_watch_context(period: str, force_refresh: bool = False) -> Dict:
+def get_market_watch_context(period: str, force_refresh: bool = False, user=None) -> Dict:
     selected_period = normalize_period(period)
     config = PERIOD_CONFIG[selected_period]
     cache_key = f"core.market_watch.v3.{selected_period}"
@@ -102,14 +106,29 @@ def get_market_watch_context(period: str, force_refresh: bool = False) -> Dict:
     if not force_refresh:
         cached_payload = cache.get(cache_key)
         if cached_payload:
-            cached_payload["from_cache"] = True
-            return cached_payload
+            payload = copy.deepcopy(cached_payload)
+            payload["from_cache"] = True
+            return payload
 
     yahoo_blocked_cached = cache.get(YAHOO_BLOCKED_CACHE_KEY)
     yahoo_blocked = bool(yahoo_blocked_cached)
 
     charts_data, failed_assets, failed_assets_details = _fetch_all_assets(
         selected_period, config, force_stooq=yahoo_blocked
+    )
+    charts_data, failed_assets, failed_assets_details = _merge_local_history_fallbacks(
+        user,
+        selected_period,
+        config,
+        charts_data,
+        failed_assets,
+        failed_assets_details,
+    )
+    charts_data, failed_assets, failed_assets_details = _merge_asset_backups(
+        selected_period,
+        charts_data,
+        failed_assets,
+        failed_assets_details,
     )
     yahoo_blocked = yahoo_blocked or bool(cache.get(YAHOO_BLOCKED_CACHE_KEY))
     if not yahoo_blocked and any(
@@ -174,13 +193,81 @@ def _fetch_all_assets(
             if item is None:
                 failed_assets.append(asset["name"])
                 failed_assets_details.append(
-                    {"name": asset["name"], "reason": reason or "Unknown fetch error"}
+                    {
+                        "name": asset["name"],
+                        "symbol": asset["symbol"],
+                        "reason": reason or "Unknown fetch error",
+                    }
                 )
                 continue
+            _store_asset_backup(period, item)
             chart_rows.append((idx, item))
 
     chart_rows.sort(key=lambda row: row[0])
     return [row[1] for row in chart_rows], failed_assets, failed_assets_details
+
+
+def _merge_local_history_fallbacks(
+    user,
+    period: str,
+    period_config: Dict,
+    charts_data: List[Dict],
+    failed_assets: List[str],
+    failed_assets_details: List[Dict],
+) -> Tuple[List[Dict], List[str], List[Dict]]:
+    if user is None or not failed_assets_details:
+        return charts_data, failed_assets, failed_assets_details
+
+    charts_by_id = {item["id"]: item for item in charts_data}
+    remaining_failed_assets: List[str] = []
+    remaining_failed_details: List[Dict] = []
+
+    for item in failed_assets_details:
+        asset_config = next(
+            (candidate for candidate in MARKET_ASSETS if candidate["symbol"] == item.get("symbol")),
+            None,
+        )
+        local_item = _fetch_local_history_fallback(
+            user=user,
+            asset=asset_config,
+            period=period,
+            max_points=period_config["max_points"],
+        )
+        if local_item is None:
+            remaining_failed_assets.append(item["name"])
+            remaining_failed_details.append(item)
+            continue
+        charts_by_id[local_item["id"]] = local_item
+
+    ordered_ids = [_chart_id_for_symbol(asset["symbol"]) for asset in MARKET_ASSETS]
+    merged_charts = [charts_by_id[chart_id] for chart_id in ordered_ids if chart_id in charts_by_id]
+    return merged_charts, remaining_failed_assets, remaining_failed_details
+
+
+def _merge_asset_backups(
+    period: str,
+    charts_data: List[Dict],
+    failed_assets: List[str],
+    failed_assets_details: List[Dict],
+) -> Tuple[List[Dict], List[str], List[Dict]]:
+    if not failed_assets_details:
+        return charts_data, failed_assets, failed_assets_details
+
+    charts_by_id = {item["id"]: item for item in charts_data}
+    remaining_failed_assets: List[str] = []
+    remaining_failed_details: List[Dict] = []
+
+    for item in failed_assets_details:
+        backup_item = _get_asset_backup(period, item.get("symbol"))
+        if backup_item is None:
+            remaining_failed_assets.append(item["name"])
+            remaining_failed_details.append(item)
+            continue
+        charts_by_id[backup_item["id"]] = backup_item
+
+    ordered_ids = [_chart_id_for_symbol(asset["symbol"]) for asset in MARKET_ASSETS]
+    merged_charts = [charts_by_id[chart_id] for chart_id in ordered_ids if chart_id in charts_by_id]
+    return merged_charts, remaining_failed_assets, remaining_failed_details
 
 
 def _fetch_single_asset(
@@ -327,6 +414,7 @@ def _parse_chart_payload(
         "is_up": change_abs >= 0,
         "source": "Yahoo Finance",
         "is_proxy": False,
+        "is_stale": False,
     }
 
 
@@ -413,9 +501,92 @@ def _fetch_stooq_fallback(
         "is_up": change_abs >= 0,
         "source": "Stooq fallback",
         "is_proxy": fallback_config.get("is_proxy", False),
+        "is_stale": False,
     }
 
     return item, "Yahoo rate-limited. Showing Stooq fallback."
+
+
+def _fetch_local_history_fallback(
+    user,
+    asset: Optional[Dict],
+    period: str,
+    max_points: int,
+) -> Optional[Dict]:
+    if user is None or asset is None:
+        return None
+
+    histories = _get_matching_asset_histories(user, asset)
+    if len(histories) < 2:
+        return None
+
+    rows = [(entry.date, float(entry.total_value)) for entry in histories]
+    rows.sort(key=lambda item: item[0])
+
+    lookback_days = PERIOD_LOOKBACK_DAYS.get(period)
+    if lookback_days:
+        cutoff = timezone.localdate() - timedelta(days=lookback_days)
+        filtered = [item for item in rows if item[0] >= cutoff]
+        if len(filtered) >= 2:
+            rows = filtered
+
+    if len(rows) < 2:
+        return None
+
+    labels = [dt.strftime("%Y-%m-%d") for dt, _ in rows]
+    values = [round(total_value, 4) for _, total_value in rows]
+    labels, values = _downsample_series(labels, values, max_points=max_points)
+
+    first_value = values[0]
+    last_value = values[-1]
+    change_abs = last_value - first_value
+    change_pct = (change_abs / first_value * 100) if first_value else 0
+
+    return {
+        "id": _chart_id_for_symbol(asset["symbol"]),
+        "name": f"{asset['name']} (Portfolio)",
+        "symbol": asset["symbol"],
+        "isin": asset["isin"],
+        "currency": "EUR",
+        "currency_symbol": "€",
+        "current_price": round(last_value, 2),
+        "change_abs": round(change_abs, 2),
+        "change_pct": round(change_pct, 2),
+        "high": round(max(values), 2),
+        "low": round(min(values), 2),
+        "points": len(values),
+        "labels": labels,
+        "data": values,
+        "color": asset["color"],
+        "is_up": change_abs >= 0,
+        "source": "Portfolio history",
+        "is_proxy": False,
+        "is_stale": True,
+    }
+
+
+def _get_matching_asset_histories(user, asset: Dict):
+    match_query = Q()
+    asset_name = (asset.get("name") or "").strip()
+    asset_isin = (asset.get("isin") or "").strip()
+
+    if asset_name:
+        match_query |= Q(asset__name__iexact=asset_name)
+        match_query |= Q(asset__name__icontains=asset_name)
+
+    if asset_isin and asset_isin != "N/A":
+        match_query |= Q(asset__isin__iexact=asset_isin)
+
+    if not match_query:
+        return []
+
+    return list(
+        AssetHistory.objects
+        .filter(asset__user=user)
+        .filter(match_query)
+        .select_related("asset")
+        .order_by("date")
+    )
 
 
 def _stooq_date_window(period: str) -> Tuple[str, str]:
@@ -511,3 +682,45 @@ def _downsample_series(
         sampled_values.append(values[-1])
 
     return sampled_labels, sampled_values
+
+
+def _chart_id_for_symbol(symbol: str) -> str:
+    symbol_safe = (
+        symbol.replace(".", "_")
+        .replace("-", "_")
+        .replace("=", "_")
+        .replace("^", "_")
+    )
+    return f"chart_{symbol_safe}"
+
+
+def _asset_backup_cache_key(period: str, symbol: str) -> str:
+    return f"core.market_watch.v3.asset_backup.{period}.{symbol}"
+
+
+def _store_asset_backup(period: str, item: Dict) -> None:
+    cache.set(
+        _asset_backup_cache_key(period, item["symbol"]),
+        {
+            "item": item,
+            "saved_at": timezone.localtime(),
+        },
+        timeout=86400,
+    )
+
+
+def _get_asset_backup(period: str, symbol: Optional[str]) -> Optional[Dict]:
+    if not symbol:
+        return None
+
+    backup_payload = cache.get(_asset_backup_cache_key(period, symbol))
+    if not backup_payload:
+        return None
+
+    item = copy.deepcopy(backup_payload.get("item") or {})
+    if not item:
+        return None
+
+    item["is_stale"] = True
+    item["source"] = f"{item.get('source', 'Cached data')} (cached)"
+    return item
