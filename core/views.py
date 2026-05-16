@@ -5,7 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse
 
 # Servicios de las diferentes Apps
-from core.services.market_watch import get_market_watch_context, period_options
+from core.services.live_market import get_live_market_context
+from core.services.portfolio_market import get_portfolio_market_context
 from core.services.csv_import import get_csv_template_payload
 from core.services.net_worth import calculate_net_worth
 from finances.services.api import get_annual_cashflow_summary
@@ -66,23 +67,85 @@ def home(request):
 
 @login_required
 def compound_interest_calculator(request):
+    presets = [
+        {
+            "key": "conservative",
+            "title": "Conservative",
+            "rate": "4",
+            "rate_label": "4.0%",
+            "inflation": "2",
+            "contribution_growth": "1",
+            "icon": "bi-shield-check",
+            "icon_class": "text-info",
+            "active": False,
+        },
+        {
+            "key": "balanced",
+            "title": "Balanced",
+            "rate": "7",
+            "rate_label": "7.0%",
+            "inflation": "2",
+            "contribution_growth": "0",
+            "icon": "bi-graph-up-arrow",
+            "icon_class": "text-primary",
+            "active": True,
+        },
+        {
+            "key": "growth",
+            "title": "Growth",
+            "rate": "9.5",
+            "rate_label": "9.5%",
+            "inflation": "2.5",
+            "contribution_growth": "2",
+            "icon": "bi-rocket-takeoff",
+            "icon_class": "text-success",
+            "active": False,
+        },
+    ]
+    currencies = [
+        {"code": "EUR", "default": True},
+        {"code": "USD", "default": False},
+        {"code": "GBP", "default": False},
+        {"code": "CHF", "default": False},
+    ]
+
     return render(request, "core/compound_interest.html", {
-        "page_title": "Compound Interest Calculator"
+        "page_title": "Compound Interest Calculator",
+        "compound_interest_presets": presets,
+        "compound_interest_currencies": currencies,
     })
 
 
 @login_required
 def investment_dashboard(request):
     selected_period = request.GET.get("period", "1y")
+    selected_asset_id = request.GET.get("asset_id")
+    query = request.GET.get("q", "")
+
+    context = get_portfolio_market_context(
+        user=request.user,
+        period=selected_period,
+        asset_id=selected_asset_id,
+        query=query,
+    )
+    return render(request, "core/market_data.html", context)
+
+
+@login_required
+def live_market_dashboard(request):
+    selected_period = request.GET.get("period", "1y")
+    selected_asset_id = request.GET.get("asset_id")
+    query = request.GET.get("q", "")
     force_refresh = request.GET.get("refresh") == "1"
 
-    context = get_market_watch_context(
-        selected_period,
-        force_refresh=force_refresh,
+    context = get_live_market_context(
         user=request.user,
+        period=selected_period,
+        asset_id=selected_asset_id,
+        query=query,
+        force_refresh=force_refresh,
     )
-    context["period_options"] = period_options()
-    return render(request, "core/market_data.html", context)
+    return render(request, "core/live_market_data.html", context)
 
 
 @login_required

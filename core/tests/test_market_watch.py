@@ -1,12 +1,29 @@
 from unittest.mock import patch
+from datetime import date, datetime, timezone as datetime_timezone
+import json
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 
+from investments.models import Asset, AssetHistory, Transaction
+from core.services.live_market import (
+    _fetch_coinbase_market_data,
+    _fetch_ft_market_data,
+    _parse_ft_historical_rows,
+    get_live_market_context,
+    normalize_live_market_period,
+    resolve_market_identity,
+)
+from core.services.portfolio_market import (
+    get_portfolio_market_context,
+    normalize_portfolio_period,
+    portfolio_period_options,
+)
 from core.services.market_watch import (
     DEFAULT_PERIOD,
+    _fetch_coingecko_fallback,
     _downsample_series,
     _fetch_stooq_fallback,
     get_market_watch_context,
@@ -57,6 +74,29 @@ class MarketWatchServiceTests(TestCase):
         self.assertFalse(item["is_proxy"])
         self.assertIn("Yahoo rate-limited", reason)
 
+    @patch("core.services.market_watch._open_json_url")
+    def test_coingecko_fallback_builds_crypto_chart_payload(self, mocked_open_json):
+        mocked_open_json.return_value = {
+            "prices": [
+                [1735689600000, 90000],
+                [1735776000000, 92000],
+                [1735862400000, 91000],
+            ]
+        }
+        asset = {
+            "name": "Bitcoin",
+            "symbol": "BTC-EUR",
+            "isin": "N/A",
+            "color": "#f7931a",
+        }
+        item, reason = _fetch_coingecko_fallback(asset, period="1mo", max_points=120)
+
+        self.assertIsNotNone(item)
+        self.assertEqual(item["source"], "CoinGecko fallback")
+        self.assertEqual(item["currency"], "EUR")
+        self.assertEqual(item["change_abs"], 1000)
+        self.assertIn("CoinGecko", reason)
+
     @patch("core.services.market_watch._fetch_all_assets")
     def test_context_uses_cache_for_same_period(self, mocked_fetch):
         mocked_fetch.return_value = ([{"id": "chart_1"}], [], [])
@@ -91,29 +131,371 @@ class MarketWatchServiceTests(TestCase):
         self.assertEqual(ctx["charts_data"], [{"id": "chart_backup"}])
 
 
+class PortfolioMarketServiceTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="portfolio-user", password="pass12345")
+        self.world = Asset.objects.create(
+            user=self.user,
+            name="ETF World",
+            isin="IE00WORLD",
+            category="INDEX_FUND",
+            platform="Broker",
+        )
+        self.bitcoin = Asset.objects.create(
+            user=self.user,
+            name="Bitcoin",
+            category="CRYPTO",
+            platform="Exchange",
+        )
+        self.family = Asset.objects.create(
+            user=self.user,
+            name="Family Investments",
+            category="INDEX_FUND",
+            platform="Family",
+        )
+
+        AssetHistory.objects.create(
+            user=self.user,
+            asset=self.world,
+            date=date(2025, 1, 1),
+            total_value=1000,
+        )
+        AssetHistory.objects.create(
+            user=self.user,
+            asset=self.world,
+            date=date(2025, 3, 1),
+            total_value=1150,
+        )
+        AssetHistory.objects.create(
+            user=self.user,
+            asset=self.world,
+            date=date(2025, 4, 1),
+            total_value=1300,
+        )
+        AssetHistory.objects.create(
+            user=self.user,
+            asset=self.bitcoin,
+            date=date(2025, 4, 1),
+            total_value=500,
+        )
+        AssetHistory.objects.create(
+            user=self.user,
+            asset=self.family,
+            date=date(2025, 4, 1),
+            total_value=10000,
+        )
+        Transaction.objects.create(
+            user=self.user,
+            asset=self.world,
+            date=date(2025, 2, 1),
+            action="BUY",
+            amount=100,
+        )
+
+    def test_normalize_portfolio_period_falls_back_to_default(self):
+        self.assertEqual(normalize_portfolio_period("not-real"), "1y")
+        self.assertEqual(normalize_portfolio_period("3mo"), "3mo")
+        self.assertIn("YTD", [item["label"] for item in portfolio_period_options()])
+        self.assertNotIn("1D", [item["label"] for item in portfolio_period_options()])
+
+    def test_selected_asset_performance_is_adjusted_for_contributions(self):
+        ctx = get_portfolio_market_context(
+            self.user,
+            period="3mo",
+            asset_id=str(self.world.id),
+        )
+
+        self.assertEqual(ctx["selected_scope"], "asset")
+        self.assertEqual(ctx["selected_scope_name"], "ETF World")
+        self.assertEqual(ctx["performance"]["current_value"], 1300)
+        self.assertEqual(ctx["performance"]["net_contributions"], 100)
+        self.assertEqual(ctx["performance"]["market_change"], 200)
+        self.assertAlmostEqual(ctx["performance"]["return_pct"], 18.1818, places=3)
+        self.assertEqual(ctx["chart_payload"]["market_values"], [1000.0, 1150.0, 1300.0])
+
+    def test_asset_search_filters_portfolio_options(self):
+        ctx = get_portfolio_market_context(self.user, period="1y", query="bitcoin")
+
+        self.assertEqual([asset["name"] for asset in ctx["searchable_assets"]], ["Bitcoin"])
+        self.assertEqual(ctx["query"], "bitcoin")
+
+    def test_portfolio_scope_excludes_family_investments_when_personal_assets_exist(self):
+        ctx = get_portfolio_market_context(self.user, period="all")
+
+        self.assertEqual(ctx["selected_scope"], "portfolio")
+        self.assertEqual(ctx["performance"]["current_value"], 1800)
+
+
+class LiveMarketServiceTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="live-user", password="pass12345")
+        self.world = Asset.objects.create(
+            user=self.user,
+            name="Fidelity MSCI World Index",
+            isin="IE00BYX5NX33",
+            category="INDEX_FUND",
+            platform="MyInvestor",
+        )
+        self.bitcoin = Asset.objects.create(
+            user=self.user,
+            name="Bitcoin",
+            category="CRYPTO",
+            platform="Kraken",
+        )
+        self.manual = Asset.objects.create(
+            user=self.user,
+            name="Custom ETF",
+            market_symbol="CSTM.F",
+            category="INDEX_FUND",
+            platform="Broker",
+        )
+        self.gold = Asset.objects.create(
+            user=self.user,
+            name="Physical Gold USD",
+            isin="IE00B4ND3602",
+            category="COMMODITY",
+            platform="Trade Republic",
+        )
+        self.unmapped = Asset.objects.create(
+            user=self.user,
+            name="Private Fund",
+            category="INDEX_FUND",
+            platform="Manual",
+        )
+
+    def test_live_periods_support_short_market_ranges(self):
+        self.assertEqual(normalize_live_market_period("1d"), "1d")
+        self.assertEqual(normalize_live_market_period("not-real"), "1y")
+
+    def test_market_identity_resolves_known_isin_and_manual_symbol(self):
+        world_identity = resolve_market_identity(self.world)
+        manual_identity = resolve_market_identity(self.manual)
+        bitcoin_identity = resolve_market_identity(self.bitcoin)
+        gold_identity = resolve_market_identity(self.gold)
+
+        self.assertEqual(world_identity.symbol, "0P0001CLDK.F")
+        self.assertEqual(world_identity.ft_symbol_id, "667887206")
+        self.assertEqual(manual_identity.symbol, "CSTM.F")
+        self.assertTrue(manual_identity.is_manual)
+        self.assertEqual(bitcoin_identity.symbol, "BTC-EUR")
+        self.assertEqual(gold_identity.symbol, "IGLN.L")
+        self.assertEqual(gold_identity.ft_symbol_id, "33139564")
+        self.assertIsNone(resolve_market_identity(self.unmapped))
+
+    @patch("core.services.live_market._fetch_live_market_asset")
+    def test_live_context_fetches_selected_real_market_symbol(self, mocked_fetch):
+        mocked_fetch.return_value = (
+            {
+                "id": "chart_0P0001CLDK_F",
+                "name": "Fidelity MSCI World Index",
+                "symbol": "0P0001CLDK.F",
+                "isin": "IE00BYX5NX33",
+                "currency": "EUR",
+                "currency_symbol": "€",
+                "current_price": 12.5,
+                "change_abs": 1.0,
+                "change_pct": 8.7,
+                "high": 12.8,
+                "low": 11.2,
+                "points": 10,
+                "labels": ["2026-01-01", "2026-01-02"],
+                "data": [11.5, 12.5],
+                "color": "#2563eb",
+                "is_up": True,
+                "source": "Yahoo Finance",
+                "is_proxy": False,
+                "is_stale": False,
+            },
+            None,
+        )
+
+        ctx = get_live_market_context(
+            self.user,
+            period="3mo",
+            asset_id=str(self.world.id),
+            force_refresh=True,
+        )
+
+        self.assertEqual(ctx["selected_asset"]["symbol"], "0P0001CLDK.F")
+        self.assertEqual(ctx["chart"]["current_price"], 12.5)
+        mocked_fetch.assert_called_once()
+        _args, kwargs = mocked_fetch.call_args
+        self.assertEqual(kwargs["asset"]["symbol"], "0P0001CLDK.F")
+        self.assertEqual(kwargs["period"], "3mo")
+
+    def test_ft_historical_parser_reads_close_prices_in_oldest_order(self):
+        rows = _parse_ft_historical_rows(
+            '<tr><td class="mod-ui-table__cell--text">'
+            '<span class="mod-ui-hide-small-below">Wednesday, May 13, 2026</span>'
+            '<span class="mod-ui-hide-medium-above">Wed, May 13, 2026</span>'
+            "</td><td>13.48</td><td>13.48</td><td>13.48</td><td>13.48</td><td>0</td></tr>"
+            '<tr><td class="mod-ui-table__cell--text">'
+            '<span class="mod-ui-hide-small-below">Thursday, May 14, 2026</span>'
+            '<span class="mod-ui-hide-medium-above">Thu, May 14, 2026</span>'
+            "</td><td>13.60</td><td>13.60</td><td>13.60</td><td>13.60</td><td>0</td></tr>"
+        )
+
+        self.assertEqual(rows, [(date(2026, 5, 13), 13.48), (date(2026, 5, 14), 13.60)])
+
+    @patch("core.services.live_market._open_text_url")
+    def test_coinbase_market_data_builds_long_crypto_chart_payload(self, mocked_open_text):
+        first_timestamp = int(datetime(2026, 5, 14, tzinfo=datetime_timezone.utc).timestamp())
+        second_timestamp = int(datetime(2026, 5, 15, tzinfo=datetime_timezone.utc).timestamp())
+        mocked_open_text.return_value = json.dumps(
+            [
+                [second_timestamp, 98, 103, 100, 102, 5],
+                [first_timestamp, 97, 101, 99, 100, 4],
+            ]
+        )
+        asset = {
+            "name": self.bitcoin.name,
+            "symbol": "BTC-EUR",
+            "isin": "N/A",
+            "color": "#f59e0b",
+        }
+
+        item, reason = _fetch_coinbase_market_data(asset, period="5y", max_points=120)
+
+        self.assertIsNotNone(item)
+        self.assertEqual(item["source"], "Coinbase Exchange")
+        self.assertEqual(item["labels"], ["2026-05-14", "2026-05-15"])
+        self.assertEqual(item["change_pct"], 2)
+        self.assertIn("Coinbase", reason)
+
+    @patch("core.services.live_market.timezone.localdate", return_value=date(2026, 5, 15))
+    @patch("core.services.live_market._open_text_url")
+    def test_ft_market_data_builds_chart_payload(self, mocked_open_text, _mocked_today):
+        mocked_open_text.return_value = json.dumps(
+            {
+                "html": (
+                    '<tr><td class="mod-ui-table__cell--text">'
+                    '<span class="mod-ui-hide-small-below">Thursday, May 14, 2026</span>'
+                    "</td><td>13.60</td><td>13.60</td><td>13.60</td><td>13.60</td><td>0</td></tr>"
+                    '<tr><td class="mod-ui-table__cell--text">'
+                    '<span class="mod-ui-hide-small-below">Wednesday, April 15, 2026</span>'
+                    "</td><td>12.83</td><td>12.83</td><td>12.83</td><td>12.83</td><td>0</td></tr>"
+                )
+            }
+        )
+        identity = resolve_market_identity(self.world)
+        asset = {
+            "name": self.world.name,
+            "symbol": identity.symbol,
+            "isin": identity.isin,
+            "color": "#2563eb",
+        }
+
+        item, reason = _fetch_ft_market_data(
+            asset=asset,
+            identity=identity,
+            period="1mo",
+            max_points=120,
+        )
+
+        self.assertIsNotNone(item)
+        self.assertEqual(item["source"], "FT Markets")
+        self.assertEqual(item["currency"], "EUR")
+        self.assertEqual(item["labels"], ["2026-04-15", "2026-05-14"])
+        self.assertEqual(item["change_pct"], 6)
+        self.assertIn("FT Markets", reason)
+
+    def test_live_context_marks_unresolved_assets(self):
+        ctx = get_live_market_context(
+            self.user,
+            period="1y",
+            asset_id=str(self.unmapped.id),
+        )
+
+        self.assertIsNone(ctx["chart"])
+        self.assertIn("not mapped", ctx["fetch_error"])
+        self.assertIn("Private Fund", [asset["name"] for asset in ctx["unresolved_assets"]])
+
+
 class MarketWatchViewTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="market-user", password="pass12345")
 
-    @patch("core.views.period_options")
-    @patch("core.views.get_market_watch_context")
-    def test_market_view_passes_period_and_refresh(self, mocked_context, mocked_period_options):
+    @patch("core.views.get_portfolio_market_context")
+    def test_market_view_passes_period_asset_and_query(self, mocked_context):
         mocked_context.return_value = {
-            "charts_data": [],
-            "failed_assets": [],
-            "failed_assets_details": [],
-            "using_stale_backup": False,
-            "all_failed": False,
-            "selected_period": "5d",
-            "selected_period_label": "1W",
+            "asset_options": [],
+            "searchable_assets": [],
+            "chart_payload": {},
+            "performance": {
+                "has_data": False,
+                "has_enough_data": False,
+                "is_partial": False,
+                "current_value": 0,
+                "market_change": 0,
+                "status": "secondary",
+                "return_status": "secondary",
+                "return_display": "N/A",
+                "net_contributions": 0,
+                "transaction_count": 0,
+                "start_value": 0,
+                "snapshots": 0,
+                "mwrr_display": "N/A",
+            },
+            "period_options": [{"value": "3mo", "label": "3M"}],
+            "selected_period": "3mo",
+            "selected_period_label": "3M",
+            "selected_asset_id": "2",
+            "selected_scope": "asset",
+            "selected_scope_name": "ETF World",
+            "selected_scope_meta": "Index Funds",
+            "query": "world",
+            "portfolio_has_assets": True,
             "generated_at": None,
-            "from_cache": False,
         }
-        mocked_period_options.return_value = [("5d", "1W")]
 
         self.client.login(username="market-user", password="pass12345")
-        response = self.client.get(reverse("core:market_data"), {"period": "5d", "refresh": "1"})
+        response = self.client.get(
+            reverse("core:market_data"),
+            {"period": "3mo", "asset_id": "2", "q": "world"},
+        )
 
         self.assertEqual(response.status_code, 200)
-        mocked_context.assert_called_once_with("5d", force_refresh=True, user=self.user)
-        self.assertEqual(response.context["period_options"], [("5d", "1W")])
+        mocked_context.assert_called_once_with(
+            user=self.user,
+            period="3mo",
+            asset_id="2",
+            query="world",
+        )
+
+    @patch("core.views.get_live_market_context")
+    def test_live_market_view_passes_period_asset_query_and_refresh(self, mocked_context):
+        mocked_context.return_value = {
+            "asset_options": [],
+            "searchable_assets": [],
+            "selected_asset": None,
+            "selected_asset_id": "2",
+            "chart": None,
+            "fetch_error": None,
+            "from_cache": False,
+            "using_stale_backup": False,
+            "force_refresh": True,
+            "period_options": [{"value": "1d", "label": "1D"}],
+            "selected_period": "1d",
+            "selected_period_label": "1D",
+            "query": "world",
+            "resolved_count": 0,
+            "unresolved_assets": [],
+            "portfolio_has_assets": True,
+            "yahoo_rate_limited": False,
+            "generated_at": None,
+        }
+
+        self.client.login(username="market-user", password="pass12345")
+        response = self.client.get(
+            reverse("core:live_market_data"),
+            {"period": "1d", "asset_id": "2", "q": "world", "refresh": "1"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        mocked_context.assert_called_once_with(
+            user=self.user,
+            period="1d",
+            asset_id="2",
+            query="world",
+            force_refresh=True,
+        )

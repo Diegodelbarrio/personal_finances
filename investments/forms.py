@@ -7,7 +7,7 @@ from .models import Asset, AssetHistory, Transaction
 class AssetForm(forms.ModelForm):
     class Meta:
         model = Asset
-        fields = ["name", "isin", "category", "platform"]
+        fields = ["name", "isin", "market_symbol", "category", "platform"]
         widgets = {
             "name": forms.TextInput(
                 attrs={
@@ -21,6 +21,13 @@ class AssetForm(forms.ModelForm):
                     "class": "form-control",
                     "placeholder": "Optional ISIN",
                     "maxlength": "20",
+                }
+            ),
+            "market_symbol": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Optional Yahoo symbol, e.g. BTC-EUR",
+                    "maxlength": "32",
                 }
             ),
             "category": forms.Select(attrs={"class": "form-select"}),
@@ -38,6 +45,7 @@ class AssetForm(forms.ModelForm):
         self.user = user
         self.fields["name"].label = "Asset"
         self.fields["isin"].label = "ISIN"
+        self.fields["market_symbol"].label = "Market Symbol"
         self.fields["category"].label = "Category"
         self.fields["platform"].label = "Platform"
 

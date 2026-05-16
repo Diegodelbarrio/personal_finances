@@ -13,6 +13,11 @@ const CategoryManagerModule = {
     },
 
     initQuickActionsDropdowns: function() {
+        if (window.FinOrbitTables && typeof window.FinOrbitTables.initActionDropdowns === "function") {
+            window.FinOrbitTables.initActionDropdowns(document);
+            return;
+        }
+
         if (!window.bootstrap || !window.bootstrap.Dropdown) {
             return;
         }
@@ -659,6 +664,10 @@ const CategoryManagerModule = {
             const valA = valueGetter(a, column);
             const valB = valueGetter(b, column);
 
+            if (window.FinOrbitTables && typeof window.FinOrbitTables.compareValues === "function") {
+                return window.FinOrbitTables.compareValues(valA, valB, ascending);
+            }
+
             if (typeof valA === "number" && typeof valB === "number") {
                 return ascending ? valA - valB : valB - valA;
             }
@@ -670,6 +679,17 @@ const CategoryManagerModule = {
     },
 
     updateSortIcons: function(tableKey) {
+        const state = tableKey === "categories" ? this.categoryState : this.subcategoryState;
+
+        if (window.FinOrbitTables && typeof window.FinOrbitTables.updateSortHeaders === "function") {
+            window.FinOrbitTables.updateSortHeaders({
+                tableKey,
+                activeColumn: state && state.sortState ? state.sortState.column : null,
+                ascending: state && state.sortState ? state.sortState.ascending : true,
+            });
+            return;
+        }
+
         const headers = document.querySelectorAll(`.sortable-header[data-table="${tableKey}"]`);
         headers.forEach((header) => {
             const icon = header.querySelector(".sort-icon");
@@ -679,7 +699,6 @@ const CategoryManagerModule = {
             icon.className = "bi bi-arrow-down-up sort-icon opacity-50";
         });
 
-        const state = tableKey === "categories" ? this.categoryState : this.subcategoryState;
         if (!state || !state.sortState.column) {
             return;
         }
@@ -755,7 +774,11 @@ const CategoryManagerModule = {
             })
         );
 
-        this.getPageWindow(totalPages, state.currentPage).forEach((entry) => {
+        const pageWindow = window.FinOrbitTables && typeof window.FinOrbitTables.getPageWindow === "function"
+            ? window.FinOrbitTables.getPageWindow(totalPages, state.currentPage)
+            : this.getPageWindow(totalPages, state.currentPage);
+
+        pageWindow.forEach((entry) => {
             if (entry === "...") {
                 const ellipsis = document.createElement("span");
                 ellipsis.className = "pagination-ellipsis";
@@ -787,9 +810,16 @@ const CategoryManagerModule = {
     },
 
     buildPaginationButton: function(label, options = {}) {
+        if (window.FinOrbitTables && typeof window.FinOrbitTables.buildPaginationButton === "function") {
+            return window.FinOrbitTables.buildPaginationButton(label, {
+                ...options,
+                className: "pagination-btn fo-pagination-btn",
+            });
+        }
+
         const button = document.createElement("button");
         button.type = "button";
-        button.className = "pagination-btn";
+        button.className = "pagination-btn fo-pagination-btn";
         button.textContent = label;
 
         if (options.active) {

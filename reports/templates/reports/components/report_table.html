@@ -1,7 +1,1 @@
-<div class="report-table-container">
-    <div class="table-responsive">
-        <table class="report-table {{ extra_classes }} align-middle mb-0 {% if hover %}table-hover{% endif %}">
-            {% include table_template %}
-        </table>
-    </div>
-</div>
+{% include "components/table_shell.html" with table_template=table_template shell_class="report-table-container" base_table_class="report-table" table_class=extra_classes hover=hover %}

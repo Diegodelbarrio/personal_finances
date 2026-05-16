@@ -107,6 +107,10 @@ const InvestmentsModule = {
             if (searchContainer.length) {
                 searchContainer.append($('.dataTables_filter'));
             }
+
+            if (window.FinOrbitTables && typeof window.FinOrbitTables.refreshScrollShadows === "function") {
+                window.FinOrbitTables.refreshScrollShadows(document);
+            }
         }
     },
 

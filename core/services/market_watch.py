@@ -52,7 +52,9 @@ PERIOD_CONFIG = {
     "1d": {"label": "1D", "interval": "5m", "ttl": 120, "max_points": 240},
     "5d": {"label": "1W", "interval": "30m", "ttl": 300, "max_points": 260},
     "1mo": {"label": "1M", "interval": "1d", "ttl": 900, "max_points": 280},
+    "3mo": {"label": "3M", "interval": "1d", "ttl": 1200, "max_points": 290},
     "6mo": {"label": "6M", "interval": "1d", "ttl": 1800, "max_points": 300},
+    "ytd": {"label": "YTD", "interval": "1d", "ttl": 1800, "max_points": 300},
     "1y": {"label": "1Y", "interval": "1d", "ttl": 3600, "max_points": 320},
     "5y": {"label": "5Y", "interval": "1wk", "ttl": 7200, "max_points": 320},
     "max": {"label": "ALL", "interval": "1mo", "ttl": 10800, "max_points": 340},
@@ -74,13 +76,20 @@ STOOQ_FALLBACK_MAP = {
     "0P00012I6A.F": {"symbol": "eimi.uk", "currency": "GBP", "is_proxy": True},
     "BTC-EUR": {"symbol": "btceur", "currency": "EUR", "is_proxy": False},
     "GC=F": {"symbol": "xauusd", "currency": "USD", "is_proxy": True},
+    "IGLN.L": {"symbol": "igln.uk", "currency": "USD", "is_proxy": False},
+}
+
+COINGECKO_FALLBACK_MAP = {
+    "BTC-EUR": {"id": "bitcoin", "currency": "EUR", "vs_currency": "eur"},
 }
 
 PERIOD_LOOKBACK_DAYS = {
     "1d": 2,
     "5d": 7,
     "1mo": 32,
+    "3mo": 100,
     "6mo": 190,
+    "ytd": None,
     "1y": 380,
     "5y": 1900,
     "max": None,
@@ -274,6 +283,14 @@ def _fetch_single_asset(
     asset: Dict, period: str, period_config: Dict, force_stooq: bool = False
 ) -> Tuple[Optional[Dict], Optional[str]]:
     if force_stooq:
+        crypto_item, crypto_reason = _fetch_coingecko_fallback(
+            asset=asset,
+            period=period,
+            max_points=period_config["max_points"],
+        )
+        if crypto_item is not None:
+            return crypto_item, crypto_reason or "Yahoo temporarily blocked."
+
         item, reason = _fetch_stooq_fallback(
             asset=asset,
             period=period,
@@ -340,6 +357,19 @@ def _fetch_single_asset(
                 )
 
     concise_error = " | ".join(errors[:3]) if errors else "No valid market payload"
+    crypto_item, crypto_reason = _fetch_coingecko_fallback(
+        asset=asset,
+        period=period,
+        max_points=period_config["max_points"],
+    )
+    if crypto_item is not None:
+        logger.warning(
+            "Market Watch Yahoo failed for %s. Using CoinGecko fallback. Reason: %s",
+            asset["symbol"],
+            concise_error,
+        )
+        return crypto_item, crypto_reason
+
     fallback_item, fallback_reason = _fetch_stooq_fallback(
         asset=asset,
         period=period,
@@ -507,6 +537,75 @@ def _fetch_stooq_fallback(
     return item, "Yahoo rate-limited. Showing Stooq fallback."
 
 
+def _fetch_coingecko_fallback(
+    asset: Dict, period: str, max_points: int
+) -> Tuple[Optional[Dict], Optional[str]]:
+    fallback_config = COINGECKO_FALLBACK_MAP.get(asset["symbol"])
+    if not fallback_config:
+        return None, None
+
+    days = _coingecko_days(period)
+    url = (
+        f"https://api.coingecko.com/api/v3/coins/{fallback_config['id']}/market_chart"
+        f"?vs_currency={fallback_config['vs_currency']}&days={days}"
+    )
+
+    try:
+        payload = _open_json_url(url, timeout=8)
+    except Exception as exc:
+        return None, f"CoinGecko fetch failed: {type(exc).__name__}"
+
+    raw_prices = payload.get("prices") or []
+    rows = []
+    for raw_timestamp, raw_price in raw_prices:
+        try:
+            item_date = datetime.fromtimestamp(float(raw_timestamp) / 1000)
+            price = float(raw_price)
+        except (TypeError, ValueError):
+            continue
+        rows.append((item_date, price))
+
+    if len(rows) < 2:
+        return None, "CoinGecko returned insufficient data points"
+
+    date_fmt = "%Y-%m-%d %H:%M" if period in {"1d", "5d"} else "%Y-%m-%d"
+    labels = [item_date.strftime(date_fmt) for item_date, _ in rows]
+    prices = [round(price, 4) for _, price in rows]
+    labels, prices = _downsample_series(labels, prices, max_points=max_points)
+
+    first_price = prices[0]
+    last_price = prices[-1]
+    change_abs = last_price - first_price
+    change_pct = (change_abs / first_price * 100) if first_price else 0
+
+    currency = fallback_config["currency"]
+    currency_symbol = CURRENCY_SYMBOLS.get(currency, currency)
+
+    item = {
+        "id": _chart_id_for_symbol(asset["symbol"]),
+        "name": asset["name"],
+        "symbol": asset["symbol"],
+        "isin": asset["isin"],
+        "currency": currency,
+        "currency_symbol": currency_symbol,
+        "current_price": round(last_price, 2),
+        "change_abs": round(change_abs, 2),
+        "change_pct": round(change_pct, 2),
+        "high": round(max(prices), 2),
+        "low": round(min(prices), 2),
+        "points": len(prices),
+        "labels": labels,
+        "data": prices,
+        "color": asset["color"],
+        "is_up": change_abs >= 0,
+        "source": "CoinGecko fallback",
+        "is_proxy": False,
+        "is_stale": False,
+    }
+
+    return item, "Yahoo unavailable. Showing CoinGecko crypto market data."
+
+
 def _fetch_local_history_fallback(
     user,
     asset: Optional[Dict],
@@ -591,12 +690,35 @@ def _get_matching_asset_histories(user, asset: Dict):
 
 def _stooq_date_window(period: str) -> Tuple[str, str]:
     now = datetime.now()
+    if period == "ytd":
+        return datetime(now.year, 1, 1).strftime("%Y%m%d"), now.strftime("%Y%m%d")
+
     lookback_days = PERIOD_LOOKBACK_DAYS.get(period)
     if lookback_days:
         start = now - timedelta(days=lookback_days)
     else:
         start = now - timedelta(days=365 * 20)
     return start.strftime("%Y%m%d"), now.strftime("%Y%m%d")
+
+
+def _coingecko_days(period: str):
+    if period == "1d":
+        return 1
+    if period == "5d":
+        return 7
+    if period == "1mo":
+        return 30
+    if period == "3mo":
+        return 90
+    if period == "6mo":
+        return 180
+    if period == "ytd":
+        return max(1, (datetime.now() - datetime(datetime.now().year, 1, 1)).days)
+    if period == "1y":
+        return 365
+    if period == "5y":
+        return 1825
+    return "max"
 
 
 def _open_json_url(url: str, timeout: int = 6) -> Dict:

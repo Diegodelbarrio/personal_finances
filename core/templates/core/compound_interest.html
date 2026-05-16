@@ -4,36 +4,71 @@
 {% block title %}Compound Interest Calculator | FinOrbit{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-end mb-4">
+<div class="compound-page">
+<div class="compound-header d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
     <div>
-        <h2 class="fw-bold text-dark ls-tight">Compound Interest Simulator</h2>
-        <p class="text-muted mb-0">Event-based projection with inflation, contribution growth, and target tracking.</p>
+        <span class="compound-kicker"><i class="bi bi-stars"></i> Planning tool</span>
+        <h2 class="compound-title mb-2">Compound Interest Simulator</h2>
+        <p class="text-muted mb-0">Model deposits, contribution cadence, inflation drag, and target outcomes in one projection.</p>
+    </div>
+    <div class="compound-header-actions">
+        <span id="projectionSummary" class="projection-chip">Ready</span>
     </div>
 </div>
 
-<div class="row g-4">
-    <div class="col-xl-4">
-        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-            <div class="card-header bg-light border-0 py-3">
-                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-sliders me-2"></i>Parameters</h6>
+<div class="row g-4 align-items-start compound-layout">
+    <div class="col-12 col-xl-4">
+        <div class="card compound-panel parameters-panel border-0">
+            <div class="card-header compound-panel-header border-0">
+                <div class="compound-panel-title">
+                    <span class="compound-panel-icon"><i class="bi bi-sliders"></i></span>
+                    <div>
+                        <h6 class="mb-0">Parameters</h6>
+                        <small>Assumptions used in the projection</small>
+                    </div>
+                </div>
             </div>
-            <div class="card-body p-4">
+            <div class="card-body compound-panel-body">
                 <div id="formFeedback" class="alert alert-danger py-2 px-3 small d-none mb-3" role="alert"></div>
 
+                <div class="form-section">
+                    <div class="compound-section-label">Scenario preset</div>
+                    <div class="scenario-preset-grid" aria-label="Scenario presets">
+                        {% for preset in compound_interest_presets %}
+                        <button type="button" class="scenario-preset{% if preset.active %} active{% endif %}" data-preset="{{ preset.key }}" data-rate="{{ preset.rate }}" data-inflation="{{ preset.inflation }}" data-contribution-growth="{{ preset.contribution_growth }}">
+                            <span class="scenario-icon {{ preset.icon_class }}"><i class="bi {{ preset.icon }}"></i></span>
+                            <span class="scenario-body">
+                                <span class="scenario-title">{{ preset.title }}</span>
+                                <small>{{ preset.rate_label }} return</small>
+                            </span>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
                 <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="currencyCode" class="form-label small fw-bold text-uppercase text-muted">Currency</label>
+                        <select id="currencyCode" class="form-select input-shell fw-semibold">
+                            {% for currency in compound_interest_currencies %}
+                            <option value="{{ currency.code }}"{% if currency.default %} selected{% endif %}>{{ currency.code }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <div class="col-12">
                         <label for="initialDeposit" class="form-label small fw-bold text-uppercase text-muted">Initial Deposit</label>
                         <div class="input-group input-shell">
-                            <span class="input-group-text bg-white border-0 text-muted fw-bold">EUR</span>
+                            <span class="input-group-text bg-white border-0 text-muted fw-bold" data-currency-label>EUR</span>
                             <input type="number" id="initialDeposit" class="form-control border-0 fw-semibold" min="0" step="0.01" value="5000">
                         </div>
                     </div>
                     <div class="col-12">
                         <label for="contributionAmount" class="form-label small fw-bold text-uppercase text-muted">Contribution per Event</label>
                         <div class="input-group input-shell">
-                            <span class="input-group-text bg-white border-0 text-muted fw-bold">EUR</span>
+                            <span class="input-group-text bg-white border-0 text-muted fw-bold" data-currency-label>EUR</span>
                             <input type="number" id="contributionAmount" class="form-control border-0 fw-semibold" min="0" step="0.01" value="300">
                         </div>
+                        <div id="annualContributionHint" class="field-hint">--</div>
                     </div>
                     <div class="col-md-6">
                         <label for="contributionFrequency" class="form-label small fw-bold text-uppercase text-muted">Contribution Frequency</label>
@@ -88,7 +123,7 @@
                     <div class="col-12">
                         <label for="targetAmount" class="form-label small fw-bold text-uppercase text-muted">Target Amount (Optional)</label>
                         <div class="input-group input-shell">
-                            <span class="input-group-text bg-white border-0 text-muted fw-bold">EUR</span>
+                            <span class="input-group-text bg-white border-0 text-muted fw-bold" data-currency-label>EUR</span>
                             <input type="number" id="targetAmount" class="form-control border-0 fw-semibold" min="0" step="0.01" placeholder="Example: 200000">
                         </div>
                     </div>
@@ -104,28 +139,35 @@
                 </div>
 
                 <div class="d-flex gap-2 mt-4">
-                    <button id="calculateBtn" type="button" class="btn btn-primary flex-grow-1 rounded-pill fw-bold py-2 d-flex justify-content-center align-items-center gap-2">
+                    <button id="calculateBtn" type="button" class="btn btn-primary flex-grow-1 fw-bold py-2 d-flex justify-content-center align-items-center gap-2">
                         <i class="bi bi-calculator-fill"></i>
                         <span>Calculate</span>
                     </button>
-                    <button id="resetBtn" type="button" class="btn btn-outline-secondary rounded-pill fw-semibold py-2 px-3" title="Restore defaults">
+                    <button id="resetBtn" type="button" class="btn btn-outline-secondary fw-semibold py-2 px-3" title="Restore defaults">
                         <i class="bi bi-arrow-counterclockwise"></i>
                     </button>
                 </div>
-                <p class="small text-muted mt-3 mb-0">Inputs are auto-saved in your browser. Press Enter in any field to recalculate.</p>
+
+                <div id="assumptionList" class="assumption-list mt-4"></div>
             </div>
         </div>
     </div>
 
-    <div class="col-xl-8">
-        <div class="card border-0 shadow-sm rounded-4 mb-4">
-            <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold mb-0">Portfolio Projection</h5>
-                <button id="exportCsvBtn" type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3" disabled>
+    <div class="col-12 col-xl-8">
+        <div class="card compound-panel projection-panel border-0 mb-4">
+            <div class="card-header compound-panel-header border-0 d-flex justify-content-between align-items-center">
+                <div class="compound-panel-title">
+                    <span class="compound-panel-icon"><i class="bi bi-graph-up"></i></span>
+                    <div>
+                        <h6 class="mb-0">Portfolio Projection</h6>
+                        <small>Nominal, contributed, earned and real value</small>
+                    </div>
+                </div>
+                <button id="exportCsvBtn" type="button" class="btn btn-sm btn-outline-dark export-btn" disabled>
                     <i class="bi bi-download me-1"></i>CSV
                 </button>
             </div>
-            <div class="card-body p-4">
+            <div class="card-body compound-panel-body">
                 <div class="chart-shell">
                     <canvas id="growthChart"></canvas>
                 </div>
@@ -133,45 +175,114 @@
         </div>
 
         <div class="row g-3 mb-4">
-            <div class="col-md-6 col-xl-4">
+            <div class="col-md-6 col-xl-3">
                 <div class="metric-card">
                     <div class="metric-label">Future Value</div>
                     <div id="totalBalance" class="metric-value text-dark">--</div>
+                    <div id="totalBalanceNote" class="metric-note">--</div>
                 </div>
             </div>
-            <div class="col-md-6 col-xl-4">
+            <div class="col-md-6 col-xl-3">
                 <div class="metric-card">
                     <div class="metric-label">Total Contributions</div>
                     <div id="totalContributions" class="metric-value text-secondary">--</div>
+                    <div id="totalContributionsNote" class="metric-note">--</div>
                 </div>
             </div>
-            <div class="col-md-6 col-xl-4">
+            <div class="col-md-6 col-xl-3">
                 <div class="metric-card">
                     <div class="metric-label">Total Interest</div>
                     <div id="totalInterest" class="metric-value text-success">--</div>
+                    <div id="totalInterestNote" class="metric-note">--</div>
                 </div>
             </div>
-            <div class="col-md-6 col-xl-4">
+            <div class="col-md-6 col-xl-3">
                 <div class="metric-card">
                     <div class="metric-label">Real Value (Inflation-Adjusted)</div>
                     <div id="realBalance" class="metric-value text-info-emphasis">--</div>
+                    <div id="realBalanceNote" class="metric-note">--</div>
                 </div>
             </div>
-            <div class="col-md-6 col-xl-4">
+            <div class="col-md-6 col-xl-3">
                 <div class="metric-card">
                     <div class="metric-label">Growth Multiple</div>
                     <div id="growthMultiple" class="metric-value text-primary">--</div>
+                    <div id="growthMultipleNote" class="metric-note">--</div>
                 </div>
             </div>
-            <div class="col-md-6 col-xl-4">
+            <div class="col-md-6 col-xl-3">
+                <div class="metric-card">
+                    <div class="metric-label">Effective Annual Return</div>
+                    <div id="effectiveRate" class="metric-value text-dark">--</div>
+                    <div id="effectiveRateNote" class="metric-note">--</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-3">
                 <div class="metric-card">
                     <div class="metric-label">Target ETA</div>
                     <div id="goalEstimate" class="metric-value text-dark">--</div>
+                    <div id="targetGapNote" class="metric-note">--</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-3">
+                <div class="metric-card">
+                    <div class="metric-label">Required Contribution</div>
+                    <div id="requiredContribution" class="metric-value text-primary">--</div>
+                    <div id="requiredContributionNote" class="metric-note">--</div>
                 </div>
             </div>
         </div>
 
-        <div class="accordion shadow-sm rounded-4 overflow-hidden border-0" id="breakdownAccordion">
+        <div class="row g-4 mb-4">
+            <div class="col-lg-5">
+                <div class="insight-panel h-100">
+                    <div class="panel-heading">
+                        <div>
+                            <span class="panel-kicker">Goal plan</span>
+                            <h5 class="fw-bold mb-0">Target Readiness</h5>
+                        </div>
+                        <i class="bi bi-bullseye text-primary"></i>
+                    </div>
+                    <div class="target-progress-wrap">
+                        <div class="d-flex justify-content-between gap-3 mb-2">
+                            <span id="targetProgressLabel" class="fw-bold text-dark">No target</span>
+                            <span id="targetGap" class="text-muted fw-semibold">--</span>
+                        </div>
+                        <div class="progress target-progress" role="progressbar" aria-label="Target progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                            <div id="targetProgressBar" class="progress-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="milestone-list" id="milestoneList"></div>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="insight-panel h-100">
+                    <div class="panel-heading">
+                        <div>
+                            <span class="panel-kicker">Stress test</span>
+                            <h5 class="fw-bold mb-0">Scenario Comparison</h5>
+                        </div>
+                        <i class="bi bi-bar-chart-line text-success"></i>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0 scenario-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Scenario</th>
+                                    <th scope="col" class="text-end">Return</th>
+                                    <th scope="col" class="text-end">Final Value</th>
+                                    <th scope="col" class="text-end">Real Value</th>
+                                    <th scope="col" class="text-end">Target</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scenarioComparisonBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion compound-accordion border-0" id="breakdownAccordion">
             <div class="accordion-item border-0">
                 <h2 class="accordion-header" id="breakdownHeading">
                     <button class="accordion-button collapsed fw-bold bg-white py-3" type="button" data-bs-toggle="collapse" data-bs-target="#breakdownCollapse" aria-expanded="false" aria-controls="breakdownCollapse">
@@ -180,16 +291,18 @@
                 </h2>
                 <div id="breakdownCollapse" class="accordion-collapse collapse" aria-labelledby="breakdownHeading">
                     <div class="accordion-body p-0">
-                        <div class="table-responsive table-shell">
-                            <table class="table table-hover mb-0 align-middle text-end">
+                        <div class="table-responsive fo-table-responsive fo-table-shell table-shell">
+                            <table class="table fo-table fo-table--hover table-hover mb-0 align-middle text-end">
                                 <thead class="table-light sticky-top">
                                     <tr>
                                         <th scope="col" class="text-start">Year</th>
+                                        <th scope="col">Opening</th>
                                         <th scope="col">Contributions</th>
                                         <th scope="col">Interest (Year)</th>
                                         <th scope="col">Contributed (Total)</th>
                                         <th scope="col">Balance</th>
                                         <th scope="col">Real Balance</th>
+                                        <th scope="col">Interest Share</th>
                                     </tr>
                                 </thead>
                                 <tbody id="breakdownBody" class="small"></tbody>
@@ -201,47 +314,408 @@
         </div>
     </div>
 </div>
+</div>
 
 <style>
-    .input-shell {
-        border: 1px solid #dce3ec;
-        border-radius: 0.95rem;
+    .compound-page {
+        --compound-border: #dbe3ee;
+        --compound-border-strong: #c8d3e2;
+        --compound-soft: #f7f9fc;
+        --compound-text: #17202c;
+        --compound-muted: #657386;
+        --compound-primary: #0d6efd;
+        max-width: 1500px;
+        margin: 0 auto;
+        color: var(--compound-text);
+    }
+
+    .compound-page * {
+        min-width: 0;
+    }
+
+    .compound-title {
+        color: var(--compound-text);
+        font-size: clamp(1.45rem, 2vw, 2rem);
+        font-weight: 800;
+        line-height: 1.1;
+        letter-spacing: 0;
+    }
+
+    .compound-header {
+        padding-bottom: 0.25rem;
+    }
+
+    .compound-kicker,
+    .panel-kicker,
+    .compound-section-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        color: var(--compound-primary);
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    .projection-chip {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--compound-border);
+        border-radius: 8px;
+        background: #ffffff;
+        color: var(--compound-muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        line-height: 1.25;
+        padding: 0.55rem 0.75rem;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+    }
+
+    .compound-panel,
+    .metric-card,
+    .insight-panel,
+    .compound-accordion {
+        border: 1px solid var(--compound-border) !important;
+        border-radius: 8px !important;
+        background: #ffffff;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+    }
+
+    .compound-panel {
         overflow: hidden;
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .compound-panel-header {
+        background: #ffffff;
+        border-bottom: 1px solid #edf1f6 !important;
+        padding: 0.95rem 1.05rem;
+    }
+
+    .compound-panel-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .compound-panel-title h6 {
+        color: var(--compound-text);
+        font-size: 0.98rem;
+        font-weight: 800;
+        line-height: 1.15;
+    }
+
+    .compound-panel-title small {
+        display: block;
+        color: var(--compound-muted);
+        font-size: 0.74rem;
+        font-weight: 600;
+        line-height: 1.3;
+        margin-top: 0.1rem;
+    }
+
+    .compound-panel-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 34px;
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background: #f3f6fb;
+        color: var(--compound-primary);
+        font-size: 1rem;
+    }
+
+    .compound-panel-body {
+        padding: 1.05rem;
+    }
+
+    .form-section {
+        margin-bottom: 1.1rem;
+    }
+
+    .compound-page .row.g-3 {
+        --bs-gutter-y: 0.95rem;
+        --bs-gutter-x: 0.9rem;
+    }
+
+    .compound-page .form-label {
+        color: #4b5563 !important;
+        font-size: 0.68rem;
+        font-weight: 800 !important;
+        letter-spacing: 0.05em;
+        line-height: 1.2;
+        margin-bottom: 0.4rem;
+    }
+
+    .input-shell {
+        min-height: 44px;
+        border: 1px solid var(--compound-border);
+        border-radius: 8px;
+        background: #ffffff;
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+        transition: border-color 0.16s ease, box-shadow 0.16s ease;
     }
 
     .input-shell:focus-within {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+        border-color: var(--compound-primary);
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.12);
+    }
+
+    .compound-page .form-control,
+    .compound-page .form-select,
+    .compound-page .input-group-text {
+        min-height: 42px;
+        color: var(--compound-text);
+        font-size: 0.96rem;
+        line-height: 1.3;
+    }
+
+    .compound-page .form-control,
+    .compound-page .form-select {
+        font-weight: 700;
+    }
+
+    .compound-page .form-control:focus,
+    .compound-page .form-select:focus {
+        box-shadow: none;
+    }
+
+    .compound-page .input-group-text {
+        min-width: 64px;
+        justify-content: center;
+        color: #64748b !important;
+        font-weight: 800 !important;
+        background: #f8fafc !important;
+        border-right: 1px solid #eef2f7 !important;
+    }
+
+    .compound-page select.input-shell {
+        padding-left: 0.85rem;
+        padding-right: 2.4rem;
+    }
+
+    .field-hint {
+        color: var(--compound-muted);
+        font-size: 0.74rem;
+        font-weight: 600;
+        line-height: 1.35;
+        margin-top: 0.4rem;
+    }
+
+    .scenario-preset-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.6rem;
+        margin-top: 0.6rem;
+    }
+
+    .scenario-preset {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        min-height: 64px;
+        gap: 0.6rem;
+        border: 1px solid var(--compound-border);
+        border-radius: 8px;
+        background: #ffffff;
+        color: var(--compound-text);
+        padding: 0.65rem;
+        text-align: left;
+        transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+    }
+
+    .scenario-preset:hover,
+    .scenario-preset:focus-visible,
+    .scenario-preset.active {
+        border-color: var(--compound-primary);
+        background: #f8fbff;
+        box-shadow: 0 8px 18px rgba(13, 110, 253, 0.09);
+        outline: none;
+    }
+
+    .scenario-icon {
+        display: inline-flex;
+        flex: 0 0 32px;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: var(--compound-soft);
+        font-size: 0.95rem;
+    }
+
+    .scenario-body {
+        display: block;
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .scenario-title {
+        display: block;
+        color: #111827;
+        font-size: 0.78rem;
+        font-weight: 800;
+        line-height: 1.18;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .scenario-preset small {
+        display: block;
+        color: var(--compound-muted);
+        font-size: 0.7rem;
+        font-weight: 700;
+        line-height: 1.2;
+        margin-top: 0.18rem;
+        white-space: normal;
+    }
+
+    .assumption-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+
+    .assumption-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        border: 1px solid #e5ebf3;
+        border-radius: 8px;
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.7rem;
+        font-weight: 700;
+        line-height: 1.2;
+        padding: 0.38rem 0.5rem;
     }
 
     .chart-shell {
-        height: 380px;
+        height: 360px;
         width: 100%;
     }
 
     .metric-card {
-        background: #ffffff;
-        border: 1px solid #e9eff5;
-        border-radius: 1rem;
-        padding: 1rem 1.1rem;
+        padding: 0.9rem;
         height: 100%;
-        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
     }
 
     .metric-label {
-        font-size: 0.7rem;
-        font-weight: 700;
-        letter-spacing: 0.05em;
+        font-size: 0.66rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
         text-transform: uppercase;
-        color: #7b8798;
+        color: var(--compound-muted);
         margin-bottom: 0.35rem;
+        line-height: 1.25;
     }
 
     .metric-value {
-        font-size: 1.2rem;
+        color: var(--compound-text);
+        font-size: clamp(1rem, 1.5vw, 1.18rem);
         line-height: 1.25;
         font-weight: 800;
+        overflow-wrap: anywhere;
+    }
+
+    .metric-note {
+        color: var(--compound-muted);
+        font-size: 0.7rem;
+        font-weight: 600;
+        line-height: 1.3;
+        margin-top: 0.3rem;
+    }
+
+    .insight-panel {
+        padding: 1rem;
+    }
+
+    .panel-heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .panel-heading > i {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 34px;
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background: #f8fafc;
+        font-size: 1rem;
+    }
+
+    .target-progress {
+        height: 0.55rem;
+        border-radius: 999px;
+        background-color: #e2e8f0;
+    }
+
+    .target-progress .progress-bar {
+        border-radius: 999px;
+        background: linear-gradient(90deg, #0d6efd, #20c997);
+    }
+
+    .milestone-list {
+        display: grid;
+        gap: 0.65rem;
+        margin-top: 0.95rem;
+    }
+
+    .milestone-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
+        border-top: 1px solid #eef2f7;
+        padding-top: 0.65rem;
+    }
+
+    .milestone-title {
+        color: #334155;
+        font-size: 0.8rem;
+        font-weight: 800;
+        line-height: 1.25;
+    }
+
+    .milestone-meta {
+        color: var(--compound-muted);
+        font-size: 0.72rem;
+        font-weight: 600;
+    }
+
+    .milestone-value {
+        white-space: nowrap;
+        color: var(--compound-primary);
+        font-size: 0.78rem;
+        font-weight: 800;
+    }
+
+    .scenario-table th {
+        color: #64748b;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .scenario-table td {
+        color: #334155;
+        font-size: 0.78rem;
+        font-weight: 700;
+        padding-top: 0.62rem;
+        padding-bottom: 0.62rem;
+        vertical-align: middle;
     }
 
     .table-shell {
@@ -253,27 +727,117 @@
     }
 
     .btn-check:checked + .btn-outline-secondary {
-        background-color: #212529;
-        border-color: #212529;
+        background-color: var(--compound-primary);
+        border-color: var(--compound-primary);
         color: #ffffff;
+    }
+
+    .compound-page .btn-outline-secondary,
+    .compound-page .btn-outline-dark,
+    .compound-page .btn-primary {
+        border-radius: 8px !important;
+        font-size: 0.84rem;
+        font-weight: 800;
+    }
+
+    .compound-page .btn-outline-secondary {
+        border-color: var(--compound-border-strong);
+        color: #344054;
+    }
+
+    .export-btn {
+        min-height: 34px;
+        padding: 0.35rem 0.65rem;
+    }
+
+    .compound-accordion {
+        overflow: hidden;
+    }
+
+    .compound-accordion .accordion-button {
+        color: var(--compound-text);
+        font-size: 0.86rem;
+        padding: 0.95rem 1rem;
+    }
+
+    .compound-accordion .accordion-button:focus {
+        box-shadow: none;
+    }
+
+    @media (min-width: 1200px) {
+        .parameters-panel .scenario-preset-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .scenario-preset-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .compound-header-actions {
+            width: 100%;
+        }
+
+        .projection-chip {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .compound-panel-body {
+            padding: 0.9rem;
+        }
+
+        .compound-page .input-group-text {
+            min-width: 56px;
+        }
+
+        .chart-shell {
+            height: 300px;
+        }
+    }
+
+    @media (max-width: 420px) {
+        .compound-page .form-control,
+        .compound-page .form-select,
+        .compound-page .input-group-text {
+            font-size: 0.9rem;
+        }
+
+        .metric-card,
+        .insight-panel {
+            padding: 0.8rem;
+        }
     }
 </style>
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const STORAGE_KEY = "finorbit.compound_interest.v3";
+        const STORAGE_KEY = "finorbit.compound_interest.v4";
+        const VALID_CURRENCIES = ["EUR", "USD", "GBP", "CHF"];
+        const FREQUENCY_LABELS = {
+            "1": "yearly",
+            "2": "semi-annual",
+            "4": "quarterly",
+            "12": "monthly",
+            "26": "bi-weekly",
+            "52": "weekly",
+            "365": "daily"
+        };
 
         const chartCanvas = document.getElementById("growthChart");
         const chartContext = chartCanvas ? chartCanvas.getContext("2d") : null;
         let chartInstance = null;
         let hasCalculated = false;
         let latestBreakdown = [];
+        let latestParams = null;
         let recalcTimer = null;
+        let activePreset = "balanced";
 
         const defaultState = {
+            currency: "EUR",
             initial: "5000",
             contribution: "300",
             contributionFrequency: "12",
@@ -283,10 +847,12 @@
             contributionGrowth: "0",
             inflation: "2",
             target: "",
-            timing: "end"
+            timing: "end",
+            preset: "balanced"
         };
 
         const inputs = {
+            currency: document.getElementById("currencyCode"),
             initial: document.getElementById("initialDeposit"),
             contribution: document.getElementById("contributionAmount"),
             contributionFrequency: document.getElementById("contributionFrequency"),
@@ -306,36 +872,37 @@
         };
 
         const feedback = document.getElementById("formFeedback");
+        const presetButtons = Array.from(document.querySelectorAll("[data-preset]"));
+        const currencyLabels = Array.from(document.querySelectorAll("[data-currency-label]"));
 
         const output = {
             totalBalance: document.getElementById("totalBalance"),
+            totalBalanceNote: document.getElementById("totalBalanceNote"),
             totalContributions: document.getElementById("totalContributions"),
+            totalContributionsNote: document.getElementById("totalContributionsNote"),
             totalInterest: document.getElementById("totalInterest"),
+            totalInterestNote: document.getElementById("totalInterestNote"),
             realBalance: document.getElementById("realBalance"),
+            realBalanceNote: document.getElementById("realBalanceNote"),
             growthMultiple: document.getElementById("growthMultiple"),
+            growthMultipleNote: document.getElementById("growthMultipleNote"),
+            effectiveRate: document.getElementById("effectiveRate"),
+            effectiveRateNote: document.getElementById("effectiveRateNote"),
             goalEstimate: document.getElementById("goalEstimate"),
-            breakdownBody: document.getElementById("breakdownBody")
+            targetGapNote: document.getElementById("targetGapNote"),
+            requiredContribution: document.getElementById("requiredContribution"),
+            requiredContributionNote: document.getElementById("requiredContributionNote"),
+            targetProgressLabel: document.getElementById("targetProgressLabel"),
+            targetGap: document.getElementById("targetGap"),
+            targetProgressBar: document.getElementById("targetProgressBar"),
+            targetProgress: document.querySelector(".target-progress"),
+            milestoneList: document.getElementById("milestoneList"),
+            scenarioComparisonBody: document.getElementById("scenarioComparisonBody"),
+            breakdownBody: document.getElementById("breakdownBody"),
+            annualContributionHint: document.getElementById("annualContributionHint"),
+            assumptionList: document.getElementById("assumptionList"),
+            projectionSummary: document.getElementById("projectionSummary")
         };
-
-        const currencyFormat = new Intl.NumberFormat("de-DE", {
-            style: "currency",
-            currency: "EUR",
-            maximumFractionDigits: 0
-        });
-
-        const detailedCurrencyFormat = new Intl.NumberFormat("de-DE", {
-            style: "currency",
-            currency: "EUR",
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-
-        const compactCurrencyFormat = new Intl.NumberFormat("de-DE", {
-            style: "currency",
-            currency: "EUR",
-            notation: "compact",
-            maximumFractionDigits: 1
-        });
 
         function toNumber(value, fallbackValue) {
             const normalized = String(value ?? "").trim().replace(",", ".");
@@ -346,8 +913,76 @@
             return Number.isFinite(parsed) ? parsed : fallbackValue;
         }
 
+        function escapeHtml(value) {
+            return String(value).replace(/[&<>"']/g, function (character) {
+                return {
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    "\"": "&quot;",
+                    "'": "&#39;"
+                }[character];
+            });
+        }
+
+        function getCurrencyCode() {
+            const code = inputs.currency ? inputs.currency.value : defaultState.currency;
+            return VALID_CURRENCIES.includes(code) ? code : defaultState.currency;
+        }
+
+        function updateCurrencyLabels() {
+            const currency = getCurrencyCode();
+            currencyLabels.forEach((label) => {
+                label.textContent = currency;
+            });
+        }
+
+        function formatCurrency(value, options) {
+            const settings = Object.assign({
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+                notation: "standard"
+            }, options || {});
+            const formatter = new Intl.NumberFormat("de-DE", {
+                style: "currency",
+                currency: getCurrencyCode(),
+                minimumFractionDigits: settings.minimumFractionDigits,
+                maximumFractionDigits: settings.maximumFractionDigits,
+                notation: settings.notation
+            });
+
+            return formatter.format(Number.isFinite(value) ? value : 0);
+        }
+
+        function formatDetailedCurrency(value) {
+            return formatCurrency(value, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatCompactCurrency(value) {
+            return formatCurrency(value, {
+                notation: "compact",
+                maximumFractionDigits: 1
+            });
+        }
+
+        function formatPercent(value, digits) {
+            const formatter = new Intl.NumberFormat("de-DE", {
+                minimumFractionDigits: digits || 0,
+                maximumFractionDigits: digits || 0
+            });
+            return formatter.format(Number.isFinite(value) ? value : 0) + "%";
+        }
+
+        function getFrequencyLabel(frequency) {
+            return FREQUENCY_LABELS[String(frequency)] || (frequency + "x/year");
+        }
+
         function clearInvalidState() {
             [
+                inputs.currency,
                 inputs.initial,
                 inputs.contribution,
                 inputs.contributionFrequency,
@@ -357,11 +992,17 @@
                 inputs.contributionGrowth,
                 inputs.inflation,
                 inputs.target
-            ].forEach((element) => element.classList.remove("is-invalid"));
+            ].forEach((element) => {
+                if (element) {
+                    element.classList.remove("is-invalid");
+                }
+            });
         }
 
         function markInvalid(element) {
-            element.classList.add("is-invalid");
+            if (element) {
+                element.classList.add("is-invalid");
+            }
         }
 
         function showError(message) {
@@ -381,6 +1022,7 @@
 
         function collectParameters() {
             return {
+                currency: getCurrencyCode(),
                 initial: toNumber(inputs.initial.value, 0),
                 contribution: toNumber(inputs.contribution.value, 0),
                 contributionFrequency: parseInt(inputs.contributionFrequency.value, 10),
@@ -399,6 +1041,11 @@
 
             const errors = [];
             const periodicFactor = 1 + ((params.rate / 100) / params.compoundingFrequency);
+
+            if (!VALID_CURRENCIES.includes(params.currency)) {
+                markInvalid(inputs.currency);
+                errors.push("Currency is invalid.");
+            }
 
             if (params.initial < 0) {
                 markInvalid(inputs.initial);
@@ -541,14 +1188,19 @@
 
                 const annualInterest = balance - openingBalance - annualContribution;
                 const realBalance = balance / Math.pow(inflationFactor, year);
+                const cumulativeInterest = balance - totalContributed;
+                const interestShare = balance === 0 ? 0 : (cumulativeInterest / balance) * 100;
 
                 breakdown.push({
                     year: year,
+                    openingBalance: openingBalance,
                     annualContribution: annualContribution,
                     annualInterest: annualInterest,
                     totalContributed: totalContributed,
+                    cumulativeInterest: cumulativeInterest,
                     balance: balance,
-                    realBalance: realBalance
+                    realBalance: realBalance,
+                    interestShare: interestShare
                 });
 
                 labels.push("Year " + year);
@@ -576,11 +1228,74 @@
             };
         }
 
+        function getEffectiveAnnualRate(params) {
+            return (Math.pow(1 + ((params.rate / 100) / params.compoundingFrequency), params.compoundingFrequency) - 1) * 100;
+        }
+
+        function getRealAnnualRate(params) {
+            const effectiveRate = getEffectiveAnnualRate(params) / 100;
+            return (((1 + effectiveRate) / (1 + (params.inflation / 100))) - 1) * 100;
+        }
+
+        function calculateRequiredContribution(params) {
+            if (!params.target || params.target <= 0) {
+                return null;
+            }
+
+            if (params.initial >= params.target) {
+                return 0;
+            }
+
+            const withoutContributions = simulateProjection(Object.assign({}, params, {
+                contribution: 0
+            }));
+
+            if (withoutContributions.finalBalance >= params.target) {
+                return 0;
+            }
+
+            let low = 0;
+            let high = Math.max(params.contribution, 1);
+            let attempts = 0;
+
+            while (attempts < 40) {
+                const testResult = simulateProjection(Object.assign({}, params, {
+                    contribution: high
+                }));
+
+                if (testResult.finalBalance >= params.target) {
+                    break;
+                }
+
+                high *= 2;
+                attempts += 1;
+            }
+
+            if (attempts >= 40 || high > 10000000000) {
+                return null;
+            }
+
+            for (let iteration = 0; iteration < 60; iteration += 1) {
+                const midpoint = (low + high) / 2;
+                const midpointResult = simulateProjection(Object.assign({}, params, {
+                    contribution: midpoint
+                }));
+
+                if (midpointResult.finalBalance >= params.target) {
+                    high = midpoint;
+                } else {
+                    low = midpoint;
+                }
+            }
+
+            return high;
+        }
+
         function formatSignedCurrency(value) {
             if (value > 0) {
-                return "+" + currencyFormat.format(value);
+                return "+" + formatCurrency(value);
             }
-            return currencyFormat.format(value);
+            return formatCurrency(value);
         }
 
         function formatGoalEta(goalEtaYears, target) {
@@ -602,14 +1317,204 @@
                 return [
                     "<tr>",
                     "<td class=\"text-start fw-semibold text-muted\">" + row.year + "</td>",
-                    "<td>" + detailedCurrencyFormat.format(row.annualContribution) + "</td>",
+                    "<td>" + formatDetailedCurrency(row.openingBalance) + "</td>",
+                    "<td>" + formatDetailedCurrency(row.annualContribution) + "</td>",
                     "<td class=\"" + (row.annualInterest >= 0 ? "text-success" : "text-danger") + "\">" + formatSignedCurrency(row.annualInterest) + "</td>",
-                    "<td>" + detailedCurrencyFormat.format(row.totalContributed) + "</td>",
-                    "<td class=\"fw-semibold text-primary\">" + detailedCurrencyFormat.format(row.balance) + "</td>",
-                    "<td>" + detailedCurrencyFormat.format(row.realBalance) + "</td>",
+                    "<td>" + formatDetailedCurrency(row.totalContributed) + "</td>",
+                    "<td class=\"fw-semibold text-primary\">" + formatDetailedCurrency(row.balance) + "</td>",
+                    "<td>" + formatDetailedCurrency(row.realBalance) + "</td>",
+                    "<td>" + formatPercent(row.interestShare, 1) + "</td>",
                     "</tr>"
                 ].join("");
             }).join("");
+        }
+
+        function renderScenarioComparison(params) {
+            const downsideRate = Math.max(params.rate - 2, -99);
+            const scenarios = [
+                {
+                    name: "No new contributions",
+                    tone: "text-muted",
+                    params: Object.assign({}, params, { contribution: 0 })
+                },
+                {
+                    name: "Downside",
+                    tone: "text-danger",
+                    params: Object.assign({}, params, { rate: downsideRate })
+                },
+                {
+                    name: "Base case",
+                    tone: "text-primary",
+                    params: params
+                },
+                {
+                    name: "Upside",
+                    tone: "text-success",
+                    params: Object.assign({}, params, { rate: params.rate + 2 })
+                }
+            ];
+
+            output.scenarioComparisonBody.innerHTML = scenarios.map((scenario) => {
+                const scenarioResult = simulateProjection(scenario.params);
+                return [
+                    "<tr>",
+                    "<td><span class=\"fw-bold " + scenario.tone + "\">" + escapeHtml(scenario.name) + "</span></td>",
+                    "<td class=\"text-end\">" + formatPercent(scenario.params.rate, 1) + "</td>",
+                    "<td class=\"text-end\">" + formatCurrency(scenarioResult.finalBalance) + "</td>",
+                    "<td class=\"text-end\">" + formatCurrency(scenarioResult.finalRealBalance) + "</td>",
+                    "<td class=\"text-end\">" + escapeHtml(formatGoalEta(scenarioResult.goalEtaYears, params.target)) + "</td>",
+                    "</tr>"
+                ].join("");
+            }).join("");
+        }
+
+        function renderAssumptions(params) {
+            const effectiveAnnualRate = getEffectiveAnnualRate(params);
+            const assumptions = [
+                ["bi-cash-coin", formatCurrency(params.contribution) + " " + getFrequencyLabel(params.contributionFrequency)],
+                ["bi-arrow-repeat", getFrequencyLabel(params.compoundingFrequency) + " compounding"],
+                ["bi-clock", params.timing === "begin" ? "Start-of-period deposits" : "End-of-period deposits"],
+                ["bi-percent", formatPercent(effectiveAnnualRate, 2) + " effective"],
+                ["bi-graph-down-arrow", formatPercent(params.inflation, 1) + " inflation"],
+                ["bi-currency-exchange", params.currency]
+            ];
+
+            output.assumptionList.innerHTML = assumptions.map((assumption) => {
+                return "<span class=\"assumption-pill\"><i class=\"bi " + assumption[0] + "\"></i>" + escapeHtml(assumption[1]) + "</span>";
+            }).join("");
+        }
+
+        function findFirstRow(rows, predicate) {
+            for (let index = 0; index < rows.length; index += 1) {
+                if (predicate(rows[index])) {
+                    return rows[index];
+                }
+            }
+            return null;
+        }
+
+        function renderMilestones(result, params) {
+            const milestones = [];
+
+            if (params.target > 0) {
+                const halfTarget = findFirstRow(result.breakdown, (row) => row.balance >= params.target * 0.5);
+                if (halfTarget) {
+                    milestones.push({
+                        title: "50% target",
+                        meta: formatCurrency(halfTarget.balance),
+                        value: "Year " + halfTarget.year
+                    });
+                }
+
+                const targetRow = findFirstRow(result.breakdown, (row) => row.balance >= params.target);
+                if (targetRow) {
+                    milestones.push({
+                        title: "Target reached",
+                        meta: formatCurrency(targetRow.balance),
+                        value: formatGoalEta(result.goalEtaYears, params.target)
+                    });
+                }
+            }
+
+            const annualContributionCovered = findFirstRow(result.breakdown, (row) => {
+                return row.annualContribution > 0 && row.annualInterest >= row.annualContribution;
+            });
+            if (annualContributionCovered) {
+                milestones.push({
+                    title: "Interest beats annual deposits",
+                    meta: formatCurrency(annualContributionCovered.annualInterest),
+                    value: "Year " + annualContributionCovered.year
+                });
+            }
+
+            const cumulativeInterestCovered = findFirstRow(result.breakdown, (row) => {
+                return row.totalContributed > 0 && row.cumulativeInterest >= row.totalContributed;
+            });
+            if (cumulativeInterestCovered) {
+                milestones.push({
+                    title: "Interest equals principal",
+                    meta: formatCurrency(cumulativeInterestCovered.cumulativeInterest),
+                    value: "Year " + cumulativeInterestCovered.year
+                });
+            }
+
+            milestones.push({
+                title: "Final value",
+                meta: formatCurrency(result.finalBalance),
+                value: "Year " + params.years
+            });
+
+            output.milestoneList.innerHTML = milestones.slice(0, 4).map((milestone) => {
+                return [
+                    "<div class=\"milestone-item\">",
+                    "<div>",
+                    "<div class=\"milestone-title\">" + escapeHtml(milestone.title) + "</div>",
+                    "<div class=\"milestone-meta\">" + escapeHtml(milestone.meta) + "</div>",
+                    "</div>",
+                    "<div class=\"milestone-value\">" + escapeHtml(milestone.value) + "</div>",
+                    "</div>"
+                ].join("");
+            }).join("");
+        }
+
+        function renderGoalPlan(result, params, requiredContribution) {
+            const hasTarget = params.target > 0;
+            const gap = hasTarget ? params.target - result.finalBalance : 0;
+            const progress = hasTarget ? Math.min(Math.max((result.finalBalance / params.target) * 100, 0), 100) : 0;
+
+            output.targetProgressLabel.textContent = hasTarget ? formatPercent(progress, 0) + " funded" : "No target set";
+            output.targetGap.textContent = hasTarget
+                ? (gap > 0 ? formatCurrency(gap) + " gap" : formatCurrency(Math.abs(gap)) + " surplus")
+                : formatCurrency(result.finalBalance) + " projected";
+            output.targetProgressBar.style.width = progress + "%";
+            output.targetProgress.setAttribute("aria-valuenow", String(Math.round(progress)));
+
+            if (!hasTarget) {
+                output.requiredContribution.textContent = "No target";
+                output.requiredContributionNote.textContent = "Add a goal amount";
+                output.targetGapNote.textContent = "Goal tracking inactive";
+                return;
+            }
+
+            if (requiredContribution === null) {
+                output.requiredContribution.textContent = "--";
+                output.requiredContributionNote.textContent = "Target is outside this range";
+            } else {
+                output.requiredContribution.textContent = formatCurrency(requiredContribution);
+                if (requiredContribution <= params.contribution + 0.01) {
+                    output.requiredContributionNote.textContent = "Current contribution is enough";
+                } else {
+                    output.requiredContributionNote.textContent = "+" + formatCurrency(requiredContribution - params.contribution) + " per event";
+                }
+            }
+
+            output.targetGapNote.textContent = gap > 0 ? "Projected shortfall" : "Projected surplus";
+        }
+
+        function renderSummary(result, params, requiredContribution) {
+            const effectiveAnnualRate = getEffectiveAnnualRate(params);
+            const realAnnualRate = getRealAnnualRate(params);
+            const annualContribution = params.contribution * params.contributionFrequency;
+            const recurringContributions = result.totalContributed - params.initial;
+            const interestShare = result.finalBalance === 0 ? 0 : (result.totalInterest / result.finalBalance) * 100;
+
+            output.totalBalance.textContent = formatCurrency(result.finalBalance);
+            output.totalBalanceNote.textContent = "Nominal after " + params.years + " years";
+            output.totalContributions.textContent = formatCurrency(result.totalContributed);
+            output.totalContributionsNote.textContent = formatCurrency(params.initial) + " initial + " + formatCurrency(recurringContributions) + " recurring";
+            output.totalInterest.textContent = formatCurrency(result.totalInterest);
+            output.totalInterestNote.textContent = formatPercent(interestShare, 1) + " of ending value";
+            output.realBalance.textContent = formatCurrency(result.finalRealBalance);
+            output.realBalanceNote.textContent = formatPercent(params.inflation, 1) + " annual inflation";
+            output.growthMultiple.textContent = result.growthMultiple.toFixed(2) + "x";
+            output.growthMultipleNote.textContent = "Vs contributed capital";
+            output.effectiveRate.textContent = formatPercent(effectiveAnnualRate, 2);
+            output.effectiveRateNote.textContent = formatPercent(realAnnualRate, 2) + " real estimate";
+            output.goalEstimate.textContent = formatGoalEta(result.goalEtaYears, params.target);
+            output.annualContributionHint.textContent = formatCurrency(params.contribution) + " x " + params.contributionFrequency + " = " + formatCurrency(annualContribution) + " / year";
+            output.projectionSummary.textContent = formatCurrency(result.finalBalance) + " in " + params.years + " years";
+
+            renderGoalPlan(result, params, requiredContribution);
         }
 
         function updateChart(result, params) {
@@ -671,6 +1576,19 @@
                 });
             }
 
+            if (params.target > 0) {
+                datasets.push({
+                    label: "Target",
+                    data: result.chart.labels.map(() => params.target),
+                    borderColor: "#f59f00",
+                    borderWidth: 2,
+                    borderDash: [4, 5],
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0
+                });
+            }
+
             chartInstance = new Chart(chartContext, {
                 type: "line",
                 data: {
@@ -699,7 +1617,7 @@
                             cornerRadius: 8,
                             callbacks: {
                                 label: function (context) {
-                                    return (context.dataset.label || "") + ": " + detailedCurrencyFormat.format(context.parsed.y);
+                                    return (context.dataset.label || "") + ": " + formatDetailedCurrency(context.parsed.y);
                                 }
                             }
                         }
@@ -724,7 +1642,7 @@
                             ticks: {
                                 color: "#94a3b8",
                                 callback: function (value) {
-                                    return compactCurrencyFormat.format(value);
+                                    return formatCompactCurrency(value);
                                 }
                             }
                         }
@@ -735,6 +1653,7 @@
 
         function persistState() {
             const state = {
+                currency: inputs.currency.value,
                 initial: inputs.initial.value,
                 contribution: inputs.contribution.value,
                 contributionFrequency: inputs.contributionFrequency.value,
@@ -744,7 +1663,8 @@
                 contributionGrowth: inputs.contributionGrowth.value,
                 inflation: inputs.inflation.value,
                 target: inputs.target.value,
-                timing: getTimingValue()
+                timing: getTimingValue(),
+                preset: activePreset
             };
 
             try {
@@ -754,7 +1674,15 @@
             }
         }
 
+        function setActivePreset(presetName) {
+            activePreset = presetName || "custom";
+            presetButtons.forEach((button) => {
+                button.classList.toggle("active", button.dataset.preset === activePreset);
+            });
+        }
+
         function applyState(state) {
+            inputs.currency.value = VALID_CURRENCIES.includes(state.currency) ? state.currency : defaultState.currency;
             inputs.initial.value = state.initial;
             inputs.contribution.value = state.contribution;
             inputs.contributionFrequency.value = state.contributionFrequency;
@@ -768,6 +1696,13 @@
             inputs.timingRadios.forEach((radio) => {
                 radio.checked = radio.value === state.timing;
             });
+
+            if (!inputs.timingRadios.some((radio) => radio.checked)) {
+                document.getElementById("timingEnd").checked = true;
+            }
+
+            setActivePreset(state.preset || "custom");
+            updateCurrencyLabels();
         }
 
         function restoreState() {
@@ -794,17 +1729,22 @@
                 return;
             }
 
-            const headers = ["Year", "Contributions", "Interest_Year", "Contributed_Total", "Balance", "Real_Balance"];
+            const headers = ["Year", "Currency", "Opening_Balance", "Contributions", "Interest_Year", "Contributed_Total", "Cumulative_Interest", "Balance", "Real_Balance", "Interest_Share_Percent"];
             const lines = [headers.join(",")];
+            const currency = latestParams ? latestParams.currency : getCurrencyCode();
 
             latestBreakdown.forEach((row) => {
                 lines.push([
                     row.year,
+                    currency,
+                    row.openingBalance.toFixed(2),
                     row.annualContribution.toFixed(2),
                     row.annualInterest.toFixed(2),
                     row.totalContributed.toFixed(2),
+                    row.cumulativeInterest.toFixed(2),
                     row.balance.toFixed(2),
-                    row.realBalance.toFixed(2)
+                    row.realBalance.toFixed(2),
+                    row.interestShare.toFixed(2)
                 ].join(","));
             });
 
@@ -830,18 +1770,18 @@
 
             const execute = function () {
                 const result = simulateProjection(params);
+                const requiredContribution = calculateRequiredContribution(params);
 
-                output.totalBalance.textContent = currencyFormat.format(result.finalBalance);
-                output.totalContributions.textContent = currencyFormat.format(result.totalContributed);
-                output.totalInterest.textContent = currencyFormat.format(result.totalInterest);
-                output.realBalance.textContent = currencyFormat.format(result.finalRealBalance);
-                output.growthMultiple.textContent = result.growthMultiple.toFixed(2) + "x";
-                output.goalEstimate.textContent = formatGoalEta(result.goalEtaYears, params.target);
-
+                updateCurrencyLabels();
+                renderSummary(result, params, requiredContribution);
                 renderBreakdownTable(result.breakdown);
+                renderScenarioComparison(params);
+                renderMilestones(result, params);
+                renderAssumptions(params);
                 updateChart(result, params);
 
                 latestBreakdown = result.breakdown;
+                latestParams = params;
                 buttons.exportCsv.disabled = latestBreakdown.length === 0;
                 hasCalculated = true;
             };
@@ -882,6 +1822,7 @@
             applyState(defaultState);
             hasCalculated = false;
             latestBreakdown = [];
+            latestParams = null;
             buttons.exportCsv.disabled = true;
             if (chartInstance) {
                 chartInstance.destroy();
@@ -893,6 +1834,15 @@
         function handleFieldUpdate(event) {
             event.currentTarget.classList.remove("is-invalid");
             clearError();
+
+            if (event.currentTarget === inputs.currency) {
+                updateCurrencyLabels();
+            }
+
+            if ([inputs.rate, inputs.inflation, inputs.contributionGrowth].includes(event.currentTarget)) {
+                setActivePreset("custom");
+            }
+
             persistState();
             scheduleRecalculation();
         }
@@ -902,6 +1852,17 @@
                 event.preventDefault();
                 runCalculation(true);
             }
+        }
+
+        function applyPreset(button) {
+            inputs.rate.value = button.dataset.rate;
+            inputs.inflation.value = button.dataset.inflation;
+            inputs.contributionGrowth.value = button.dataset.contributionGrowth;
+            setActivePreset(button.dataset.preset);
+            clearError();
+            clearInvalidState();
+            persistState();
+            runCalculation(false);
         }
 
         restoreState();
@@ -925,6 +1886,7 @@
         });
 
         [
+            inputs.currency,
             inputs.contributionFrequency,
             inputs.compoundingFrequency
         ].forEach((element) => {
@@ -933,6 +1895,12 @@
 
         inputs.timingRadios.forEach((radio) => {
             radio.addEventListener("change", handleFieldUpdate);
+        });
+
+        presetButtons.forEach((button) => {
+            button.addEventListener("click", function () {
+                applyPreset(button);
+            });
         });
 
         runCalculation(false);

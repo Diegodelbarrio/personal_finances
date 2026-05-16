@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Live Market Data | FinOrbit{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'core/css/market_data.css' %}">
+{% endblock extra_head %}
+
+{% block content %}
+<section class="market-header mb-4">
+    <div class="d-flex flex-column flex-xl-row align-items-start justify-content-between gap-3">
+        <div>
+            <div class="market-eyebrow">Investments</div>
+            <h1 class="market-title mb-2">Live Market Data</h1>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <span class="market-chip">
+                    <i class="bi bi-clock-history"></i>
+                    {{ generated_at|date:"Y-m-d H:i" }}
+                </span>
+                <span class="market-chip">
+                    <i class="bi bi-calendar-range"></i>
+                    {{ selected_period_label }}
+                </span>
+                <span class="market-chip">
+                    <i class="bi bi-link-45deg"></i>
+                    {{ resolved_count }} mapped
+                </span>
+                {% if yahoo_rate_limited %}
+                    <span class="market-chip market-chip-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Provider limited
+                    </span>
+                {% endif %}
+                {% if using_stale_backup %}
+                    <span class="market-chip market-chip-warning">
+                        <i class="bi bi-database-exclamation"></i>
+                        Cached fallback
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="market-actions">
+            <a href="{% url 'core:market_data' %}" class="btn btn-light border btn-sm">
+                <i class="bi bi-bar-chart-line me-1"></i>
+                Portfolio Data
+            </a>
+            <a href="?period={{ selected_period }}&asset_id={{ selected_asset_id }}{% if query %}&q={{ query|urlencode }}{% endif %}&refresh=1" class="btn btn-primary btn-sm">
+                <i class="bi bi-arrow-clockwise me-1"></i>
+                Refresh
+            </a>
+        </div>
+    </div>
+</section>
+
+<div class="market-grid">
+    <aside class="market-sidebar">
+        <form class="market-search" method="get" role="search">
+            <input type="hidden" name="period" value="{{ selected_period }}">
+            <input type="hidden" name="asset_id" value="{{ selected_asset_id }}">
+            <label for="liveAssetSearch" class="market-label">Search</label>
+            <div class="market-search-control">
+                <i class="bi bi-search"></i>
+                <input
+                    id="liveAssetSearch"
+                    name="q"
+                    type="search"
+                    value="{{ query }}"
+                    class="form-control"
+                    placeholder="Asset, ISIN, symbol"
+                    autocomplete="off"
+                    data-market-search-input
+                >
+                <button type="submit" class="btn btn-dark" title="Search" aria-label="Search">
+                    <i class="bi bi-arrow-return-left"></i>
+                </button>
+            </div>
+        </form>
+
+        <div class="market-asset-count">
+            <span id="assetSearchCount">{{ searchable_assets|length }}</span>
+            <span>assets</span>
+        </div>
+
+        <div class="market-asset-list" id="portfolioAssetList">
+            {% for asset in searchable_assets %}
+                <a
+                    href="?period={{ selected_period }}&asset_id={{ asset.id }}{% if query %}&q={{ query|urlencode }}{% endif %}"
+                    class="market-asset-option {% if selected_asset_id == asset.id %}is-active{% endif %} {% if not asset.is_resolved %}is-muted{% endif %}"
+                    data-asset-search="{{ asset.searchable_text }}"
+                    data-asset-kind="asset"
+                >
+                    <span class="market-asset-icon market-asset-icon-{{ asset.category_code|lower }}">
+                        {% if asset.category_code == "CRYPTO" %}
+                            <i class="bi bi-currency-bitcoin"></i>
+                        {% elif asset.category_code == "INDEX_FUND" %}
+                            <i class="bi bi-graph-up-arrow"></i>
+                        {% elif asset.category_code == "COMMODITY" %}
+                            <i class="bi bi-gem"></i>
+                        {% else %}
+                            <i class="bi bi-layers"></i>
+                        {% endif %}
+                    </span>
+                    <span class="market-asset-main">
+                        <strong>{{ asset.name }}</strong>
+                        <small>
+                            {% if asset.is_resolved %}
+                                {{ asset.symbol }} - {{ asset.match_note }}
+                            {% else %}
+                                No market symbol
+                            {% endif %}
+                        </small>
+                    </span>
+                    <span class="market-asset-value">
+                        {% if asset.is_resolved %}
+                            Live
+                        {% else %}
+                            Setup
+                        {% endif %}
+                    </span>
+                </a>
+            {% empty %}
+                <div class="market-empty-compact">
+                    No portfolio assets
+                </div>
+            {% endfor %}
+        </div>
+    </aside>
+
+    <section class="market-main">
+        <div class="market-panel mb-3">
+            <div class="d-flex flex-column flex-lg-row align-items-start justify-content-between gap-3 mb-3">
+                <div>
+                    <div class="market-label">Selected Asset</div>
+                    <h2 class="market-section-title mb-1">
+                        {% if selected_asset %}{{ selected_asset.name }}{% else %}No asset selected{% endif %}
+                    </h2>
+                    <div class="market-muted">
+                        {% if selected_asset and selected_asset.is_resolved %}
+                            {{ selected_asset.market_name }} - {{ selected_asset.symbol }}
+                        {% elif selected_asset %}
+                            Add a market symbol to use live market data
+                        {% else %}
+                            Add assets to your portfolio first
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="market-periods" role="group" aria-label="Market range">
+                    {% for period in period_options %}
+                        <a
+                            href="?period={{ period.value }}&asset_id={{ selected_asset_id }}{% if query %}&q={{ query|urlencode }}{% endif %}"
+                            class="market-period-btn {% if selected_period == period.value %}is-active{% endif %}"
+                            aria-current="{% if selected_period == period.value %}true{% else %}false{% endif %}"
+                        >
+                            {{ period.label }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if chart %}
+                <div class="market-chart-shell">
+                    <canvas id="liveMarketChart"></canvas>
+                    <div id="liveMarketRangeOverlay" class="market-range-overlay" aria-hidden="true"></div>
+                </div>
+                <div id="liveMarketRangeSummary" class="market-range-summary" hidden>
+                    <span class="market-range-summary__label">Selected range</span>
+                    <strong data-range-performance>0.00%</strong>
+                    <span data-range-detail></span>
+                </div>
+            {% else %}
+                <div class="market-empty-state">
+                    <i class="bi bi-activity"></i>
+                    <strong>Live market data unavailable</strong>
+                    <span>{{ fetch_error|default:"Select a mapped asset." }}</span>
+                </div>
+            {% endif %}
+        </div>
+
+        {% if fetch_error and chart %}
+            <div class="alert alert-warning border-0 shadow-sm rounded-2 mb-3" role="alert">
+                {{ fetch_error }}
+            </div>
+        {% endif %}
+
+        <div class="market-metrics">
+            <div class="market-metric">
+                <span>Market price</span>
+                <strong>
+                    {% if chart %}{{ chart.currency_symbol }}{{ chart.current_price }}{% else %}N/A{% endif %}
+                </strong>
+                {% if chart %}<small>{{ chart.symbol }}</small>{% endif %}
+            </div>
+            <div class="market-metric">
+                <span>Period return</span>
+                <strong class="{% if chart.is_up %}text-success{% elif chart %}text-danger{% else %}text-secondary{% endif %}">
+                    {% if chart %}{{ chart.change_pct }}%{% else %}N/A{% endif %}
+                </strong>
+                <small>{{ selected_period_label }}</small>
+            </div>
+            <div class="market-metric">
+                <span>Absolute move</span>
+                <strong class="{% if chart.is_up %}text-success{% elif chart %}text-danger{% else %}text-secondary{% endif %}">
+                    {% if chart %}{{ chart.currency_symbol }}{{ chart.change_abs }}{% else %}N/A{% endif %}
+                </strong>
+                <small>Market price series</small>
+            </div>
+            <div class="market-metric">
+                <span>High</span>
+                <strong>{% if chart %}{{ chart.currency_symbol }}{{ chart.high }}{% else %}N/A{% endif %}</strong>
+                <small>{{ selected_period_label }}</small>
+            </div>
+            <div class="market-metric">
+                <span>Low</span>
+                <strong>{% if chart %}{{ chart.currency_symbol }}{{ chart.low }}{% else %}N/A{% endif %}</strong>
+                <small>{{ selected_period_label }}</small>
+            </div>
+            <div class="market-metric">
+                <span>Source</span>
+                <strong class="market-source-text">{% if chart %}{{ chart.source }}{% else %}N/A{% endif %}</strong>
+                <small>{% if chart %}{{ chart.points }} samples{% else %}0 samples{% endif %}</small>
+            </div>
+        </div>
+
+        {% if unresolved_assets %}
+            <div class="market-panel market-setup-panel mt-3">
+                <div class="d-flex align-items-start gap-3">
+                    <span class="market-setup-icon"><i class="bi bi-link-45deg"></i></span>
+                    <div>
+                        <h3 class="market-setup-title">Assets needing a symbol</h3>
+                        <p class="market-muted mb-2">
+                            These assets are in your portfolio but do not have an automatic live-market mapping yet.
+                        </p>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for asset in unresolved_assets %}
+                                <span class="market-chip">{{ asset.name }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </section>
+</div>
+
+{{ chart|json_script:"live-market-data" }}
+{% endblock content %}
+
+{% block scripts %}
+<script src="{% static 'core/js/market_data.js' %}"></script>
+{% endblock scripts %}

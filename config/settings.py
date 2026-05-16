@@ -4,6 +4,7 @@ Django settings for config project.
 
 import importlib.util
 import os
+import sys
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
@@ -22,6 +23,7 @@ except ImportError:  # pragma: no cover
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
+IS_RUNNING_TESTS = "test" in sys.argv
 
 
 def env_bool(name, default=False):
@@ -289,6 +291,18 @@ EMAIL_TRANSACTIONAL_FROM_EMAIL = os.getenv(
     DEFAULT_FROM_EMAIL,
 )
 EMAIL_TRANSACTIONAL_REPLY_TO = env_list("EMAIL_TRANSACTIONAL_REPLY_TO")
+NEW_USER_NOTIFICATION_ENABLED = env_bool(
+    "NEW_USER_NOTIFICATION_ENABLED",
+    default=not IS_RUNNING_TESTS,
+)
+NEW_USER_NOTIFICATION_RECIPIENTS = env_list(
+    "NEW_USER_NOTIFICATION_RECIPIENTS",
+    default=SERVER_EMAIL,
+)
+NEW_USER_WELCOME_EMAIL_ENABLED = env_bool(
+    "NEW_USER_WELCOME_EMAIL_ENABLED",
+    default=not IS_RUNNING_TESTS,
+)
 
 # Marketing/bulk mail settings (newsletters, campaigns)
 EMAIL_MARKETING_ENABLED = env_bool("EMAIL_MARKETING_ENABLED", default=False)

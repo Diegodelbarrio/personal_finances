@@ -19,6 +19,13 @@ class Asset(models.Model):
 
     name = models.CharField(max_length=100, verbose_name="Name of Asset")
     isin = models.CharField(max_length=20, blank=True, null=True, verbose_name="ISIN")
+    market_symbol = models.CharField(
+        max_length=32,
+        blank=True,
+        null=True,
+        verbose_name="Market Symbol",
+        help_text="Optional Yahoo Finance symbol used for live market data.",
+    )
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, verbose_name="Category")
     platform = models.CharField(max_length=50, verbose_name="Entity/Platform")
 

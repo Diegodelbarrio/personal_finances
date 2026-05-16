@@ -7,12 +7,72 @@
 {% block navbar_class %}navbar-landing{% endblock %}
 
 {% block hero %}
-<div class="dashboard-header text-center">
-    <div class="position-relative" style="z-index: 1;">
-        <h1 class="fw-bold display-5 mb-2 text-white" style="letter-spacing: -1px;">Your Finances, Your Future</h1>
-        <p class="text-white-50 mb-0 fs-5 fw-light">
-            A clear overview of your money, investments, and goals
-        </p>
+<div class="dashboard-header">
+    <div class="hero-shell">
+        <div class="hero-panel">
+            <div class="hero-panel-top">
+                <div class="hero-product-mark">
+                    <span class="hero-product-icon"><i class="bi bi-stars"></i></span>
+                    <span>FinOrbit</span>
+                </div>
+                <div class="hero-market-status js-net-worth-status {% if data_status == 'danger' %}status-danger{% elif data_status == 'warning' %}status-warning{% else %}status-updated{% endif %}"
+                     data-bs-toggle="tooltip"
+                     data-bs-placement="bottom"
+                     title="{% if data_status == 'danger' %}Data is old (>30 days). Update required{% elif data_status == 'warning' %}Partial update: Some assets are still pending for this month{% else %}All data is up to date.{% endif %}">
+                    <i class="bi {% if data_status == 'danger' %}bi-exclamation-circle{% elif data_status == 'warning' %}bi-hourglass-split{% else %}bi-check-circle{% endif %}"></i>
+                    <span>{% if last_market_date %}Updated {{ last_market_date|date:"d/m/Y" }}{% else %}Update pending{% endif %}</span>
+                </div>
+            </div>
+
+            <div class="hero-panel-grid">
+                <div class="hero-copy">
+                    <p class="hero-kicker">Personal finance cockpit</p>
+                    <h1>Modern control for every money decision.</h1>
+                    <p class="hero-lede">
+                        Track capital, cashflow, goals, and portfolio movement from one focused operating surface.
+                    </p>
+                    <div class="hero-action-row">
+                        <a href="{% url 'create_transaction' %}?next={{ request.get_full_path|urlencode }}" class="btn hero-primary-action">
+                            <i class="bi bi-plus-lg"></i>
+                            Add transaction
+                        </a>
+                        <a href="{% url 'summary' %}" class="btn hero-secondary-action">
+                            <i class="bi bi-calendar2-week"></i>
+                            Review month
+                        </a>
+                    </div>
+                </div>
+
+                <div class="hero-balance-card">
+                    <span class="hero-balance-label">Global net worth</span>
+                    <strong>{{ current_net_worth|floatformat:0 }}€</strong>
+                    <span class="hero-balance-note">Cash and investments combined</span>
+                </div>
+            </div>
+
+            <div class="hero-snapshot-grid" aria-label="Financial snapshot">
+                <div class="hero-snapshot-item">
+                    <span class="hero-snapshot-label">Annual savings</span>
+                    <strong>{{ total_annual_savings|floatformat:0 }}€</strong>
+                    <small>Current year result</small>
+                </div>
+                <div class="hero-snapshot-item">
+                    <span class="hero-snapshot-label">Emergency cover</span>
+                    <strong>{% if emergency_fund %}{{ emergency_fund.months_covered|floatformat:1 }}m{% else %}--{% endif %}</strong>
+                    <small>{% if emergency_fund %}Target {{ emergency_fund.target_months }}m{% else %}Not configured{% endif %}</small>
+                </div>
+                <div class="hero-snapshot-item">
+                    <span class="hero-snapshot-label">Income YTD</span>
+                    <strong>{{ total_income|floatformat:0 }}€</strong>
+                    <small>Recorded inflow</small>
+                </div>
+                <div class="hero-snapshot-item">
+                    <span class="hero-snapshot-label">Expenses YTD</span>
+                    <strong>{{ total_expenses|floatformat:0 }}€</strong>
+                    <small>Recorded outflow</small>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock hero %}
@@ -30,7 +90,7 @@
     {% endfor %}
 {% endif %}
 
-<section class="landing-section">
+<section class="landing-section workspace-section">
     <div class="landing-section-head">
         <div>
             <p class="landing-kicker mb-1">Workspace Navigator</p>
@@ -38,39 +98,51 @@
         </div>
     </div>
 
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="action-card landing-panel card-rounded h-100">
-                <div class="panel-icon text-success"><i class="bi bi-graph-up-arrow"></i></div>
-                <h6 class="fw-bold mb-2">Investments</h6>
-                <p class="panel-copy">Portfolio status, transactions and asset tracking.</p>
-                <a href="{% url 'investments:investment_dashboard' %}" class="btn btn-dark rounded-pill px-4 mt-auto">
-                    Enter
-                </a>
-            </div>
-        </div>
+    <div class="module-grid">
+        <a href="{% url 'investments:investment_dashboard' %}" class="module-card module-investments">
+            <span class="module-topline">
+                <span class="module-icon"><i class="bi bi-graph-up-arrow"></i></span>
+                <span class="module-chip">Portfolio</span>
+            </span>
+            <span class="module-title">Investments</span>
+            <span class="module-copy">Track positions, transactions, market value, and portfolio movement.</span>
+            <span class="module-meta-list">
+                <span>Assets</span>
+                <span>Transactions</span>
+                <span>Performance</span>
+            </span>
+            <span class="module-link">Open dashboard <i class="bi bi-arrow-up-right"></i></span>
+        </a>
 
-        <div class="col-md-4">
-            <div class="action-card landing-panel card-rounded h-100">
-                <div class="panel-icon text-info"><i class="bi bi-calendar-month"></i></div>
-                <h6 class="fw-bold mb-2">Monthly Finances</h6>
-                <p class="panel-copy">Income, expenses and month-by-month cashflow control.</p>
-                <a href="{% url 'summary' %}" class="btn btn-dark rounded-pill px-4 mt-auto">
-                    Enter
-                </a>
-            </div>
-        </div>
+        <a href="{% url 'summary' %}" class="module-card module-finances">
+            <span class="module-topline">
+                <span class="module-icon"><i class="bi bi-calendar-month"></i></span>
+                <span class="module-chip">Cashflow</span>
+            </span>
+            <span class="module-title">Monthly Finances</span>
+            <span class="module-copy">Review income, expenses, categories, and month-by-month discipline.</span>
+            <span class="module-meta-list">
+                <span>Income</span>
+                <span>Expenses</span>
+                <span>Categories</span>
+            </span>
+            <span class="module-link">Open summary <i class="bi bi-arrow-up-right"></i></span>
+        </a>
 
-        <div class="col-md-4">
-            <div class="action-card landing-panel card-rounded h-100">
-                <div class="panel-icon text-primary"><i class="bi bi-file-earmark-text"></i></div>
-                <h6 class="fw-bold mb-2">Annual Reports</h6>
-                <p class="panel-copy">Consolidated analytics for finances and investments.</p>
-                <a href="{% url 'reports:report_finance' %}" class="btn btn-dark rounded-pill px-4 mt-auto">
-                    Enter
-                </a>
-            </div>
-        </div>
+        <a href="{% url 'reports:report_finance' %}" class="module-card module-reports">
+            <span class="module-topline">
+                <span class="module-icon"><i class="bi bi-file-earmark-text"></i></span>
+                <span class="module-chip">Analytics</span>
+            </span>
+            <span class="module-title">Annual Reports</span>
+            <span class="module-copy">Compare yearly finances, investment performance, and bank holdings.</span>
+            <span class="module-meta-list">
+                <span>Finance</span>
+                <span>Holdings</span>
+                <span>Exports</span>
+            </span>
+            <span class="module-link">Open reports <i class="bi bi-arrow-up-right"></i></span>
+        </a>
     </div>
 
 </section>
@@ -181,7 +253,7 @@
                     {% include "core/components/objectives_card.html" %}
                 </div>
             {% else %}
-                <div class="card card-rounded h-100 card-empty-goals goals-empty-state p-4 p-md-5">
+                <div class="card card-rounded h-100 card-empty-goals goals-empty-state">
                     <div class="goals-empty-content">
                         <span class="goals-empty-icon mb-3">
                             <i class="bi bi-bullseye"></i>
@@ -195,7 +267,7 @@
                                 <span class="goals-point"><i class="bi bi-graph-up-arrow"></i> Net worth target</span>
                                 <span class="goals-point"><i class="bi bi-piggy-bank"></i> Annual savings target</span>
                             </div>
-                            <a href="{% url 'settings:settings_home' %}" class="btn btn-dark rounded-pill px-4 goals-empty-cta">
+                            <a href="{% url 'settings:settings_home' %}" class="btn btn-dark goals-empty-cta">
                                 Set Objectives <i class="bi bi-arrow-right-short ms-1"></i>
                             </a>
                         </div>
@@ -231,7 +303,7 @@
                         <small class="quick-action-meta">Finances</small>
                         <span class="quick-action-note">Primary daily flow</span>
                     </div>
-                    
+                    <i class="bi bi-arrow-up-right quick-action-chevron"></i>
                 </a>
 
                 <div class="quick-actions-grid mt-1">
@@ -241,7 +313,7 @@
                             <div class="fw-bold quick-action-title">Investment</div>
                             <small class="quick-action-meta d-block">Portfolio</small>
                         </div>
-                        
+                        <i class="bi bi-arrow-up-right quick-action-chevron"></i>
                     </a>
                     <a href="{% url 'investments:create_asset_history' %}?next={{ request.get_full_path|urlencode }}" class="quick-action-tile quick-action-small text-decoration-none text-dark">
                         <div class="quick-action-icon text-info"><i class="bi bi-camera"></i></div>
@@ -249,7 +321,7 @@
                             <div class="fw-bold quick-action-title">Snapshot</div>
                             <small class="quick-action-meta d-block">Asset Value</small>
                         </div>
-                        
+                        <i class="bi bi-arrow-up-right quick-action-chevron"></i>
                     </a>
                 </div>
                 <div class="quick-actions-footer mt-auto">
@@ -275,15 +347,15 @@
                             <span class="compound-tool-title">Compound Interest</span>
                             <small class="compound-tool-meta">Projection</small>
                         </span>
-                        
+                        <i class="bi bi-arrow-up-right compound-tool-arrow"></i>
                     </a>
-                    <a href="{% url 'core:market_data' %}" class="compound-tool-link text-decoration-none">
+                    <a href="{% url 'core:live_market_data' %}" class="compound-tool-link text-decoration-none">
                         <span class="compound-tool-icon text-info"><i class="bi bi-activity"></i></span>
                         <span class="compound-tool-body">
-                            <span class="compound-tool-title">Market Watch</span>
+                            <span class="compound-tool-title">Live Market Data</span>
                             <small class="compound-tool-meta">Live data</small>
                         </span>
-                        
+                        <i class="bi bi-arrow-up-right compound-tool-arrow"></i>
                     </a>
                     <a href="{% url 'manage_categories' %}" class="compound-tool-link text-decoration-none">
                         <span class="compound-tool-icon text-success"><i class="bi bi-tags"></i></span>
@@ -291,7 +363,7 @@
                             <span class="compound-tool-title">Categories</span>
                             <small class="compound-tool-meta">Organize</small>
                         </span>
-                        
+                        <i class="bi bi-arrow-up-right compound-tool-arrow"></i>
                     </a>
                     <a href="{% url 'knowledge:index' %}" class="compound-tool-link text-decoration-none">
                         <span class="compound-tool-icon text-warning"><i class="bi bi-journal-bookmark"></i></span>
@@ -299,7 +371,7 @@
                             <span class="compound-tool-title">Knowledge</span>
                             <small class="compound-tool-meta">Learn</small>
                         </span>
-                        
+                        <i class="bi bi-arrow-up-right compound-tool-arrow"></i>
                     </a>
                 </div>
                 <div class="compound-footer mt-2">
@@ -310,7 +382,7 @@
 
         <div class="col-lg-4">
             {% if emergency_fund %}
-                <div class="card card-rounded h-100 card-emergency p-4 execution-card execution-card-fund">
+                <div class="card card-rounded h-100 card-emergency execution-card execution-card-fund">
                     <div class="execution-card-head fund-head">
                         <div class="execution-head-icon {% if emergency_fund.is_ready %}text-success{% else %}text-primary{% endif %}">
                             <i class="bi bi-shield-check"></i>
@@ -356,7 +428,7 @@
                             {% endif %}
                         </p>
                         <div class="d-flex justify-content-between align-items-end mb-1">
-                            <span class="badge {% if emergency_fund.is_ready %}bg-success{% else %}bg-primary{% endif %} rounded-pill badge-status">
+                            <span class="badge {% if emergency_fund.is_ready %}bg-success{% else %}bg-primary{% endif %} badge-status">
                                 {{ emergency_fund.progress|floatformat:0 }}% Ready
                             </span>
                             <small class="text-muted text-target">Goal: {{ emergency_fund.target_cash|floatformat:0 }}€ ({{ emergency_fund.target_months }} months)</small>
@@ -382,13 +454,13 @@
                     </div>
                 </div>
             {% else %}
-                <div class="card card-rounded h-100 card-emergency card-emergency-empty p-4 d-flex flex-column justify-content-center align-items-center text-center execution-card execution-card-fund">
+                <div class="card card-rounded h-100 card-emergency card-emergency-empty d-flex flex-column justify-content-center align-items-center text-center execution-card execution-card-fund">
                     <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mb-3 icon-box-lg">
                         <i class="bi bi-shield-plus text-muted fs-4"></i>
                     </div>
                     <h6 class="fw-bold text-dark mb-1">Emergency Fund</h6>
                     <p class="text-muted small mb-3">Not configured yet. Define your target months and yearly baseline.</p>
-                    <a href="{% url 'settings:settings_home' %}" class="btn btn-sm btn-outline-dark rounded-pill px-3">Configure</a>
+                    <a href="{% url 'settings:settings_home' %}" class="btn btn-sm btn-outline-dark">Configure</a>
                 </div>
             {% endif %}
         </div>

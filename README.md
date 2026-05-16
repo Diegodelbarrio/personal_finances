@@ -66,6 +66,9 @@ Define SMTP real por variables de entorno:
 - `EMAIL_USE_TLS` (normalmente `True`)
 - `EMAIL_TRANSACTIONAL_FROM_EMAIL`
 - `EMAIL_TRANSACTIONAL_REPLY_TO`
+- `NEW_USER_NOTIFICATION_ENABLED`: activa el aviso transaccional cuando se crea un usuario nuevo.
+- `NEW_USER_NOTIFICATION_RECIPIENTS`: emails destino separados por coma para recibir el aviso.
+- `NEW_USER_WELCOME_EMAIL_ENABLED`: activa el correo de bienvenida al email del usuario registrado.
 
 Para separar newsletters del trafico critico:
 

@@ -66,6 +66,15 @@
                         {% endfor %}
                     </div>
 
+                    <div class="mb-3">
+                        <label for="{{ form.market_symbol.id_for_label }}" class="form-label fw-semibold">{{ form.market_symbol.label }}</label>
+                        {{ form.market_symbol }}
+                        <div class="form-text">Used only for live market data when the asset cannot be matched automatically.</div>
+                        {% for error in form.market_symbol.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
                     {% for error in form.non_field_errors %}
                         <div class="invalid-feedback d-block mb-3">{{ error }}</div>
                     {% endfor %}

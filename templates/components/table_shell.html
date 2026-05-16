@@ -1,0 +1,24 @@
+{% comment %}
+Reusable FinOrbit table shell.
+
+Expected inputs:
+- table_template: template path containing thead/tbody/tfoot markup.
+
+Optional inputs:
+- shell_class, responsive_class, base_table_class, table_class
+- table_id, table_style, aria_label
+- hover, compact, dense, sticky_first, data_table
+{% endcomment %}
+<div class="fo-table-shell {{ shell_class }}">
+    <div class="table-responsive fo-table-responsive {{ responsive_class }}">
+        <table
+            {% if table_id %}id="{{ table_id }}"{% endif %}
+            class="fo-table align-middle mb-0 {{ base_table_class }} {{ table_class }}{% if hover %} table-hover fo-table--hover{% endif %}{% if compact %} fo-table--compact{% endif %}{% if dense %} fo-table--dense{% endif %}{% if sticky_first %} fo-table--sticky-first{% endif %}"
+            {% if table_style %}style="{{ table_style }}"{% endif %}
+            {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
+            {% if data_table %}data-fo-table="{{ data_table }}"{% endif %}
+        >
+            {% include table_template %}
+        </table>
+    </div>
+</div>

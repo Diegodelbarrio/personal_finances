@@ -97,12 +97,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const gradientHeight = chartCanvas.clientHeight || 320;
                 const savingsGradient = ctx.createLinearGradient(0, 0, 0, gradientHeight);
-                savingsGradient.addColorStop(0, 'rgba(16, 185, 129, 0.22)');
-                savingsGradient.addColorStop(1, 'rgba(16, 185, 129, 0.02)');
+                savingsGradient.addColorStop(0, 'rgba(15, 118, 110, 0.2)');
+                savingsGradient.addColorStop(1, 'rgba(15, 118, 110, 0.03)');
 
                 const investmentsGradient = ctx.createLinearGradient(0, 0, 0, gradientHeight);
-                investmentsGradient.addColorStop(0, 'rgba(59, 130, 246, 0.24)');
-                investmentsGradient.addColorStop(1, 'rgba(59, 130, 246, 0.03)');
+                investmentsGradient.addColorStop(0, 'rgba(36, 84, 214, 0.2)');
+                investmentsGradient.addColorStop(1, 'rgba(36, 84, 214, 0.03)');
 
                 const netWorthChart = new Chart(ctx, {
                     type: 'line',
@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 stack: 'networth',
                                 fill: true,
                                 backgroundColor: savingsGradient,
-                                borderColor: '#059669',
+                                borderColor: '#0f766e',
                                 borderWidth: 2,
                                 tension: 0.35,
                                 pointRadius: 0,
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 stack: 'networth',
                                 fill: '-1',
                                 backgroundColor: investmentsGradient,
-                                borderColor: '#2563eb',
+                                borderColor: '#2454d6',
                                 borderWidth: 2,
                                 tension: 0.35,
                                 pointRadius: 0,
@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     boxWidth: 9,
                                     usePointStyle: true,
                                     pointStyle: 'circle',
-                                    color: '#475569',
+                                    color: '#344054',
                                     padding: 12,
                                     font: { size: 10, weight: 'bold' }
                                 }
@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             x: {
                                 grid: { display: false },
                                 ticks: {
-                                    color: '#64748b',
+                                    color: '#667085',
                                     maxRotation: 0,
                                     autoSkip: true,
                                     font: { size: 10 }
@@ -188,11 +188,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 stacked: true,
                                 beginAtZero: true,
                                 grid: {
-                                    color: 'rgba(148, 163, 184, 0.2)',
+                                    color: 'rgba(152, 162, 179, 0.2)',
                                     drawBorder: false
                                 },
                                 ticks: {
-                                    color: '#64748b',
+                                    color: '#667085',
                                     font: { size: 10 },
                                     callback: v => formatEuro(v)
                                 }

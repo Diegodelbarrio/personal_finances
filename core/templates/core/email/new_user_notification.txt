@@ -1,0 +1,12 @@
+New FinOrbit user registered
+
+Username: {{ username }}
+Email: {{ email }}
+Full name: {{ full_name }}
+Joined at: {{ joined_at|date:"Y-m-d H:i T" }}
+
+Open the user in admin:
+{{ admin_user_url }}
+
+FinOrbit login:
+{{ login_url }}

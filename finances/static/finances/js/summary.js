@@ -143,13 +143,17 @@ const SummaryModule = {
             if (column === "category") {
                 const valA = a.dataset.cat.toLowerCase();
                 const valB = b.dataset.cat.toLowerCase();
-                return state.sortState.ascending
-                    ? valA.localeCompare(valB)
-                    : valB.localeCompare(valA);
+                if (window.FinOrbitTables && typeof window.FinOrbitTables.compareValues === "function") {
+                    return window.FinOrbitTables.compareValues(valA, valB, state.sortState.ascending);
+                }
+                return state.sortState.ascending ? valA.localeCompare(valB) : valB.localeCompare(valA);
             }
 
             const valA = this.getComparableValue(a, column);
             const valB = this.getComparableValue(b, column);
+            if (window.FinOrbitTables && typeof window.FinOrbitTables.compareValues === "function") {
+                return window.FinOrbitTables.compareValues(valA, valB, state.sortState.ascending);
+            }
             return state.sortState.ascending ? valA - valB : valB - valA;
         });
     },
@@ -243,7 +247,9 @@ const SummaryModule = {
         if (pages <= 1) return;
 
         const currentPage = this.tableState.currentPage;
-        const paginationItems = this.getPaginationItems(pages, currentPage);
+        const paginationItems = window.FinOrbitTables && typeof window.FinOrbitTables.getPageWindow === "function"
+            ? window.FinOrbitTables.getPageWindow(pages, currentPage)
+            : this.getPaginationItems(pages, currentPage);
 
         this.createPaginationItem({
             container,
@@ -336,6 +342,18 @@ const SummaryModule = {
     },
 
     updateSortIcons: function(activeColumn) {
+        if (window.FinOrbitTables && typeof window.FinOrbitTables.updateSortHeaders === "function") {
+            window.FinOrbitTables.updateSortHeaders({
+                container: document.querySelector(".summary-shell") || document,
+                activeColumn,
+                ascending: this.tableState.sortState.ascending,
+                defaultIconClass: "bi bi-arrow-down-up ms-1 small opacity-50",
+                ascIconClass: "bi bi-sort-up ms-1",
+                descIconClass: "bi bi-sort-down ms-1",
+            });
+            return;
+        }
+
         document.querySelectorAll(".sortable-header").forEach(header => {
             header.setAttribute("aria-sort", "none");
             const icon = header.querySelector("i");
