@@ -52,6 +52,8 @@ def calculate_net_worth(user):
 
     return {
         "current_net_worth": current_net_worth,
+        "holdings_value": holdings_value,
+        "holdings_dates": holdings_dates,
         "last_market_date": last_market_date,
         "data_status": data_status,
     }

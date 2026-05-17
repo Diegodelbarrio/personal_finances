@@ -2,9 +2,11 @@ from allauth.account.models import EmailAddress
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 import re
+
+from users.forms import ProfileForm, ProfilePreferencesForm
 
 User = get_user_model()
 
@@ -33,6 +35,8 @@ class ProfileViewTest(TestCase):
         response = self.client.get(reverse("users:profile"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Personal Information")
+        self.assertContains(response, "Workspace Usage")
+        self.assertContains(response, "Account Readiness")
 
     def test_profile_post_updates_basic_fields(self):
         self.client.login(username="diego", password="test1234")
@@ -96,6 +100,23 @@ class ProfileViewTest(TestCase):
         self.user.refresh_from_db()
         self.assertEqual(self.user.username, "diego")
 
+    def test_profile_post_rejects_invalid_timezone(self):
+        self.client.login(username="diego", password="test1234")
+        response = self.client.post(
+            reverse("users:profile"),
+            {
+                "profile-username": "diego",
+                "profile-first_name": "Diego",
+                "profile-last_name": "Del Barrio",
+                "profile-email": "diego@example.com",
+                "prefs-language_code": "en-us",
+                "prefs-timezone": "Not/AZone",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Choose a valid time zone.")
+
     def test_profile_post_uploads_and_removes_avatar(self):
         self.client.login(username="diego", password="test1234")
 
@@ -137,6 +158,39 @@ class ProfileViewTest(TestCase):
         self.user.refresh_from_db()
         self.assertFalse(bool(self.user.avatar))
 
+    def test_profile_form_rejects_upload_and_remove_avatar_together(self):
+        avatar = SimpleUploadedFile(
+            "avatar.png",
+            b"fake-image-content",
+            content_type="image/png",
+        )
+        form = ProfileForm(
+            data={
+                "username": "diego",
+                "first_name": "Diego",
+                "last_name": "Del Barrio",
+                "email": "diego@example.com",
+                "remove_avatar": "on",
+            },
+            files={"avatar": avatar},
+            instance=self.user,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("avatar", form.errors)
+
+    def test_preferences_form_rejects_invalid_timezone(self):
+        form = ProfilePreferencesForm(
+            data={
+                "language_code": "en-us",
+                "timezone": "Not/AZone",
+            },
+            instance=self.user.settings,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("timezone", form.errors)
+
     def test_account_pages_use_custom_templates(self):
         self.client.login(username="diego", password="test1234")
 
@@ -170,6 +224,11 @@ class ProfileViewTest(TestCase):
             ),
         )
 
+    @override_settings(
+        ACCOUNT_EMAIL_VERIFICATION="optional",
+        ACCOUNT_RATE_LIMITS=False,
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    )
     def test_account_email_resend_verification_sends_email(self):
         self.client.login(username="diego", password="test1234")
         EmailAddress.objects.filter(user=self.user).delete()

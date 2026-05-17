@@ -7,9 +7,67 @@ from django.urls import reverse
 
 from finances.models import Category, SubCategory, Transaction
 from holdings.models import AccountBalanceSnapshot, BankAccount
+from settings.forms import SettingsForm
 from settings.services.api import SettingsService
 
 User = get_user_model()
+
+
+class SettingsFormTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="settings-form-user",
+            password="test1234",
+            email="settings-form@example.com",
+        )
+
+    def test_form_updates_language_timezone_and_validates_ranges(self):
+        form = SettingsForm(
+            data={
+                "annual_savings_target": "7200",
+                "monthly_budget": "1800",
+                "net_worth_target": "50000",
+                "savings_rate_target": "30",
+                "target_date": "2030-12-31",
+                "retirement_age": "60",
+                "main_currency": "EUR",
+                "financial_profile": "GROWTH",
+                "emergency_fund_months": "8",
+                "language_code": "es",
+                "timezone": "Europe/Brussels",
+            },
+            instance=self.user.settings,
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
+        settings = form.save()
+        self.assertEqual(settings.language_code, "es")
+        self.assertEqual(settings.timezone, "Europe/Brussels")
+        self.assertEqual(settings.financial_profile, "GROWTH")
+
+    def test_form_rejects_out_of_range_targets(self):
+        form = SettingsForm(
+            data={
+                "annual_savings_target": "-1",
+                "monthly_budget": "1800",
+                "net_worth_target": "50000",
+                "savings_rate_target": "125",
+                "target_date": "",
+                "retirement_age": "12",
+                "main_currency": "EUR",
+                "financial_profile": "BALANCED",
+                "emergency_fund_months": "30",
+                "language_code": "en-us",
+                "timezone": "Europe/Madrid",
+            },
+            instance=self.user.settings,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("annual_savings_target", form.errors)
+        self.assertIn("savings_rate_target", form.errors)
+        self.assertIn("retirement_age", form.errors)
+        self.assertIn("emergency_fund_months", form.errors)
 
 
 class SettingsPhase3InsightsTests(TestCase):
@@ -183,4 +241,6 @@ class SettingsHomeViewPhase3Tests(TestCase):
         self.assertContains(response, "Smart Recommendations")
         self.assertContains(response, "Goal Simulator")
         self.assertContains(response, "Potential Savings Scenarios")
+        self.assertContains(response, "Language")
+        self.assertContains(response, "Time Zone")
         self.assertNotContains(response, 'id="simulator-monthly-contribution"')

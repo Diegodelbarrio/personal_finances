@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from settings.models import UserSettings
 
@@ -52,6 +53,18 @@ class ProfileForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["avatar"].required = False
+        self.fields["avatar"].widget.attrs.update(
+            {
+                "data-profile-avatar-input": "true",
+                "aria-describedby": "avatar-help-text",
+            }
+        )
+        self.fields["remove_avatar"].widget.attrs.update(
+            {
+                "class": "form-check-input",
+                "data-profile-remove-avatar": "true",
+            }
+        )
         self.fields["remove_avatar"].initial = False
 
     def clean_username(self):
@@ -79,7 +92,8 @@ class ProfileForm(forms.ModelForm):
 
     def clean_avatar(self):
         avatar = self.cleaned_data.get("avatar")
-        if not avatar:
+        uploaded_avatar = self.files.get(self.add_prefix("avatar"))
+        if not avatar or not uploaded_avatar:
             return avatar
 
         content_type = (getattr(avatar, "content_type", "") or "").lower()
@@ -104,6 +118,13 @@ class ProfileForm(forms.ModelForm):
 
         return avatar
 
+    def clean(self):
+        cleaned_data = super().clean()
+        uploaded_avatar = self.files.get(self.add_prefix("avatar"))
+        if uploaded_avatar and cleaned_data.get("remove_avatar"):
+            self.add_error("avatar", "Choose either a new avatar or remove the current one, not both.")
+        return cleaned_data
+
     def save(self, commit=True):
         instance = super().save(commit=False)
         remove_avatar = self.cleaned_data.get("remove_avatar")
@@ -118,6 +139,7 @@ class ProfileForm(forms.ModelForm):
 
 class ProfilePreferencesForm(forms.ModelForm):
     COMMON_TIMEZONE_CHOICES = [
+        ("Europe/Brussels", "Europe/Brussels"),
         ("Europe/Madrid", "Europe/Madrid"),
         ("Europe/London", "Europe/London"),
         ("UTC", "UTC"),
@@ -136,6 +158,7 @@ class ProfilePreferencesForm(forms.ModelForm):
 
     timezone = forms.ChoiceField(
         choices=COMMON_TIMEZONE_CHOICES,
+        error_messages={"invalid_choice": "Choose a valid time zone."},
         widget=forms.Select(attrs={"class": "form-select"}),
     )
 
@@ -155,3 +178,15 @@ class ProfilePreferencesForm(forms.ModelForm):
                 (current_timezone, current_timezone),
                 *self.fields["timezone"].choices,
             ]
+
+    def clean_timezone(self):
+        timezone_name = (self.cleaned_data.get("timezone") or "").strip()
+        if not timezone_name:
+            raise forms.ValidationError("Time zone is required.")
+
+        try:
+            ZoneInfo(timezone_name)
+        except ZoneInfoNotFoundError as exc:
+            raise forms.ValidationError("Choose a valid time zone.") from exc
+
+        return timezone_name

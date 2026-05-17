@@ -1,3 +1,5 @@
+from django.db.models import OuterRef, Subquery
+
 from holdings.models import AccountBalanceSnapshot, BankAccount
 
 
@@ -6,21 +8,22 @@ def get_current_value(user, dates_only_active=False):
     Devuelve el valor total actual de las cuentas (cash)
     y las fechas usadas para el cálculo.
     """
-    total = 0
+    latest_snapshot = AccountBalanceSnapshot.objects.filter(
+        account=OuterRef("pk"),
+    ).order_by("-date")
+    accounts = BankAccount.objects.filter(user=user).annotate(
+        latest_balance=Subquery(latest_snapshot.values("balance")[:1]),
+        latest_date=Subquery(latest_snapshot.values("date")[:1]),
+    )
+
+    total = 0.0
     dates = []
 
-    accounts = BankAccount.objects.filter(user=user)
     for acc in accounts:
-        last_snapshot = (
-            AccountBalanceSnapshot.objects
-            .filter(account=acc)
-            .order_by('-date')
-            .first()
-        )
-        if last_snapshot:
-            total += float(last_snapshot.balance)
-            if (not dates_only_active) or acc.is_active:
-                dates.append(last_snapshot.date)
+        if acc.latest_balance is not None:
+            total += float(acc.latest_balance)
+        if acc.latest_date and ((not dates_only_active) or acc.is_active):
+            dates.append(acc.latest_date)
 
     return total, dates
 

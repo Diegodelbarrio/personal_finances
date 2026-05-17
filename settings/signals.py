@@ -5,15 +5,8 @@ from .models import SavingsPotentialModel, UserSettings
 
 User = get_user_model()
 
-@receiver(post_save, sender=User)
-def create_user_settings(sender, instance, created, **kwargs):
-    if created:
-        user_settings, _ = UserSettings.objects.get_or_create(user=instance)
-        SavingsPotentialModel.objects.get_or_create(user_settings=user_settings)
 
 @receiver(post_save, sender=User)
-def save_user_settings(sender, instance, **kwargs):
-    # Usamos get_or_create por seguridad para evitar el error RelatedObjectDoesNotExist
+def ensure_user_settings(sender, instance, **kwargs):
     user_settings, _ = UserSettings.objects.get_or_create(user=instance)
     SavingsPotentialModel.objects.get_or_create(user_settings=user_settings)
-    user_settings.save()

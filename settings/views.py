@@ -1,9 +1,10 @@
-from django.shortcuts import render, redirect
-from django.contrib import messages  # Para los mensajes
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.shortcuts import redirect, render
 
 from .forms import SettingsForm
 from settings.services.api import SettingsService
+
 
 @login_required
 def settings_home(request):
@@ -12,16 +13,16 @@ def settings_home(request):
     if request.method == 'POST':
         form = SettingsForm(request.POST, instance=user_settings)
 
-        if not form.has_changed():
-            messages.info(request, "No changes detected. Nothing to update.", extra_tags='settings')
-            return redirect('settings:settings_home')
-
         if form.is_valid():
+            if not form.has_changed():
+                messages.info(request, "No changes detected. Nothing to update.", extra_tags='settings')
+                return redirect('settings:settings_home')
+
             form.save()
             messages.success(request, 'Settings updated successfully!', extra_tags='settings')
             return redirect('settings:settings_home')
-        else:
-            messages.error(request, 'Please correct the errors below.', extra_tags='settings')
+
+        messages.error(request, 'Please correct the errors below.', extra_tags='settings')
     else:
         form = SettingsForm(instance=user_settings)
 

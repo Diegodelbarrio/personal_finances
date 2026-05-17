@@ -2,10 +2,12 @@ import datetime
 import math
 from decimal import Decimal
 
+from django.db.models import Q, Sum
+from django.db.models.functions import TruncMonth
+
 from core.services.net_worth import calculate_net_worth
-from finances.services import metrics as finance_metrics
 from finances.services import queries as finance_queries
-from holdings.services.api import get_current_value
+from finances.models import Category
 from settings.models import SavingsPotentialModel, UserSettings
 
 class SettingsService:
@@ -124,11 +126,11 @@ class SettingsService:
         monthly_expenses = [float(item["expenses"]) for item in window["monthly_rows"] if float(item["expenses"]) > 0]
         expense_volatility = SettingsService._expense_volatility(monthly_expenses, avg_monthly_expenses)
 
-        cash_total, _cash_dates = get_current_value(user, dates_only_active=True)
+        net_worth_data = calculate_net_worth(user)
+        cash_total = float(net_worth_data.get("holdings_value", 0.0) or 0.0)
         configured_emergency_months = max(int(user_settings.emergency_fund_months or 0), 1)
         emergency_months_covered = (cash_total / avg_monthly_expenses) if avg_monthly_expenses > 0 else 0.0
 
-        net_worth_data = calculate_net_worth(user)
         current_net_worth = float(net_worth_data.get("current_net_worth", 0.0) or 0.0)
 
         score = SettingsService._calculate_financial_score(
@@ -617,22 +619,56 @@ class SettingsService:
 
     @staticmethod
     def _collect_monthly_rows(window_qs, window_start, window_end):
+        monthly_totals = (
+            window_qs
+            .annotate(month=TruncMonth("date"))
+            .values("month")
+            .annotate(
+                income=Sum(
+                    "amount",
+                    filter=Q(
+                        subcategory__parent_category__transaction_type=Category.TransactionType.INCOME
+                    ),
+                ),
+                expenses=Sum(
+                    "amount",
+                    filter=Q(
+                        subcategory__parent_category__transaction_type=Category.TransactionType.EXPENSE
+                    ),
+                ),
+            )
+        )
+        totals_by_month = {}
+        for item in monthly_totals:
+            month_value = item["month"]
+            month_start = month_value.date() if hasattr(month_value, "date") else month_value
+            income = abs(item["income"] or 0)
+            expenses = abs(item["expenses"] or 0)
+            totals_by_month[month_start] = {
+                "income": float(income),
+                "expenses": float(expenses),
+                "savings": float(income - expenses),
+            }
+
         rows = []
         cursor = window_start.replace(day=1)
         end_cursor = window_end.replace(day=1)
 
         while cursor <= end_cursor:
-            period_qs = window_qs.filter(
-                date__year=cursor.year,
-                date__month=cursor.month,
+            stats = totals_by_month.get(
+                cursor,
+                {
+                    "income": 0.0,
+                    "expenses": 0.0,
+                    "savings": 0.0,
+                },
             )
-            stats = finance_metrics.get_period_metrics(period_qs)
             rows.append(
                 {
                     "month_start": cursor,
-                    "income": float(stats["income"]),
-                    "expenses": float(stats["expenses"]),
-                    "savings": float(stats["savings"]),
+                    "income": stats["income"],
+                    "expenses": stats["expenses"],
+                    "savings": stats["savings"],
                 }
             )
             cursor = SettingsService._add_months(cursor, 1)
