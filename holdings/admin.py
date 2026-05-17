@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
-from .models import BankAccount, AccountBalanceSnapshot
+from .models import AccountBalanceSnapshot, BankAccount, BankConnection
 
 # 1. CLASE BASE PARA HOLDINGS
 class HoldingsUserOwnedAdmin(admin.ModelAdmin):
@@ -53,10 +53,56 @@ class BankAccountUserFilter(SimpleListFilter):
 # 3. REGISTRO DE ADMINS
 @admin.register(BankAccount)
 class BankAccountAdmin(HoldingsUserOwnedAdmin):
-    list_display = ('name', 'institution', 'account_type', 'currency', 'is_active', 'user')
-    list_filter = ('account_type', 'institution', 'is_active', 'currency')
-    search_fields = ('name', 'institution')
+    list_display = (
+        'name',
+        'institution',
+        'account_type',
+        'currency',
+        'is_active',
+        'sync_provider',
+        'last_synced_at',
+        'user',
+    )
+    list_filter = ('account_type', 'institution', 'is_active', 'currency', 'sync_provider')
+    search_fields = ('name', 'institution', 'external_account_id')
     list_editable = ('is_active',) # Nota: Solo funcionará para el superuser si no filtramos los permisos de edición
+
+
+@admin.register(BankConnection)
+class BankConnectionAdmin(HoldingsUserOwnedAdmin):
+    exclude = ('consent_token',)
+    list_display = (
+        'institution_display',
+        'provider',
+        'status',
+        'last_synced_at',
+        'created_at',
+        'user',
+    )
+    list_filter = ('provider', 'status', 'institution_name')
+    search_fields = ('institution_name', 'institution_id', 'external_id', 'reference')
+    readonly_fields = (
+        'reference',
+        'external_id',
+        'agreement_id',
+        'has_consent_token',
+        'redirect_url',
+        'consent_url',
+        'accounts',
+        'metadata',
+        'last_synced_at',
+        'created_at',
+        'updated_at',
+    )
+
+    def institution_display(self, obj):
+        return obj.institution_name or obj.institution_id or obj.provider
+    institution_display.short_description = "Institution"
+
+    def has_consent_token(self, obj):
+        return bool(obj.consent_token)
+    has_consent_token.boolean = True
+    has_consent_token.short_description = "Consent token stored"
 
 @admin.register(AccountBalanceSnapshot)
 class AccountBalanceSnapshotAdmin(HoldingsUserOwnedAdmin):

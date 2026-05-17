@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-xl-10">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1">
+                        <li class="breadcrumb-item small text-uppercase fw-bold"><a class="text-decoration-none text-muted">Holdings</a></li>
+                        <li class="breadcrumb-item small text-uppercase fw-bold active" aria-current="page">Bank Sync</li>
+                    </ol>
+                </nav>
+                <h1 class="h3 fw-bold mb-1">Bank Sync</h1>
+                <p class="text-muted mb-0">Connect a provider and create balance snapshots automatically.</p>
+            </div>
+            <a href="{% url 'reports:report_holdings' %}" class="btn btn-sm btn-light border rounded-pill px-3">
+                <i class="bi bi-arrow-left me-1"></i> Back to Holdings
+            </a>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                {% if "bank_sync" in message.tags %}
+                    <div class="alert {% if 'success' in message.tags %}alert-success{% elif 'info' in message.tags %}alert-info{% elif 'warning' in message.tags %}alert-warning{% else %}alert-danger{% endif %} border-0 shadow-sm mb-3" role="alert">
+                        {{ message }}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+
+        {% if not bank_sync_enabled %}
+            <div class="alert alert-warning border-0 shadow-sm">
+                Bank sync is disabled. Set <code>BANK_SYNC_ENABLED=True</code> in your local environment to use this branch.
+            </div>
+        {% endif %}
+
+        <div class="row g-4">
+            <div class="col-12 col-lg-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <h2 class="h6 fw-bold mb-3">New Connection</h2>
+                        {% if institutions_loaded %}
+                            <div class="alert alert-info border-0 small mb-3">
+                                Yapily shows institutions registered for this application. Use <code>modelo-sandbox</code> for testing, or select your real bank after it is registered in Yapily Console.
+                            </div>
+                        {% endif %}
+                        <form method="post" action="{% url 'holdings:bank_sync_start' %}" novalidate>
+                            {% csrf_token %}
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold" for="{{ form.provider.id_for_label }}">Provider</label>
+                                {{ form.provider }}
+                                {% if form.provider.errors %}
+                                    <div class="text-danger small mt-1">{{ form.provider.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold" for="{{ form.country_code.id_for_label }}">Country</label>
+                                {{ form.country_code }}
+                                {% if form.country_code.errors %}
+                                    <div class="text-danger small mt-1">{{ form.country_code.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold" for="{{ form.institution_id.id_for_label }}">Institution ID</label>
+                                {{ form.institution_id }}
+                                {% if institutions_loaded and institution_count == 0 %}
+                                    <div class="text-muted small mt-1">
+                                        No Yapily institutions are available for this app/country yet.
+                                    </div>
+                                {% endif %}
+                                {% if form.institution_id.errors %}
+                                    <div class="text-danger small mt-1">{{ form.institution_id.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            {% if not institutions_loaded or institution_count == 0 %}
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold" for="{{ form.institution_name.id_for_label }}">Institution Name</label>
+                                    {{ form.institution_name }}
+                                    {% if form.institution_name.errors %}
+                                        <div class="text-danger small mt-1">{{ form.institution_name.errors|join:", " }}</div>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+
+                            <button type="submit" class="btn btn-primary rounded-pill px-4 w-100" {% if not bank_sync_enabled %}disabled{% endif %}>
+                                <i class="bi bi-link-45deg me-1"></i> Start Connection
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h2 class="h6 fw-bold mb-0">Connections</h2>
+                            <span class="badge text-bg-light border">{{ connections|length }}</span>
+                        </div>
+
+                        <div class="table-responsive fo-table-responsive fo-table-shell fo-table-shell--compact">
+                            <table class="table table-sm fo-table fo-table--dense align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Institution</th>
+                                        <th>Provider</th>
+                                        <th>Status</th>
+                                        <th>Accounts</th>
+                                        <th>Last Sync</th>
+                                        <th class="text-end">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for connection in connections %}
+                                        <tr>
+                                            <td>
+                                                <div class="fw-semibold">{{ connection.institution_name|default:connection.institution_id|default:"Bank connection" }}</div>
+                                                <div class="text-muted small">{{ connection.reference }}</div>
+                                            </td>
+                                            <td>{{ connection.get_provider_display }}</td>
+                                            <td>
+                                                <span class="badge {% if connection.status == 'LINKED' %}text-bg-success{% elif connection.status == 'ERROR' %}text-bg-danger{% elif connection.status == 'EXPIRED' %}text-bg-warning{% else %}text-bg-secondary{% endif %}">
+                                                    {{ connection.get_status_display }}
+                                                </span>
+                                            </td>
+                                            <td>{{ connection.bank_accounts.count }}</td>
+                                            <td>
+                                                {% if connection.last_synced_at %}
+                                                    {{ connection.last_synced_at|date:"Y-m-d H:i" }}
+                                                {% else %}
+                                                    <span class="text-muted">Never</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end">
+                                                <div class="d-flex flex-wrap justify-content-end gap-2">
+                                                    {% if connection.consent_url and connection.status != 'LINKED' %}
+                                                        <a href="{{ connection.consent_url }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                                            <i class="bi bi-box-arrow-up-right me-1"></i> Consent
+                                                        </a>
+                                                    {% endif %}
+                                                    <form method="post" action="{% url 'holdings:bank_sync_connection' connection.id %}">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-sm btn-light border rounded-pill px-3" {% if connection.status != 'LINKED' %}disabled{% endif %}>
+                                                            <i class="bi bi-arrow-repeat me-1"></i> Sync
+                                                        </button>
+                                                    </form>
+                                                    <form method="post" action="{% url 'holdings:bank_sync_delete_connection' connection.id %}" onsubmit="return confirm('Delete this bank connection? Existing accounts and snapshots will be kept.');">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                                            <i class="bi bi-trash me-1"></i> Delete
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% if connection.error_message %}
+                                            <tr>
+                                                <td colspan="6" class="text-danger small">{{ connection.error_message }}</td>
+                                            </tr>
+                                        {% endif %}
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="6" class="text-muted">No bank connections yet.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

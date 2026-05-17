@@ -50,6 +50,56 @@ App local:
 - `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`.
 - `SECURE_HSTS_SECONDS`, `SECURE_HSTS_INCLUDE_SUBDOMAINS`, `SECURE_HSTS_PRELOAD`.
 
+## Bank sync experiment
+
+This branch includes an Open Banking sync spike for account balances. It keeps the
+manual CSV flow and adds an optional provider flow that writes into the existing
+`BankAccount` and `AccountBalanceSnapshot` models.
+
+For local testing without real bank data:
+
+```bash
+BANK_SYNC_ENABLED=True
+BANK_SYNC_PROVIDER=mock
+```
+
+Then open:
+
+- `http://127.0.0.1:8000/holdings/bank-sync/`
+
+The mock provider creates sample accounts and balance snapshots. No bank
+credentials are needed.
+
+For Yapily sandbox testing, create provider credentials in the Yapily Console
+and set them only in your local `.env` or production environment:
+
+```bash
+BANK_SYNC_ENABLED=True
+BANK_SYNC_PROVIDER=yapily
+BANK_SYNC_COUNTRY_CODE=ES
+YAPILY_APPLICATION_ID=...
+YAPILY_APPLICATION_SECRET=...
+YAPILY_BASE_URL=https://api.yapily.com
+```
+
+Use `modelo-sandbox` as the institution ID for the first sandbox connection.
+To connect a real account, first register the real bank/institution for the
+Yapily application in Yapily Console. The bank sync page will list institutions
+that the Yapily API returns for this application and country. If your bank is
+not listed, it is not available to this application yet; activate/register it in
+Yapily Console or contact Yapily for live banking data access.
+
+Do not paste personal bank credentials, provider secrets, access tokens, or
+refresh tokens into chat or commit them to git. The bank login happens on the
+provider consent page, not inside FinOrbit.
+
+To sync linked connections from the terminal:
+
+```bash
+python manage.py sync_bank_balances --user your-username
+python manage.py sync_bank_balances --all-users
+```
+
 ## Configuracion profesional de email
 
 La app ya queda preparada para dos canales:

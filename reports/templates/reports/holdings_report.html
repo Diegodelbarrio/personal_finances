@@ -3,9 +3,14 @@
 {% block report_content %}
     <div class="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
         <h4 class="fw-bold text-dark mb-0">Monthly breakdown of balances by bank account</h4>
-        <a href="{% url 'holdings:import_snapshots_csv' %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm btn-light border rounded-pill px-3">
-            <i class="bi bi-filetype-csv me-1"></i> Import Snapshots CSV
-        </a>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'holdings:bank_sync' %}" class="btn btn-sm btn-primary rounded-pill px-3">
+                <i class="bi bi-arrow-repeat me-1"></i> Bank Sync
+            </a>
+            <a href="{% url 'holdings:import_snapshots_csv' %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm btn-light border rounded-pill px-3">
+                <i class="bi bi-filetype-csv me-1"></i> Import Snapshots CSV
+            </a>
+        </div>
     </div>
 
     

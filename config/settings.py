@@ -353,3 +353,22 @@ ACCOUNT_SIGNUP_FIELDS = [
 ]
 
 SITE_URL = os.getenv("SITE_URL", "http://localhost:8000")
+
+
+# Bank account data sync
+BANK_SYNC_ENABLED = env_bool("BANK_SYNC_ENABLED", default=DEBUG)
+BANK_SYNC_PROVIDER = os.getenv("BANK_SYNC_PROVIDER", "mock").strip().lower()
+BANK_SYNC_COUNTRY_CODE = os.getenv("BANK_SYNC_COUNTRY_CODE", "ES").strip().upper()
+BANK_SYNC_HTTP_TIMEOUT = env_int("BANK_SYNC_HTTP_TIMEOUT", 20)
+
+GOCARDLESS_BASE_URL = os.getenv(
+    "GOCARDLESS_BASE_URL",
+    "https://bankaccountdata.gocardless.com/api/v2",
+).rstrip("/")
+GOCARDLESS_SECRET_ID = os.getenv("GOCARDLESS_SECRET_ID", "")
+GOCARDLESS_SECRET_KEY = os.getenv("GOCARDLESS_SECRET_KEY", "")
+GOCARDLESS_REFRESH_TOKEN = os.getenv("GOCARDLESS_REFRESH_TOKEN", "")
+
+YAPILY_BASE_URL = os.getenv("YAPILY_BASE_URL", "https://api.yapily.com").rstrip("/")
+YAPILY_APPLICATION_ID = os.getenv("YAPILY_APPLICATION_ID", "")
+YAPILY_APPLICATION_SECRET = os.getenv("YAPILY_APPLICATION_SECRET", "")
