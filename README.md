@@ -96,6 +96,11 @@ Si el backend es de consola, veras el email impreso en la terminal. Con SMTP rea
 
 ## Despliegue (general)
 
+Para guias mas completas:
+
+- Backups y restauracion de PostgreSQL: [`DB_BACKUP_STRATEGY.md`](DB_BACKUP_STRATEGY.md).
+- Arquitectura y plan de rollout de la aplicacion: [`APPLICATION_ROLLOUT_ARCHITECTURE.md`](APPLICATION_ROLLOUT_ARCHITECTURE.md).
+
 1. Crear servicio web (Render, Railway, Fly.io, etc.).
 2. Configurar variables de entorno de `.env.example`.
 3. Instalar dependencias con `pip install -r requirements.txt`.
