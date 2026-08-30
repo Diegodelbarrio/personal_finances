@@ -8,6 +8,15 @@
         </a>
     </div>
 
+    {% if report.monthly_data.currency_mismatches %}
+        <div class="alert alert-warning border-0 shadow-sm" role="alert">
+            Accounts in another currency are excluded because automatic conversion is not supported:
+            {% for account in report.monthly_data.currency_mismatches %}
+                {{ account.name }} ({{ account.currency }}){% if not forloop.last %}, {% endif %}
+            {% endfor %}.
+        </div>
+    {% endif %}
+
     
 
     {% include "reports/components/report_table.html" with hover=True extra_classes="report-table-holdings" table_template="reports/tables/holdings_table.html" %}

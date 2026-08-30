@@ -60,8 +60,15 @@ class ManageCategoriesViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Food")
         self.assertContains(response, "Groceries")
-        self.assertNotContains(response, "Salary")
-        self.assertNotContains(response, other_sub.name)
+        self.assertEqual(
+            list(response.context["categories"].values_list("name", flat=True)),
+            ["Food"],
+        )
+        self.assertEqual(
+            list(response.context["subcategories"].values_list("name", flat=True)),
+            ["Groceries"],
+        )
+        self.assertNotIn(other_sub, response.context["subcategories"])
 
     def test_create_category_in_separate_view(self):
         self.client.login(username="diego", password="testpass123")
@@ -370,7 +377,7 @@ class ManageCategoriesViewTests(TestCase):
         self.assertEqual(groceries.budget_group, SubCategory.BudgetGroup.NEEDS)
         self.assertEqual(groceries.expense_nature, SubCategory.ExpenseNature.VARIABLE)
         self.assertTrue(groceries.is_essential)
-        self.assertContains(response, "Default categories created successfully")
+        self.assertContains(response, "Default categories applied:")
 
     def test_default_categories_setup_requires_income_category(self):
         Category.objects.filter(user=self.user).delete()

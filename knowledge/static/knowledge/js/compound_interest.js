@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let totalPrincipal = 0;
     let totalBalance = 0;
+    const locale = document.documentElement.lang || 'en-GB';
+    const currency = document.documentElement.dataset.currency || 'EUR';
 
     // Calculation Logic (Monthly Compounding)
     for (let year = 0; year <= years; year++) {
@@ -64,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     callbacks: {
                         label: function(context) {
                             return context.dataset.label + ': ' + 
-                                   new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(context.raw);
+                                   new Intl.NumberFormat(locale, { style: 'currency', currency }).format(context.raw);
                         }
                     }
                 }
@@ -74,7 +76,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            return value / 1000 + 'k €';
+                            return new Intl.NumberFormat(locale, {
+                                style: 'currency',
+                                currency,
+                                notation: 'compact',
+                                maximumFractionDigits: 1
+                            }).format(value);
                         }
                     },
                     grid: {

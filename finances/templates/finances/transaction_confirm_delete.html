@@ -16,7 +16,7 @@
                 <div class="bg-light rounded-4 p-3 mb-4">
                     <div class="small text-muted mb-2">Transaction details</div>
                     <div><strong>Date:</strong> {{ transaction.date|date:"Y-m-d" }}</div>
-                    <div><strong>Amount:</strong> {{ transaction.amount|floatformat:2 }} €</div>
+                    <div><strong>Amount:</strong> {{ transaction.amount|floatformat:2 }} {{ request.user_currency_symbol }}</div>
                     <div><strong>Subcategory:</strong> {{ transaction.subcategory.parent_category.name }} -> {{ transaction.subcategory.name }}</div>
                     <div><strong>Description:</strong> {{ transaction.description|default:"-" }}</div>
                 </div>

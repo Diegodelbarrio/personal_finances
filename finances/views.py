@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction as db_transaction
 from django.db.models import Count, DecimalField, ExpressionWrapper, F
-from django.db.models.deletion import ProtectedError
+from django.db.models.deletion import ProtectedError, RestrictedError
 from django.db.models.functions import Abs
 from django.shortcuts import get_object_or_404, redirect, render, resolve_url
 from django.utils import timezone
@@ -177,7 +177,7 @@ def _delete_categories_batch(user, category_ids):
         try:
             category.delete()
             result["deleted"] += 1
-        except ProtectedError:
+        except (ProtectedError, RestrictedError):
             result["protected"].append(category.name)
 
     return result
@@ -201,7 +201,7 @@ def _delete_subcategories_batch(user, subcategory_ids):
         try:
             subcategory.delete()
             result["deleted"] += 1
-        except ProtectedError:
+        except (ProtectedError, RestrictedError):
             result["protected"].append(label)
 
     return result
@@ -256,17 +256,23 @@ def _add_batch_delete_messages(request, result, noun):
 
 @login_required
 def summary(request):
-    # 1. Entrada de datos (Input)
     now = timezone.now()
-    year = int(request.GET.get('year', now.year))
-    month = int(request.GET.get('month', now.month))
-    
-    # 2. Lógica de negocio/selección (Process)
+    year = _coerce_int(request.GET.get("year"), now.year)
+    month = _coerce_int(request.GET.get("month"), now.month)
+    if month < 1 or month > 12:
+        month = now.month
+
     context = get_summary_page_data(request.user, year, month)
     context["current_path"] = request.get_full_path()
-    
-    # 3. Respuesta (Output)
+
     return render(request, 'finances/summary.html', context)
+
+
+def _coerce_int(value, fallback):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return fallback
 
 
 @login_required
@@ -286,7 +292,7 @@ def manage_categories(request):
                     "Category deleted successfully.",
                     extra_tags="finances_categories",
                 )
-            except ProtectedError:
+            except (ProtectedError, RestrictedError):
                 messages.error(
                     request,
                     "This category cannot be deleted because it has subcategories with linked transactions.",
@@ -311,7 +317,7 @@ def manage_categories(request):
                     "Subcategory deleted successfully.",
                     extra_tags="finances_categories",
                 )
-            except ProtectedError:
+            except (ProtectedError, RestrictedError):
                 messages.error(
                     request,
                     "This subcategory cannot be deleted because it has linked transactions.",

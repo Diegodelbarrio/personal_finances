@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 
 from finances.models import Category, SubCategory, Transaction
@@ -68,6 +69,36 @@ class SettingsFormTests(TestCase):
         self.assertIn("savings_rate_target", form.errors)
         self.assertIn("retirement_age", form.errors)
         self.assertIn("emergency_fund_months", form.errors)
+
+    def test_reporting_currency_can_change_before_financial_data_exists(self):
+        self.user.settings.main_currency = "USD"
+        self.user.settings.save()
+
+        self.user.settings.refresh_from_db()
+        self.assertEqual(self.user.settings.main_currency, "USD")
+
+    def test_reporting_currency_change_is_blocked_after_financial_data_exists(self):
+        category = Category.objects.create(
+            user=self.user,
+            name="Salary",
+            transaction_type="INCOME",
+            expense_type="N/A",
+        )
+        subcategory = SubCategory.objects.create(
+            user=self.user,
+            parent_category=category,
+            name="Job",
+        )
+        Transaction.objects.create(
+            user=self.user,
+            subcategory=subcategory,
+            amount=100,
+            date=date.today(),
+        )
+
+        self.user.settings.main_currency = "USD"
+        with self.assertRaises(ValidationError):
+            self.user.settings.save()
 
 
 class SettingsPhase3InsightsTests(TestCase):

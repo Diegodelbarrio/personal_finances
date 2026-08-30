@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from investments.models import Asset, AssetHistory, Transaction
-from investments.services.api import EXCLUDE_ASSET_NAME, get_money_weighted_return
+from investments.services.api import get_money_weighted_return
 
 
 DEFAULT_PORTFOLIO_PERIOD = "1y"
@@ -66,7 +66,7 @@ def get_portfolio_market_context(
         first_available_date = series[0][0] if series else None
     else:
         non_family_assets = [
-            asset for asset in portfolio_assets if asset.name != EXCLUDE_ASSET_NAME
+            asset for asset in portfolio_assets if not asset.exclude_from_totals
         ]
         investable_assets = non_family_assets or portfolio_assets
         portfolio_includes_family = not non_family_assets
@@ -151,7 +151,7 @@ def _build_asset_options(assets: Iterable[Asset]) -> List[Dict]:
                 "first_date": first_history.date if first_history else None,
                 "history_count": len(histories),
                 "searchable_text": searchable_text,
-                "is_family": asset.name == EXCLUDE_ASSET_NAME,
+                "is_family": asset.exclude_from_totals,
             }
         )
 
@@ -225,7 +225,7 @@ def _transaction_rows(
     if asset:
         query &= Q(asset=asset)
     elif not include_family:
-        query &= ~Q(asset__name=EXCLUDE_ASSET_NAME)
+        query &= Q(asset__exclude_from_totals=False)
     return list(Transaction.objects.filter(query).select_related("asset").order_by("date"))
 
 

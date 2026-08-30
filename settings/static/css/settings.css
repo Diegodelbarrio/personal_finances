@@ -170,6 +170,8 @@
 .settings-form-panel,
 .settings-simulator-panel,
 .settings-insight-panel {
+    min-width: 0;
+    max-width: 100%;
     border: 1px solid var(--settings-border);
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.94);
@@ -503,9 +505,13 @@
 }
 
 .simulator-scenarios-table-wrap {
+    width: 100%;
+    max-width: 100%;
     border: 1px solid var(--settings-border);
     border-radius: 8px;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
     background: #ffffff;
 }
 
@@ -765,6 +771,10 @@
 
     .settings-metric strong {
         white-space: normal;
+    }
+
+    .simulator-scenarios-table {
+        min-width: 680px;
     }
 
     .settings-action-bar {

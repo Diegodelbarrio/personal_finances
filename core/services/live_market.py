@@ -22,7 +22,6 @@ from core.services.market_watch import (
     _open_text_url,
 )
 from investments.models import Asset
-from investments.services.api import EXCLUDE_ASSET_NAME
 
 
 DEFAULT_LIVE_MARKET_PERIOD = "1y"
@@ -119,7 +118,7 @@ def get_live_market_context(
     cleaned_query = (query or "").strip()
     assets = list(
         Asset.objects.filter(user=user)
-        .exclude(name=EXCLUDE_ASSET_NAME)
+        .exclude(exclude_from_totals=True)
         .order_by("name")
     )
     asset_options = _build_live_asset_options(assets)

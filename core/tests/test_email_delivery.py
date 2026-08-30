@@ -41,7 +41,9 @@ class EmailDeliveryServiceTest(TestCase):
 
         self.assertEqual(result.messages_sent, 2)
         self.assertEqual(len(mail.outbox), 2)
-        self.assertEqual(mail.outbox[0].to, ["a@example.com", "b@example.com"])
-        self.assertEqual(mail.outbox[1].to, ["c@example.com"])
+        self.assertEqual(mail.outbox[0].to, [])
+        self.assertEqual(mail.outbox[1].to, [])
+        self.assertEqual(mail.outbox[0].bcc, ["a@example.com", "b@example.com"])
+        self.assertEqual(mail.outbox[1].bcc, ["c@example.com"])
         self.assertEqual(mail.outbox[0].from_email, "news@finorbit.test")
         self.assertEqual(mail.outbox[0].reply_to, ["newsletter@finorbit.test"])

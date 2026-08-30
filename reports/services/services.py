@@ -15,6 +15,7 @@ from investments.services.api import (
 )
 from investments.models import AssetHistory, Transaction as InvestmentTransaction
 from holdings.services.api import get_annual_balance_evolution
+from core.currency import get_currency_symbol, get_user_currency
 
 def _build_year_range(first_year, last_year):
     if first_year is None or last_year is None or first_year > last_year:
@@ -316,6 +317,7 @@ def get_investment_annual_report(user, year):
         mwrr_status = "success" if mwrr >= 0 else "danger"
         mwrr_icon = "bi-percent"
     
+    currency_symbol = get_currency_symbol(get_user_currency(user))
     annual_stats = {
         "total_contributions": total_contributions,
         "total_profit": total_profit,
@@ -329,8 +331,12 @@ def get_investment_annual_report(user, year):
         "mwrr_prefix": mwrr_prefix,
         "mwrr_status": mwrr_status,
         "mwrr_icon": mwrr_icon,
-        "avg_profit_subtitle": f"{(total_profit / active_months_count):,.0f} €/mes",
-        "avg_contribution_subtitle": f"{(total_contributions / active_months_count):,.0f} €/mes",
+        "avg_profit_subtitle": (
+            f"{(total_profit / active_months_count):,.0f} {currency_symbol}/month"
+        ),
+        "avg_contribution_subtitle": (
+            f"{(total_contributions / active_months_count):,.0f} {currency_symbol}/month"
+        ),
         "profit_status": "success" if total_profit >= 0 else "danger",
         "roi_status": "success" if annual_roi >= 0 else "danger",
         "profit_icon": "bi-graph-up-arrow" if total_profit >= 0 else "bi-graph-down-arrow",

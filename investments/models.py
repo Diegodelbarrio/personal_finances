@@ -1,6 +1,9 @@
 from django.db import models
 from django.utils import timezone
 from django.conf import settings  # Importante para referenciar al modelo de usuario
+from django.core.exceptions import ValidationError
+
+from core.currency import get_user_currency
 
 class Asset(models.Model):
     # CUALQUIER activo debe pertenecer a alguien
@@ -28,6 +31,10 @@ class Asset(models.Model):
     )
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, verbose_name="Category")
     platform = models.CharField(max_length=50, verbose_name="Entity/Platform")
+    exclude_from_totals = models.BooleanField(
+        default=False,
+        help_text="Exclude this asset from personal portfolio totals and market dashboards.",
+    )
 
     def __str__(self):
         return f"{self.name} ({self.user.username})"
@@ -63,7 +70,7 @@ class Transaction(models.Model):
     action = models.CharField(max_length=4, choices=ACTION_CHOICES, default='BUY')
     shares = models.DecimalField(max_digits=20, decimal_places=8, verbose_name="Shares", blank=True, null=True)
     price_per_share = models.DecimalField(max_digits=20, decimal_places=6, verbose_name="Price per Share", blank=True, null=True)
-    amount = models.DecimalField(max_digits=20, decimal_places=2, verbose_name="Total (€) Invested")
+    amount = models.DecimalField(max_digits=20, decimal_places=2, verbose_name="Total Invested")
     notes = models.TextField(blank=True, null=True, verbose_name="Comments")
 
     def __str__(self):
@@ -74,6 +81,20 @@ class Transaction(models.Model):
         verbose_name = "Transaction"
         verbose_name_plural = "Transactions"
 
+    def clean(self):
+        super().clean()
+        if self.asset_id and self.user_id and self.user_id != self.asset.user_id:
+            raise ValidationError(
+                {"user": "Transaction owner must match its asset owner."}
+            )
+        if self.amount == 0:
+            raise ValidationError({"amount": "Amount must be greater than zero."})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        self.amount = -abs(self.amount) if self.action == "SELL" else abs(self.amount)
+        super().save(*args, **kwargs)
+
 
 class AssetHistory(models.Model):
     user = models.ForeignKey(
@@ -83,12 +104,32 @@ class AssetHistory(models.Model):
     )
     asset = models.ForeignKey(Asset, on_delete=models.CASCADE, related_name='history')
     date = models.DateField(verbose_name="Date of Record")
-    total_value = models.DecimalField(max_digits=20, decimal_places=2, verbose_name="Total Market Value (€)")
+    total_value = models.DecimalField(max_digits=20, decimal_places=2, verbose_name="Total Market Value")
 
     def __str__(self):
-        return f"{self.asset.name} - {self.date} - {self.total_value}€"
+        return (
+            f"{self.asset.name} - {self.date} - {self.total_value} "
+            f"{get_user_currency(self.asset.user)}"
+        )
 
     class Meta:
         ordering = ['-date']
         verbose_name = "Asset History"
         verbose_name_plural = "Asset Histories"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["asset", "date"],
+                name="unique_asset_history_per_date",
+            )
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.asset_id and self.user_id and self.user_id != self.asset.user_id:
+            raise ValidationError(
+                {"user": "History owner must match its asset owner."}
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)

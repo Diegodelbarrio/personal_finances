@@ -14,20 +14,20 @@
 <div class="row g-4 gx-xl-3 mb-5 row-cols-1 row-cols-md-2 row-cols-xl-4">
     
     <div class="col">
-        {% with avg_inc=report.annual_stats.avg_income|floatformat:0|add:" €/month" %}
-            {% include "reports/components/metric_card.html" with label="Total Income" value=report.annual_stats.income|floatformat:2|stringformat:"s €" color="success" subtitle=avg_inc icon="bi-graph-up" %}
+        {% with avg_inc=report.annual_stats.avg_income|floatformat:0 %}
+            {% include "reports/components/metric_card.html" with label="Total Income" value=report.annual_stats.income|floatformat:2 suffix=request.user_currency_symbol color="success" subtitle=avg_inc subtitle_currency=True subtitle_suffix="/month" icon="bi-graph-up" %}
         {% endwith %}
     </div>
 
     <div class="col">
-        {% with avg_exp=report.annual_stats.avg_expenses|floatformat:0|add:" €/month" %}
-            {% include "reports/components/metric_card.html" with label="Total Expenses" value=report.annual_stats.expenses|floatformat:2|stringformat:"s €" color="danger" subtitle=avg_exp icon="bi-cart" %}
+        {% with avg_exp=report.annual_stats.avg_expenses|floatformat:0 %}
+            {% include "reports/components/metric_card.html" with label="Total Expenses" value=report.annual_stats.expenses|floatformat:2 suffix=request.user_currency_symbol color="danger" subtitle=avg_exp subtitle_currency=True subtitle_suffix="/month" icon="bi-cart" %}
         {% endwith %}
     </div>
 
     <div class="col">
-        {% with avg_sav=report.annual_stats.avg_savings|floatformat:0|add:" €/month" %}
-            {% include "reports/components/metric_card.html" with label="Net Savings" value=report.annual_stats.savings|floatformat:2|stringformat:"s €" color="primary" subtitle=avg_sav icon="bi-piggy-bank" %}
+        {% with avg_sav=report.annual_stats.avg_savings|floatformat:0 %}
+            {% include "reports/components/metric_card.html" with label="Net Savings" value=report.annual_stats.savings|floatformat:2 suffix=request.user_currency_symbol color="primary" subtitle=avg_sav subtitle_currency=True subtitle_suffix="/month" icon="bi-piggy-bank" %}
         {% endwith %}
     </div>
 

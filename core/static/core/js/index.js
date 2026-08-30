@@ -2,18 +2,26 @@
  * Lógica para el Dashboard principal (Index)
  */
 document.addEventListener('DOMContentLoaded', () => {
-    const formatEuro = (value, digits = 0) => {
+    const formatCurrency = (value, digits = 0) => {
+        if (window.FinancialFormatter) {
+            return FinancialFormatter.currency(value, {
+                minimumFractionDigits: digits,
+                maximumFractionDigits: digits
+            });
+        }
         const amount = Number(value) || 0;
-        return `${amount.toLocaleString('de-DE', {
+        return amount.toLocaleString(document.documentElement.lang || 'en-GB', {
+            style: 'currency',
+            currency: document.documentElement.dataset.currency || 'EUR',
             minimumFractionDigits: digits,
             maximumFractionDigits: digits
-        })} €`;
+        });
     };
 
-    const formatSignedEuro = (value) => {
+    const formatSignedCurrency = (value) => {
         const amount = Number(value) || 0;
         const sign = amount >= 0 ? '+' : '-';
-        return `${sign}${Math.abs(amount).toLocaleString('de-DE', { maximumFractionDigits: 0 })} €`;
+        return `${sign}${formatCurrency(Math.abs(amount), 0)}`;
     };
 
     const updateDeltaTone = (node, value) => {
@@ -160,14 +168,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                 borderWidth: 1,
                                 padding: 12,
                                 callbacks: {
-                                    label: (context) => ` ${context.dataset.label}: ${formatEuro(context.raw)}`,
+                                    label: (context) => ` ${context.dataset.label}: ${formatCurrency(context.raw)}`,
                                     footer: (tooltipItems) => {
                                         const dataIndex = tooltipItems?.[0]?.dataIndex;
                                         const tooltipChart = tooltipItems?.[0]?.chart;
                                         if (typeof dataIndex === 'number' && tooltipChart) {
                                             const cash = Number(tooltipChart.data.datasets[0].data[dataIndex]) || 0;
                                             const investments = Number(tooltipChart.data.datasets[1].data[dataIndex]) || 0;
-                                            return `TOTAL: ${formatEuro(cash + investments)}`;
+                                            return `TOTAL: ${formatCurrency(cash + investments)}`;
                                         }
                                         return '';
                                     }
@@ -194,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 ticks: {
                                     color: '#667085',
                                     font: { size: 10 },
-                                    callback: v => formatEuro(v)
+                                    callback: v => formatCurrency(v)
                                 }
                             }
                         }
@@ -235,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (cashBar) {
                         cashBar.style.width = `${cashPctValue}%`;
-                        cashBar.title = `Cash: ${formatEuro(breakdownEntry.savings)}`;
+                        cashBar.title = `Cash: ${formatCurrency(breakdownEntry.savings)}`;
                         cashBar.setAttribute('aria-valuemin', '0');
                         cashBar.setAttribute('aria-valuemax', '100');
                         cashBar.setAttribute('aria-valuenow', cashPctValue.toFixed(1));
@@ -243,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (invBar) {
                         invBar.style.width = `${invPctValue}%`;
-                        invBar.title = `Investments: ${formatEuro(breakdownEntry.investments)}`;
+                        invBar.title = `Investments: ${formatCurrency(breakdownEntry.investments)}`;
                         invBar.setAttribute('aria-valuemin', '0');
                         invBar.setAttribute('aria-valuemax', '100');
                         invBar.setAttribute('aria-valuenow', invPctValue.toFixed(1));
@@ -251,9 +259,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (cashText) cashText.textContent = `${cashPctValue.toFixed(1)}%`;
                     if (invText) invText.textContent = `${invPctValue.toFixed(1)}%`;
-                    if (totalText) totalText.textContent = formatEuro(selectedTotal);
-                    if (cashValueText) cashValueText.textContent = formatEuro(breakdownEntry.savings);
-                    if (invValueText) invValueText.textContent = formatEuro(breakdownEntry.investments);
+                    if (totalText) totalText.textContent = formatCurrency(selectedTotal);
+                    if (cashValueText) cashValueText.textContent = formatCurrency(breakdownEntry.savings);
+                    if (invValueText) invValueText.textContent = formatCurrency(breakdownEntry.investments);
 
                     const rangeText = labels.length > 1
                         ? `${labels[0]} - ${labels[labels.length - 1]}`
@@ -266,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const prevTotal = totalValues[breakdownIndex - 1];
                         const monthlyDelta = selectedTotal - prevTotal;
                         updateDeltaTone(monthlyDeltaNode, monthlyDelta);
-                        if (monthlyDeltaNode) monthlyDeltaNode.textContent = formatSignedEuro(monthlyDelta);
+                        if (monthlyDeltaNode) monthlyDeltaNode.textContent = formatSignedCurrency(monthlyDelta);
                         if (monthlyRateNode) {
                             if (prevTotal !== 0) {
                                 const monthlyRate = (monthlyDelta / prevTotal) * 100;
@@ -284,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const startTotal = totalValues[0] || 0;
                     const periodDelta = selectedTotal - startTotal;
                     updateDeltaTone(periodDeltaNode, periodDelta);
-                    if (periodDeltaNode) periodDeltaNode.textContent = formatSignedEuro(periodDelta);
+                    if (periodDeltaNode) periodDeltaNode.textContent = formatSignedCurrency(periodDelta);
                     if (periodRateNode) {
                         if (startTotal !== 0) {
                             const periodRate = (periodDelta / startTotal) * 100;

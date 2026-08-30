@@ -46,7 +46,7 @@
                     <div class="goal-block-head">
                         <div>
                             <p class="goal-label mb-1">Net Worth</p>
-                            <h6 class="goal-current mb-0">{{ current_net_worth|floatformat:0 }}€</h6>
+                            <h6 class="goal-current mb-0">{{ current_net_worth|floatformat:0 }}{{ request.user_currency_symbol }}</h6>
                         </div>
                         <span class="goal-state
                             {% if stats.nw_progress >= 100 %}is-done
@@ -61,7 +61,7 @@
                             {% endif %}
                         </span>
                     </div>
-                    <p class="goal-target mb-2">Target {{ stats.settings.net_worth_target|floatformat:0 }}€</p>
+                    <p class="goal-target mb-2">Target {{ stats.settings.net_worth_target|floatformat:0 }}{{ request.user_currency_symbol }}</p>
                     <div class="progress goal-progress">
                         <div class="progress-bar goal-progress-bar goal-progress-bar-nw js-progress"
                              role="progressbar"
@@ -72,7 +72,7 @@
                         <span class="goal-percent">
                             {% if stats.nw_progress < 0 %}0.0{% else %}{{ stats.nw_progress|floatformat:1 }}{% endif %}%
                         </span>
-                        <span class="goal-ratio">{{ current_net_worth|floatformat:0 }} / {{ stats.settings.net_worth_target|floatformat:0 }}€</span>
+                        <span class="goal-ratio">{{ current_net_worth|floatformat:0 }} / {{ stats.settings.net_worth_target|floatformat:0 }}{{ request.user_currency_symbol }}</span>
                     </div>
                     <p class="goal-insight mb-0">
                         {% if stats.nw_progress >= 100 %}
@@ -100,7 +100,7 @@
                     <div class="goal-block-head">
                         <div>
                             <p class="goal-label mb-1">Annual Savings</p>
-                            <h6 class="goal-current mb-0">{{ total_annual_savings|floatformat:0 }}€</h6>
+                            <h6 class="goal-current mb-0">{{ total_annual_savings|floatformat:0 }}{{ request.user_currency_symbol }}</h6>
                         </div>
                         <span class="goal-state
                             {% if stats.sav_progress >= 100 %}is-done
@@ -115,7 +115,7 @@
                             {% endif %}
                         </span>
                     </div>
-                    <p class="goal-target mb-2">Target {{ stats.settings.annual_savings_target|floatformat:0 }}€</p>
+                    <p class="goal-target mb-2">Target {{ stats.settings.annual_savings_target|floatformat:0 }}{{ request.user_currency_symbol }}</p>
                     <div class="progress goal-progress">
                         <div class="progress-bar goal-progress-bar goal-progress-bar-sav js-progress"
                              role="progressbar"
@@ -126,7 +126,7 @@
                         <span class="goal-percent">
                             {% if stats.sav_progress < 0 %}0.0{% else %}{{ stats.sav_progress|floatformat:1 }}{% endif %}%
                         </span>
-                        <span class="goal-ratio">{{ total_annual_savings|floatformat:0 }} / {{ stats.settings.annual_savings_target|floatformat:0 }}€</span>
+                        <span class="goal-ratio">{{ total_annual_savings|floatformat:0 }} / {{ stats.settings.annual_savings_target|floatformat:0 }}{{ request.user_currency_symbol }}</span>
                     </div>
                     <p class="goal-insight mb-0">
                         {% if stats.sav_progress >= 100 %}

@@ -5,7 +5,7 @@
         </small>
         
         <h2 class="fw-bold mt-2 mb-0 {% if 'text-white' in color_class %}text-white{% endif %}">
-            {{ value|floatformat:2 }}€
+            {{ value|floatformat:2 }}{{ request.user_currency_symbol }}
         </h2>
 
         {% if sub_value is not None %}

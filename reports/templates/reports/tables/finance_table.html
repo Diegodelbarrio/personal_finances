@@ -20,31 +20,31 @@
     </td>
 
     <td class="num-align text-income fw-bold text-center">
-        {{ m.income|floatformat:2 }} €
+        {{ m.income|floatformat:2 }} {{ request.user_currency_symbol }}
     </td>
 
     <td class="num-align text-muted small text-center">
-        {{ m.fixed|floatformat:2 }} €
+        {{ m.fixed|floatformat:2 }} {{ request.user_currency_symbol }}
     </td>
 
     <td class="num-align text-muted small text-center">
-        {{ m.variable|floatformat:2 }} €
+        {{ m.variable|floatformat:2 }} {{ request.user_currency_symbol }}
     </td>
 
     <td class="num-align text-muted small text-center">
-        {{ m.needs|floatformat:2 }} €
+        {{ m.needs|floatformat:2 }} {{ request.user_currency_symbol }}
     </td>
 
     <td class="num-align text-muted small text-center">
-        {{ m.wants|floatformat:2 }} €
+        {{ m.wants|floatformat:2 }} {{ request.user_currency_symbol }}
     </td>
 
     <td class="num-align text-muted small text-center">
-        {{ m.rule_savings|floatformat:2 }} €
+        {{ m.rule_savings|floatformat:2 }} {{ request.user_currency_symbol }}
     </td>
 
     <td class="num-align text-center fw-bold {% if m.savings >= 0 %}text-success{% else %}text-danger{% endif %}">
-        {{ m.savings|floatformat:2 }} €
+        {{ m.savings|floatformat:2 }} {{ request.user_currency_symbol }}
     </td>
 
     <td class="text-center">
@@ -67,13 +67,13 @@
 <tfoot>
     <tr class="finance-total-row">
         <td class="ps-4 fw-bold text-uppercase small">Annual Total</td>
-        <td class="num-align">{{ report.annual_stats.income|floatformat:2 }} €</td>
-        <td class="num-align">{{ report.annual_stats.fixed_total|floatformat:2 }} €</td>
-        <td class="num-align">{{ report.annual_stats.variable_total|floatformat:2 }} €</td>
-        <td class="num-align">{{ report.annual_stats.needs_total|floatformat:2 }} €</td>
-        <td class="num-align">{{ report.annual_stats.wants_total|floatformat:2 }} €</td>
-        <td class="num-align">{{ report.annual_stats.rule_savings_total|floatformat:2 }} €</td>
-        <td class="num-align fw-bold">{{ report.annual_stats.savings|floatformat:2 }} €</td>
+        <td class="num-align">{{ report.annual_stats.income|floatformat:2 }} {{ request.user_currency_symbol }}</td>
+        <td class="num-align">{{ report.annual_stats.fixed_total|floatformat:2 }} {{ request.user_currency_symbol }}</td>
+        <td class="num-align">{{ report.annual_stats.variable_total|floatformat:2 }} {{ request.user_currency_symbol }}</td>
+        <td class="num-align">{{ report.annual_stats.needs_total|floatformat:2 }} {{ request.user_currency_symbol }}</td>
+        <td class="num-align">{{ report.annual_stats.wants_total|floatformat:2 }} {{ request.user_currency_symbol }}</td>
+        <td class="num-align">{{ report.annual_stats.rule_savings_total|floatformat:2 }} {{ request.user_currency_symbol }}</td>
+        <td class="num-align fw-bold">{{ report.annual_stats.savings|floatformat:2 }} {{ request.user_currency_symbol }}</td>
         <td class="text-center">
             <span class="badge bg-white text-dark fw-bold px-3">
                 {{ report.annual_stats.avg_savings_rate|floatformat:1 }} %
@@ -82,13 +82,13 @@
     </tr>
     <tr class="finance-total-row">
         <td class="ps-4 text-muted small italic">Monthly Avg. ({{ report.active_months }} m)</td>
-        <td class="num-align text-muted small">{{ report.annual_stats.avg_income|floatformat:2 }} €</td>
-        <td class="num-align text-muted small">{{ report.annual_stats.avg_fixed|floatformat:2 }} €</td>
-        <td class="num-align text-muted small">{{ report.annual_stats.avg_variable|floatformat:2 }} €</td>
-        <td class="num-align text-muted small">{{ report.annual_stats.avg_needs|floatformat:2 }} €</td>
-        <td class="num-align text-muted small">{{ report.annual_stats.avg_wants|floatformat:2 }} €</td>
-        <td class="num-align text-muted small">{{ report.annual_stats.avg_rule_savings|floatformat:2 }} €</td>
-        <td class="num-align text-muted small">{{ report.annual_stats.avg_savings|floatformat:2 }} €</td>
+        <td class="num-align text-muted small">{{ report.annual_stats.avg_income|floatformat:2 }} {{ request.user_currency_symbol }}</td>
+        <td class="num-align text-muted small">{{ report.annual_stats.avg_fixed|floatformat:2 }} {{ request.user_currency_symbol }}</td>
+        <td class="num-align text-muted small">{{ report.annual_stats.avg_variable|floatformat:2 }} {{ request.user_currency_symbol }}</td>
+        <td class="num-align text-muted small">{{ report.annual_stats.avg_needs|floatformat:2 }} {{ request.user_currency_symbol }}</td>
+        <td class="num-align text-muted small">{{ report.annual_stats.avg_wants|floatformat:2 }} {{ request.user_currency_symbol }}</td>
+        <td class="num-align text-muted small">{{ report.annual_stats.avg_rule_savings|floatformat:2 }} {{ request.user_currency_symbol }}</td>
+        <td class="num-align text-muted small">{{ report.annual_stats.avg_savings|floatformat:2 }} {{ request.user_currency_symbol }}</td>
         <td></td>
     </tr>
 </tfoot>

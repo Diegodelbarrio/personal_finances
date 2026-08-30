@@ -3,10 +3,7 @@
 
 {% block extra_head %}
 {{ block.super }}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'finances/css/summary.css' %}?v={% now 'U' %}">
+<link rel="stylesheet" href="{% static 'finances/css/summary.css' %}">
 {% endblock extra_head %}
 
 {% block content %}
@@ -16,24 +13,24 @@
             <div>
                 <div class="summary-kicker mb-2">
                     <span class="summary-kicker-dot"></span>
-                    Monthly finances
+                    Monthly Finances
                 </div>
-                <h1 class="summary-title mb-2">Financial Monthly Summary</h1>
+                <h1 class="summary-title mb-2">Monthly Summary</h1>
                 <p class="summary-subtitle mb-0">
-                    Track your monthly cash flow, category distribution, and savings structure in one place.
+                    Cash flow, spending mix, and transaction detail for the selected period.
                 </p>
                 <div class="summary-meta mt-3">
                     <span class="meta-pill">
                         <i class="bi bi-calendar3 me-1"></i>
-                        {% for num, name in months %}{% if num == sel_month %}{{ name }}{% endif %}{% endfor %} {{ sel_year }}
+                        {{ selected_month_name }} {{ sel_year }}
                     </span>
                     <span class="meta-pill">
                         <i class="bi bi-receipt me-1"></i>
-                        {{ transactions|length }} transaction{{ transactions|length|pluralize }}
+                        {{ transaction_count }} transaction{{ transaction_count|pluralize }}
                     </span>
                     <span class="meta-pill">
                         <i class="bi bi-graph-up-arrow me-1"></i>
-                        Previous income: {{ prev_income|floatformat:2 }} €
+                        Previous income: {{ prev_income|floatformat:2 }} {{ request.user_currency_symbol }}
                     </span>
                 </div>
             </div>
@@ -50,10 +47,10 @@
 
                 <div class="summary-actions-row">
                     <div class="dropdown">
-                        <button class="btn summary-btn-period dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <button class="btn summary-btn-period dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false">
                             <i class="bi bi-calendar-event text-muted small"></i> {{ sel_year }}
                         </button>
-                        <ul class="dropdown-menu dropdown-compact shadow-lg rounded-3 border-0">
+                        <ul class="dropdown-menu summary-period-menu shadow-lg">
                             {% for y in years %}
                             <li><a class="dropdown-item {% if y == sel_year %}active{% endif %}" href="?year={{ y }}&month={{ sel_month }}">{{ y }}</a></li>
                             {% empty %}
@@ -62,11 +59,11 @@
                         </ul>
                     </div>
                     <div class="dropdown">
-                        <button class="btn summary-btn-period dropdown-toggle text-capitalize" type="button" data-bs-toggle="dropdown">
+                        <button class="btn summary-btn-period dropdown-toggle text-capitalize" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false">
                             <i class="bi bi-calendar3 text-muted small"></i>
-                            {% for num, name in months %}{% if num == sel_month %}{{ name }}{% endif %}{% endfor %}
+                            {{ selected_month_name }}
                         </button>
-                        <ul class="dropdown-menu dropdown-compact shadow-lg rounded-3 border-0">
+                        <ul class="dropdown-menu summary-period-menu shadow-lg">
                             {% for num, name in months %}
                             <li><a class="dropdown-item text-capitalize {% if num == sel_month %}active{% endif %}" href="?year={{ sel_year }}&month={{ num }}">{{ name }}</a></li>
                             {% empty %}
@@ -106,7 +103,7 @@
                     <h2 class="kpi-value mb-0 {% if kpi.label == 'Total Income' %}text-success{% elif kpi.label == 'Total Expenses' %}text-danger{% elif kpi.label == 'Net Savings' %}{% if kpi.value >= 0 %}text-success{% else %}text-danger{% endif %}{% else %}text-dark{% endif %}">
                         {{ kpi.value|floatformat:2 }}
                     </h2>
-                    <span class="kpi-currency">€</span>
+                    <span class="kpi-currency">{{ request.user_currency_symbol }}</span>
                 </div>
 
                 <div class="kpi-foot mt-auto">
@@ -139,7 +136,7 @@
             <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3">
                 <div>
                     <h5 class="fw-bold mb-1 transactions-title">Transactions</h5>
-                    <p class="transactions-subtitle mb-0">Filter, sort, and review this month activity.</p>
+                    <p class="transactions-subtitle mb-0">{{ selected_month_name }} {{ sel_year }} activity.</p>
                 </div>
 
                 <div class="transactions-toolbar">
@@ -149,12 +146,12 @@
                     </div>
 
                     <div class="dropdown">
-                        <button id="categoryFilterButton" class="btn btn-sm btn-light border rounded-pill px-3 dropdown-toggle shadow-sm fw-bold d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+                        <button id="categoryFilterButton" class="btn btn-sm btn-light border rounded-pill px-3 dropdown-toggle shadow-sm fw-bold d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-boundary="viewport" aria-expanded="false">
                             <i class="bi bi-funnel"></i>
                             Categories
                             <span id="activeFiltersCount" class="badge rounded-pill text-bg-dark d-none">0</span>
                         </button>
-                        <div class="dropdown-menu dropdown-menu-end p-3 shadow-lg border-0 rounded-4 categories-dropdown">
+                        <div class="dropdown-menu dropdown-menu-end p-3 shadow-lg categories-dropdown">
                             <div class="d-grid mb-2">
                                 <button type="button" id="selectAllCats" class="btn btn-sm btn-dark rounded-pill py-1 category-toggle-btn">Clear All</button>
                             </div>
@@ -197,29 +194,31 @@
                         <td class="text-muted small">{{ tx.subcategory.name }}</td>
                         <td class="text-end pe-4 tx-amount fw-bold" data-val="{{ tx.amount|stringformat:'f' }}">
                             <span class="{% if tx.amount > 0 %}text-success{% else %}text-dark{% endif %} tx-amount-text">
-                                {{ tx.amount|floatformat:2 }} €
+                                {{ tx.amount|floatformat:2 }} {{ request.user_currency_symbol }}
                             </span>
                         </td>
                         <td class="text-end pe-4">
-                            <div class="dropdown">
+                            <div class="summary-action-dropdown">
                                 <button
-                                    class="btn btn-sm btn-light border rounded-circle summary-action-btn fo-table-actions-trigger"
+                                    class="btn btn-sm summary-action-btn fo-table-actions-trigger"
                                     type="button"
-                                    data-bs-toggle="dropdown"
+                                    data-summary-action-trigger
+                                    aria-haspopup="menu"
                                     aria-expanded="false"
                                     aria-label="Open actions"
+                                    title="Transaction actions"
                                 >
                                     <i class="bi bi-three-dots-vertical"></i>
                                 </button>
-                                <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0">
+                                <ul class="dropdown-menu dropdown-menu-end shadow-lg summary-action-menu" data-summary-action-menu role="menu">
                                     <li>
-                                        <a href="{% url 'edit_transaction' tx.id %}?next={{ current_path|urlencode }}" class="dropdown-item">
+                                        <a href="{% url 'edit_transaction' tx.id %}?next={{ current_path|urlencode }}" class="dropdown-item" role="menuitem">
                                             <i class="bi bi-pencil-square me-2"></i>Edit
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
-                                        <a href="{% url 'delete_transaction' tx.id %}?next={{ current_path|urlencode }}" class="dropdown-item text-danger">
+                                        <a href="{% url 'delete_transaction' tx.id %}?next={{ current_path|urlencode }}" class="dropdown-item text-danger" role="menuitem">
                                             <i class="bi bi-trash3 me-2"></i>Delete
                                         </a>
                                     </li>
@@ -250,7 +249,7 @@
                 </div>
                 <div class="col-md-4 text-md-end">
                     <span class="small text-muted fw-bold me-2">VISIBLE TOTAL:</span>
-                    <span id="tableTotalAmount" class="h6 fw-bold mb-0">0.00 €</span>
+                    <span id="tableTotalAmount" class="h6 fw-bold mb-0">0.00 {{ request.user_currency_symbol }}</span>
                 </div>
             </div>
         </div>
@@ -305,7 +304,7 @@
                 </div>
 
                 {% if budget_alerts %}
-                <div class="mt-4 p-3 rounded-4 warning-box">
+                <div class="mt-4 p-3 warning-box">
                     <div class="d-flex align-items-start">
                         <i class="bi bi-exclamation-triangle-fill text-warning me-2 mt-1"></i>
                         <div class="small text-muted warning-text">
@@ -319,12 +318,12 @@
                 {% endif %}
 
                 {% if is_incomplete %}
-                <div class="mt-4 p-3 rounded-4 warning-box">
+                <div class="mt-4 p-3 warning-box">
                     <div class="d-flex align-items-start">
                         <i class="bi bi-info-circle-fill text-warning me-2 mt-1"></i>
                         <div class="small text-muted warning-text">
                             <strong class="text-dark">Potential Missing Data:</strong>
-                            Net savings are <span class="text-danger fw-bold">{{ savings_val|floatformat:2 }} €</span>.
+                            Net savings are <span class="text-danger fw-bold">{{ savings_val|floatformat:2 }} {{ request.user_currency_symbol }}</span>.
                             Review recurring incomes and delayed entries for this month.
                         </div>
                     </div>
@@ -348,5 +347,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'finances/js/summary.js' %}?v={% now 'U' %}"></script>
+<script src="{% static 'finances/js/summary.js' %}"></script>
 {% endblock %}

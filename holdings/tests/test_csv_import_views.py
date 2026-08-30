@@ -64,3 +64,23 @@ class HoldingCSVImportViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "account_type must be one of")
         self.assertFalse(AccountBalanceSnapshot.objects.filter(user=self.user).exists())
+
+    def test_import_rejects_currency_different_from_reporting_currency(self):
+        self.client.login(username="diego", password="test1234")
+        csv_file = SimpleUploadedFile(
+            "holding_snapshots_usd.csv",
+            (
+                "date,account_name,institution,account_type,currency,balance\n"
+                "2026-02-28,Dollar Account,Bank,CHECKING,USD,100\n"
+            ).encode("utf-8"),
+            content_type="text/csv",
+        )
+
+        response = self.client.post(
+            reverse("holdings:import_snapshots_csv"),
+            {"csv_file": csv_file},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "must match your reporting currency (EUR)")
+        self.assertFalse(BankAccount.objects.filter(user=self.user).exists())

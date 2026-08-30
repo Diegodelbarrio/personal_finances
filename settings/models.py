@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings  # Importa settings en lugar de User
 from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError
 
 
 class UserSettings(models.Model):
@@ -52,6 +53,46 @@ class UserSettings(models.Model):
 
     def __str__(self):
         return f"Settings of: {self.user.username}"
+
+    def clean(self):
+        super().clean()
+        if not self.pk:
+            return
+
+        previous_currency = (
+            type(self).objects.filter(pk=self.pk).values_list("main_currency", flat=True).first()
+        )
+        if not previous_currency or previous_currency == self.main_currency:
+            return
+
+        from finances.models import Transaction as FinanceTransaction
+        from holdings.models import BankAccount
+        from investments.models import AssetHistory
+        from investments.models import Transaction as InvestmentTransaction
+
+        has_currency_records = (
+            FinanceTransaction.objects.filter(user=self.user).exists()
+            or InvestmentTransaction.objects.filter(user=self.user).exists()
+            or AssetHistory.objects.filter(user=self.user).exists()
+        )
+        has_incompatible_accounts = (
+            BankAccount.objects.filter(user=self.user)
+            .exclude(currency=self.main_currency)
+            .exists()
+        )
+        if has_currency_records or has_incompatible_accounts:
+            raise ValidationError(
+                {
+                    "main_currency": (
+                        "The reporting currency cannot be changed while financial "
+                        "records use the current currency."
+                    )
+                }
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 class SavingsPotentialModel(models.Model):

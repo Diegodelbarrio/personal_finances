@@ -1,6 +1,8 @@
 from unittest.mock import patch
 from datetime import date, datetime, timezone as datetime_timezone
 import json
+import ssl
+import urllib.error
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
@@ -8,6 +10,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from investments.models import Asset, AssetHistory, Transaction
+from core.services import market_watch
 from core.services.live_market import (
     _fetch_coinbase_market_data,
     _fetch_ft_market_data,
@@ -32,6 +35,20 @@ from core.services.market_watch import (
 
 
 User = get_user_model()
+
+
+class MarketTransportSecurityTest(TestCase):
+    @patch("core.services.market_watch.urllib.request.urlopen")
+    def test_certificate_failure_is_not_retried_with_unverified_tls(self, mocked_urlopen):
+        mocked_urlopen.side_effect = urllib.error.URLError(
+            ssl.SSLCertVerificationError("certificate verify failed")
+        )
+
+        with self.assertRaises(urllib.error.URLError):
+            market_watch._open_json_url("https://example.com/data")
+
+        mocked_urlopen.assert_called_once()
+        self.assertNotIn("context", mocked_urlopen.call_args.kwargs)
 
 
 class MarketWatchServiceTests(TestCase):
@@ -152,6 +169,7 @@ class PortfolioMarketServiceTests(TestCase):
             name="Family Investments",
             category="INDEX_FUND",
             platform="Family",
+            exclude_from_totals=True,
         )
 
         AssetHistory.objects.create(

@@ -1,4 +1,5 @@
 .venv/
+.venv-python39-backup/
 *.pyc
 __pycache__/
 .env
@@ -8,3 +9,10 @@ db.sqlite3
 staticfiles/
 media/
 backups/
+.coverage
+coverage.xml
+htmlcov/
+
+# Personal financial imports must never be versioned.
+private_data/
+scripts/data_imports/*.csv

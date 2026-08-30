@@ -284,6 +284,16 @@
                             <span>Financial Settings</span>
                             <i class="bi bi-chevron-right"></i>
                         </a>
+                        <a href="{% url 'users:export_account_data' %}" class="profile-action-link">
+                            <i class="bi bi-download"></i>
+                            <span>Download My Data</span>
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                        <a href="{% url 'users:delete_account' %}" class="profile-action-link text-danger">
+                            <i class="bi bi-trash3"></i>
+                            <span>Delete Account</span>
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
                     </div>
                 </section>
             </aside>
@@ -438,7 +448,16 @@ function serializeProfileForm(form) {
     var entries = [];
 
     data.forEach(function (value, key) {
-        if (key !== "csrfmiddlewaretoken") {
+        if (key === "csrfmiddlewaretoken") {
+            return;
+        }
+
+        if (typeof File !== "undefined" && value instanceof File) {
+            var fileFingerprint = value.name
+                ? [value.name, value.size, value.type, value.lastModified].join(":")
+                : "empty";
+            entries.push(key + "=file:" + fileFingerprint);
+        } else {
             entries.push(key + "=" + value);
         }
     });

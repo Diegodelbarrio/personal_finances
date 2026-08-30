@@ -39,17 +39,17 @@
                             {% for val in sub.monthly_data %}
                             <td class="month-col num-align">
                                 <div class="{% if val > 0 %}text-dark{% else %}text-muted opacity-50{% endif %}">
-                                    {% if val > 0 %}{{ val|floatformat:0 }}€{% else %}-{% endif %}
+                                    {% if val > 0 %}{{ val|floatformat:0 }}{{ request.user_currency_symbol }}{% else %}-{% endif %}
                                 </div>
                             </td>
                             {% endfor %}
 
                             <td class="total-col num-align">
                                 <div class="fw-bold text-success">
-                                    {{ sub.total_ytd|floatformat:2 }}€
+                                    {{ sub.total_ytd|floatformat:2 }}{{ request.user_currency_symbol }}
                                 </div>
                                 <div class="roi-sub text-muted fw-bold">
-                                    Avg: {{ sub.monthly_avg|floatformat:0 }}€/m
+                                    Avg: {{ sub.monthly_avg|floatformat:0 }}{{ request.user_currency_symbol }}/m
                                 </div>
                             </td>
                         </tr>
@@ -64,17 +64,17 @@
                         {% for val in category.monthly_data %}
                         <td class="month-col num-align">
                             <div class="{% if val > 0 %}text-dark{% else %}text-muted opacity-50{% endif %}">
-                                {% if val > 0 %}{{ val|floatformat:0 }}€{% else %}-{% endif %}
+                                {% if val > 0 %}{{ val|floatformat:0 }}{{ request.user_currency_symbol }}{% else %}-{% endif %}
                             </div>
                         </td>
                         {% endfor %}
 
                         <td class="total-col num-align">
                             <div class="fw-bold text-success">
-                                {{ category.total_ytd|floatformat:2 }}€
+                                {{ category.total_ytd|floatformat:2 }}{{ request.user_currency_symbol }}
                             </div>
                             <div class="roi-sub text-muted fw-bold">
-                                Avg: {{ category.monthly_avg|floatformat:0 }}€/m
+                                Avg: {{ category.monthly_avg|floatformat:0 }}{{ request.user_currency_symbol }}/m
                             </div>
                         </td>
                     </tr>
@@ -95,15 +95,15 @@
                     </td>
                     {% for m in report.monthly_data %}
                         <td class="month-col num-align">
-                            <div class="fw-bold text-dark">{{ m.income|floatformat:0 }}€</div>
+                            <div class="fw-bold text-dark">{{ m.income|floatformat:0 }}{{ request.user_currency_symbol }}</div>
                         </td>
                     {% endfor %}
                     <td class="total-col num-align">
                         <div class="fw-bold text-success" style="font-size: 1.1rem;">
-                            {{ report.annual_stats.income|floatformat:2 }}€
+                            {{ report.annual_stats.income|floatformat:2 }}{{ request.user_currency_symbol }}
                         </div>
                         <div class="roi-sub text-dark fw-bold">
-                            Avg: {{ report.annual_stats.avg_income|floatformat:2 }}€/m
+                            Avg: {{ report.annual_stats.avg_income|floatformat:2 }}{{ request.user_currency_symbol }}/m
                         </div>
                     </td>
                 </tr>

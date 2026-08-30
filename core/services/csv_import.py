@@ -5,8 +5,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
+from django.conf import settings
 from django.db import transaction as db_transaction
 
+from core.currency import get_user_currency
 from finances.models import Location, SubCategory, Transaction as FinanceTransaction
 from holdings.models import AccountBalanceSnapshot, BankAccount
 from investments.models import (
@@ -92,7 +94,7 @@ HOLDING_SNAPSHOTS_CSV_FORMAT = {
         ("account_name", "Yes", "Bank account display name."),
         ("institution", "Yes", "Bank or platform."),
         ("account_type", "Yes", "CHECKING, SAVINGS, CASH or DEBT."),
-        ("currency", "No", "3-letter code. Default: EUR."),
+        ("currency", "No", "3-letter reporting currency. Defaults to your profile setting."),
         ("balance", "Yes", "Snapshot balance."),
         ("interest_earned", "No", "Monthly interest amount. Default: 0."),
     ],
@@ -497,6 +499,7 @@ def import_holding_snapshots_csv(user, uploaded_file):
         return CSVImportResult(success=False, errors=errors)
 
     account_type_choices = {choice for choice, _ in BankAccount.ACCOUNT_TYPES}
+    reporting_currency = get_user_currency(user)
 
     account_index = defaultdict(list)
     for account in BankAccount.objects.filter(user=user):
@@ -511,7 +514,7 @@ def import_holding_snapshots_csv(user, uploaded_file):
         account_name = row.get("account_name", "").strip()
         institution = row.get("institution", "").strip()
         account_type = row.get("account_type", "").strip().upper()
-        currency = (row.get("currency", "").strip().upper() or "EUR")
+        currency = row.get("currency", "").strip().upper() or reporting_currency
 
         parsed_date = _parse_date(row.get("date"), row_number, "date", row_errors)
         balance = _parse_decimal(
@@ -546,6 +549,16 @@ def import_holding_snapshots_csv(user, uploaded_file):
             )
         if len(currency) != 3:
             row_errors.append(_row_error(row_number, "currency must have 3 characters."))
+        elif currency != reporting_currency:
+            row_errors.append(
+                _row_error(
+                    row_number,
+                    (
+                        f"currency must match your reporting currency ({reporting_currency}); "
+                        "automatic conversion is not supported."
+                    ),
+                )
+            )
         if (
             parsed_date is None
             or balance is None
@@ -553,6 +566,7 @@ def import_holding_snapshots_csv(user, uploaded_file):
             or not institution
             or account_type not in account_type_choices
             or len(currency) != 3
+            or currency != reporting_currency
         ):
             continue
 
@@ -654,7 +668,10 @@ def import_holding_snapshots_csv(user, uploaded_file):
 
 
 def _read_csv_rows(uploaded_file, *, required_columns, optional_columns):
-    payload = uploaded_file.read()
+    max_bytes = settings.CSV_IMPORT_MAX_BYTES
+    payload = uploaded_file.read(max_bytes + 1)
+    if len(payload) > max_bytes:
+        return None, ["CSV file exceeds the configured size limit."]
 
     try:
         text = payload.decode("utf-8-sig")
@@ -665,6 +682,7 @@ def _read_csv_rows(uploaded_file, *, required_columns, optional_columns):
         return None, ["CSV file is empty."]
 
     delimiter = _detect_delimiter(text)
+    csv.field_size_limit(settings.CSV_IMPORT_MAX_FIELD_LENGTH)
     reader = csv.DictReader(io.StringIO(text), delimiter=delimiter)
     fieldnames = reader.fieldnames or []
     normalized_headers = [_normalize_header(name) for name in fieldnames if name is not None]
@@ -694,17 +712,22 @@ def _read_csv_rows(uploaded_file, *, required_columns, optional_columns):
         return None, errors
 
     rows = []
-    for row_number, raw_row in enumerate(reader, start=2):
-        normalized_row = {}
-        for key, value in raw_row.items():
-            normalized_key = _normalize_header(key)
-            if not normalized_key:
-                continue
-            normalized_row[normalized_key] = (value or "").strip()
+    try:
+        for row_number, raw_row in enumerate(reader, start=2):
+            normalized_row = {}
+            for key, value in raw_row.items():
+                normalized_key = _normalize_header(key)
+                if not normalized_key:
+                    continue
+                normalized_row[normalized_key] = (value or "").strip()
 
-        if not any(normalized_row.values()):
-            continue
-        rows.append((row_number, normalized_row))
+            if not any(normalized_row.values()):
+                continue
+            if len(rows) >= settings.CSV_IMPORT_MAX_ROWS:
+                return None, ["CSV file exceeds the configured row limit."]
+            rows.append((row_number, normalized_row))
+    except csv.Error:
+        return None, ["CSV contains a field that exceeds the configured limit."]
 
     if not rows:
         return None, ["CSV file has no data rows."]

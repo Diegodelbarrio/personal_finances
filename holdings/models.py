@@ -1,5 +1,8 @@
 from django.db import models
 from django.conf import settings # Importante para referenciar al usuario
+from django.core.exceptions import ValidationError
+
+from core.currency import CURRENCY_SYMBOLS, get_user_currency
 
 class BankAccount(models.Model):
     # Relación con el usuario: Cada cuenta tiene un dueño
@@ -35,6 +38,27 @@ class BankAccount(models.Model):
         # Un usuario no puede repetir el nombre de cuenta en la misma institución
         unique_together = ('user', 'name', 'institution')
 
+    def clean(self):
+        super().clean()
+        self.currency = (self.currency or "").strip().upper()
+        if self.currency not in CURRENCY_SYMBOLS:
+            raise ValidationError(
+                {"currency": "Choose one of the supported reporting currencies: EUR or USD."}
+            )
+        if self.user_id and self.currency != get_user_currency(self.user):
+            raise ValidationError(
+                {
+                    "currency": (
+                        "Account currency must match your reporting currency. "
+                        "Currency conversion is not performed automatically."
+                    )
+                }
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
 class AccountBalanceSnapshot(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
@@ -59,3 +83,14 @@ class AccountBalanceSnapshot(models.Model):
 
     def __str__(self):
         return f"{self.account.name} - {self.date} - {self.balance} {self.account.currency}"
+
+    def clean(self):
+        super().clean()
+        if self.account_id and self.user_id and self.user_id != self.account.user_id:
+            raise ValidationError(
+                {"user": "Snapshot owner must match its account owner."}
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)

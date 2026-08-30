@@ -163,20 +163,22 @@ const PortfolioMarketModule = {
         if (window.FinancialFormatter && typeof window.FinancialFormatter.currency === "function") {
             return window.FinancialFormatter.currency(value);
         }
-        return new Intl.NumberFormat("de-DE", {
+        return new Intl.NumberFormat(document.documentElement.lang || "en-GB", {
             style: "currency",
-            currency: "EUR",
+            currency: document.documentElement.dataset.currency || "EUR",
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
         }).format(value || 0);
     },
 
     formatCompactCurrency(value) {
-        const formatter = new Intl.NumberFormat("de-DE", {
+        const formatter = new Intl.NumberFormat(document.documentElement.lang || "en-GB", {
+            style: "currency",
+            currency: document.documentElement.dataset.currency || "EUR",
             notation: "compact",
             maximumFractionDigits: 1,
         });
-        return `${formatter.format(value || 0)}€`;
+        return formatter.format(value || 0);
     },
 
     hexToRgba(hex, opacity) {
@@ -294,7 +296,7 @@ const LiveMarketModule = {
                     y: {
                         grid: { color: "rgba(148, 163, 184, 0.16)" },
                         ticks: {
-                            callback: (value) => `${this.payload.currency_symbol || ""}${Number(value).toLocaleString("de-DE")}`,
+                            callback: (value) => `${this.payload.currency_symbol || ""}${Number(value).toLocaleString(document.documentElement.lang || "en-GB")}`,
                         },
                     },
                 },
@@ -475,10 +477,13 @@ const LiveMarketModule = {
     },
 
     formatMarketPrice(value) {
-        const amount = Number(value || 0).toLocaleString("de-DE", {
+        const amount = Number(value || 0).toLocaleString(
+            document.documentElement.lang || "en-GB",
+            {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
-        });
+            },
+        );
         return `${this.payload.currency_symbol || ""}${amount}`;
     },
 

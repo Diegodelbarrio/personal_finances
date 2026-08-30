@@ -11,7 +11,7 @@ Aplicacion Django para gestion de finanzas, inversiones, cuentas bancarias y rep
 
 ## Requisitos
 
-- Python 3.9+
+- Python 3.12 (version fijada en `.python-version`)
 - PostgreSQL (recomendado en produccion)
 
 ## Instalacion local
@@ -47,6 +47,10 @@ App local:
 - `CSRF_TRUSTED_ORIGINS`: orígenes CSRF permitidos separados por coma.
 - `DATABASE_URL`: conexion completa recomendada para cloud.
 - `DB_*`: fallback si no usas `DATABASE_URL`.
+- `SITE_URL`: URL publica exacta de la aplicacion.
+- `ACCOUNT_ALLOW_REGISTRATION`: mantenla en `False` hasta abrir el alta publica.
+- `ACCOUNT_EMAIL_VERIFICATION`: usa `mandatory` en produccion.
+- `CSV_IMPORT_MAX_*` y `FILE_UPLOAD_MAX_MEMORY_SIZE`: limites de importacion y subida.
 - `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`.
 - `SECURE_HSTS_SECONDS`, `SECURE_HSTS_INCLUDE_SUBDOMAINS`, `SECURE_HSTS_PRELOAD`.
 
@@ -119,6 +123,32 @@ gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
 ```txt
 web: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
 ```
+
+El endpoint `GET /health/` comprueba que el proceso web y la base de datos responden.
+
+## Desarrollo y controles de calidad
+
+Instala las herramientas de desarrollo y ejecuta los mismos controles que CI:
+
+```bash
+pip install -r requirements-dev.txt
+ruff check .
+python manage.py makemigrations --check --dry-run
+coverage run manage.py test
+coverage report
+pip-audit -r requirements.txt
+```
+
+GitHub Actions repite estos controles con PostgreSQL 16, valida la configuracion de
+produccion y comprueba que los archivos estaticos se pueden construir.
+
+## Privacidad de datos financieros
+
+Los CSV reales de importacion deben guardarse solo en `private_data/data_imports/`.
+La carpeta esta ignorada por Git. Si alguna vez se publicaron datos reales en un
+repositorio remoto, eliminarlos del ultimo commit no basta: hay que rotar cualquier
+secreto relacionado y limpiar el historial remoto mediante un procedimiento acordado
+con todos los colaboradores.
 
 ## Acceso para familia/amigos
 

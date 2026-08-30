@@ -17,3 +17,18 @@
     color: #999;
     padding-bottom: 15px;
 }
+
+@media (max-width: 575.98px) {
+    #searchContainer {
+        flex: 0 0 100%;
+        margin-left: 0 !important;
+        width: 100%;
+    }
+
+    #searchContainer .dataTables_filter,
+    #searchContainer label,
+    #searchContainer input {
+        display: block;
+        width: 100%;
+    }
+}

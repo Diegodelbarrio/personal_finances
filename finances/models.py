@@ -1,6 +1,5 @@
 from django.db import models
 from django.conf import settings
-from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 
 class Category(models.Model):
@@ -193,6 +192,10 @@ class SubCategory(models.Model):
 
         if not self.parent_category_id:
             return
+        if self.user_id and self.user_id != self.parent_category.user_id:
+            raise ValidationError(
+                {"user": "Subcategory owner must match its parent category owner."}
+            )
         if self.parent_category.transaction_type == Category.TransactionType.INCOME:
             return
 
@@ -202,7 +205,7 @@ class SubCategory(models.Model):
             raise ValidationError({"expense_nature": "Expense subcategories need an expense nature."})
 
     def save(self, *args, **kwargs):
-        self.apply_budget_defaults()
+        self.full_clean()
         super().save(*args, **kwargs)
 
 class Location(models.Model):
@@ -228,16 +231,38 @@ class Transaction(models.Model):
         related_name='finances_transactions'
     )
     date = models.DateField()
-    amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
     description = models.TextField(blank=True)
     
-    subcategory = models.ForeignKey(SubCategory, on_delete=models.PROTECT, related_name='transactions')
+    subcategory = models.ForeignKey(SubCategory, on_delete=models.RESTRICT, related_name='transactions')
     location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         ordering = ['-date']
 
+    def clean(self):
+        super().clean()
+        if (
+            self.subcategory_id
+            and self.user_id
+            and self.user_id != self.subcategory.user_id
+        ):
+            raise ValidationError(
+                {"user": "Transaction owner must match its subcategory owner."}
+            )
+        if (
+            self.location_id
+            and self.user_id
+            and self.user_id != self.location.user_id
+        ):
+            raise ValidationError(
+                {"location": "Transaction location must belong to the same user."}
+            )
+        if self.amount == 0:
+            raise ValidationError({"amount": "Amount must be greater than zero."})
+
     def save(self, *args, **kwargs):
+        self.full_clean()
         category_type = self.subcategory.parent_category.transaction_type
         self.amount = -abs(self.amount) if category_type == Category.TransactionType.EXPENSE else abs(self.amount)
         super().save(*args, **kwargs)

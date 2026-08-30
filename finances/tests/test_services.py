@@ -1,9 +1,15 @@
 from datetime import date
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.test import TestCase
+
+from holdings.models import AccountBalanceSnapshot, BankAccount
 
 from ..models import Transaction, Category, SubCategory
 from ..services import queries, metrics
+from ..services.selectors import get_emergency_fund_status
 
 User = get_user_model()
 
@@ -193,3 +199,62 @@ class FinancesServicesTest(TestCase):
         self.assertAlmostEqual(float(stats["needs_pct"]), 45.0)
         self.assertAlmostEqual(float(stats["wants_pct"]), 8.333333333333334)
         self.assertAlmostEqual(float(stats["savings_pct"]), 46.666666666666664)
+
+    @patch("finances.services.selectors.timezone.localdate", return_value=date(2026, 8, 30))
+    def test_emergency_fund_uses_rolling_months_with_expense_data(self, _localdate):
+        account = BankAccount.objects.create(
+            user=self.user,
+            name="Emergency Fund",
+            institution="Test Bank",
+            account_type="SAVINGS",
+        )
+        AccountBalanceSnapshot.objects.create(
+            user=self.user,
+            account=account,
+            date=date(2026, 8, 29),
+            balance=9000,
+        )
+        Transaction.objects.create(
+            user=self.user,
+            amount=300,
+            subcategory=self.sub_food,
+            date=date(2026, 1, 10),
+        )
+        Transaction.objects.create(
+            user=self.user,
+            amount=600,
+            subcategory=self.sub_food,
+            date=date(2026, 8, 10),
+        )
+        Transaction.objects.create(
+            user=self.user,
+            amount=1200,
+            subcategory=self.sub_food,
+            date=date(2025, 8, 10),
+        )
+
+        status = get_emergency_fund_status(self.user)
+
+        self.assertEqual(status["months_used"], 2)
+        self.assertEqual(status["avg_expenses"], 450)
+        self.assertEqual(status["target_cash"], 2700)
+        self.assertEqual(status["months_covered"], 20)
+        self.assertEqual(status["calc_period_label"], "Sep 2025–Aug 2026")
+
+    def test_models_reject_cross_user_finance_relationships(self):
+        other_user = User.objects.create_user(username="owner2", password="password123")
+
+        with self.assertRaises(ValidationError):
+            SubCategory.objects.create(
+                user=other_user,
+                name="Invalid ownership",
+                parent_category=self.cat_expense_var,
+            )
+
+        with self.assertRaises(ValidationError):
+            Transaction.objects.create(
+                user=other_user,
+                amount=10,
+                subcategory=self.sub_food,
+                date=date(2026, 8, 1),
+            )

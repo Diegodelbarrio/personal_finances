@@ -15,6 +15,7 @@ const SummaryModule = {
     init: function() {
         this.setupCharts();
         this.initTransactionTable();
+        this.initActionMenus();
     },
 
     setupCharts: function() {
@@ -82,7 +83,13 @@ const SummaryModule = {
     },
 
     buildCategoryFilters: function(container) {
-        const categories = [...new Set(this.tableState.rows.map(row => row.dataset.cat.trim()))].sort();
+        const categories = [
+            ...new Set(
+                this.tableState.rows
+                    .map(row => this.getRowCategory(row))
+                    .filter(Boolean)
+            )
+        ].sort();
 
         if (!categories.length) {
             const empty = document.createElement("p");
@@ -141,8 +148,8 @@ const SummaryModule = {
 
         state.filteredRows.sort((a, b) => {
             if (column === "category") {
-                const valA = a.dataset.cat.toLowerCase();
-                const valB = b.dataset.cat.toLowerCase();
+                const valA = this.getRowCategory(a).toLowerCase();
+                const valB = this.getRowCategory(b).toLowerCase();
                 if (window.FinOrbitTables && typeof window.FinOrbitTables.compareValues === "function") {
                     return window.FinOrbitTables.compareValues(valA, valB, state.sortState.ascending);
                 }
@@ -169,6 +176,8 @@ const SummaryModule = {
     },
 
     updateTable: function() {
+        this.closeActionMenu();
+
         const state = this.tableState;
         const tableBody = document.getElementById("tableBody");
         const paginationInfo = document.getElementById("paginationInfo");
@@ -386,7 +395,7 @@ const SummaryModule = {
         const hasCategoryFilters = checkboxes.length > 0;
 
         state.filteredRows = state.rows.filter(row => {
-            const matchesCategory = !hasCategoryFilters || activeCats.includes(row.dataset.cat.trim());
+            const matchesCategory = !hasCategoryFilters || activeCats.includes(this.getRowCategory(row));
             const matchesSearch = row.innerText.toLowerCase().includes(searchTerm);
             return matchesCategory && matchesSearch;
         });
@@ -435,6 +444,112 @@ const SummaryModule = {
             .replace(/^-+|-+$/g, "");
 
         return normalized || "category";
+    },
+
+    getRowCategory: function(row) {
+        return ((row && row.dataset && row.dataset.cat) || "").trim();
+    },
+
+    initActionMenus: function() {
+        document.querySelectorAll("[data-summary-action-trigger]").forEach(trigger => {
+            if (trigger.dataset.summaryActionBound === "true") {
+                return;
+            }
+
+            trigger.dataset.summaryActionBound = "true";
+            trigger.addEventListener("click", event => {
+                event.preventDefault();
+                event.stopPropagation();
+                this.toggleActionMenu(trigger);
+            });
+        });
+
+        if (this._actionMenuEventsBound) {
+            return;
+        }
+
+        this._actionMenuEventsBound = true;
+        document.addEventListener("click", () => this.closeActionMenu());
+        document.addEventListener("keydown", event => {
+            if (event.key === "Escape") {
+                this.closeActionMenu();
+            }
+        });
+        window.addEventListener("scroll", () => this.closeActionMenu(), { passive: true });
+        window.addEventListener("resize", () => this.closeActionMenu(), { passive: true });
+    },
+
+    toggleActionMenu: function(trigger) {
+        if (this.activeActionTrigger === trigger) {
+            this.closeActionMenu();
+            return;
+        }
+
+        this.closeActionMenu();
+
+        const wrapper = trigger.closest(".summary-action-dropdown");
+        const menu = wrapper ? wrapper.querySelector("[data-summary-action-menu]") : null;
+        if (!menu) {
+            return;
+        }
+
+        const placeholder = document.createComment("summary-action-menu-placeholder");
+        menu.parentNode.insertBefore(placeholder, menu);
+        document.body.appendChild(menu);
+
+        menu.classList.add("show", "summary-action-menu-floating");
+        menu.style.visibility = "hidden";
+        menu.style.left = "0px";
+        menu.style.top = "0px";
+
+        const triggerRect = trigger.getBoundingClientRect();
+        const menuRect = menu.getBoundingClientRect();
+        const gap = 8;
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+
+        let left = triggerRect.right - menuRect.width;
+        left = Math.max(gap, Math.min(left, viewportWidth - menuRect.width - gap));
+
+        let top = triggerRect.bottom + gap;
+        if (top + menuRect.height > viewportHeight - gap) {
+            top = triggerRect.top - menuRect.height - gap;
+        }
+        top = Math.max(gap, Math.min(top, viewportHeight - menuRect.height - gap));
+
+        menu.style.left = `${Math.round(left)}px`;
+        menu.style.top = `${Math.round(top)}px`;
+        menu.style.visibility = "visible";
+
+        trigger.setAttribute("aria-expanded", "true");
+        this.activeActionTrigger = trigger;
+        this.activeActionMenu = menu;
+        this.activeActionPlaceholder = placeholder;
+    },
+
+    closeActionMenu: function() {
+        if (!this.activeActionMenu) {
+            return;
+        }
+
+        this.activeActionMenu.classList.remove("show", "summary-action-menu-floating");
+        this.activeActionMenu.removeAttribute("style");
+
+        if (this.activeActionPlaceholder && this.activeActionPlaceholder.parentNode) {
+            this.activeActionPlaceholder.parentNode.insertBefore(
+                this.activeActionMenu,
+                this.activeActionPlaceholder
+            );
+            this.activeActionPlaceholder.remove();
+        }
+
+        if (this.activeActionTrigger) {
+            this.activeActionTrigger.setAttribute("aria-expanded", "false");
+        }
+
+        this.activeActionMenu = null;
+        this.activeActionTrigger = null;
+        this.activeActionPlaceholder = null;
     },
 
     updateVisibleCounter: function(count) {

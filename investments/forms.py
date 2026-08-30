@@ -1,13 +1,21 @@
 from django import forms
 from django.utils import timezone
 
+from core.currency import get_user_currency
 from .models import Asset, AssetHistory, Transaction
 
 
 class AssetForm(forms.ModelForm):
     class Meta:
         model = Asset
-        fields = ["name", "isin", "market_symbol", "category", "platform"]
+        fields = [
+            "name",
+            "isin",
+            "market_symbol",
+            "category",
+            "platform",
+            "exclude_from_totals",
+        ]
         widgets = {
             "name": forms.TextInput(
                 attrs={
@@ -38,6 +46,9 @@ class AssetForm(forms.ModelForm):
                     "maxlength": "50",
                 }
             ),
+            "exclude_from_totals": forms.CheckboxInput(
+                attrs={"class": "form-check-input"}
+            ),
         }
 
     def __init__(self, *args, user, **kwargs):
@@ -48,6 +59,7 @@ class AssetForm(forms.ModelForm):
         self.fields["market_symbol"].label = "Market Symbol"
         self.fields["category"].label = "Category"
         self.fields["platform"].label = "Platform"
+        self.fields["exclude_from_totals"].label = "Exclude from portfolio totals"
 
     def clean_name(self):
         name = self.cleaned_data["name"].strip()
@@ -121,7 +133,7 @@ class InvestmentTransactionForm(forms.ModelForm):
         self.fields["action"].label = "Action"
         self.fields["shares"].label = "Shares"
         self.fields["price_per_share"].label = "Price per Share"
-        self.fields["amount"].label = "Total (€) Invested"
+        self.fields["amount"].label = f"Total Invested ({get_user_currency(user)})"
         self.fields["notes"].label = "Comments"
         self.fields["asset"].queryset = Asset.objects.filter(user=user).order_by("name")
         self.fields["asset"].label_from_instance = lambda obj: obj.name
@@ -190,7 +202,7 @@ class AssetHistoryForm(forms.ModelForm):
         self.user = user
         self.fields["asset"].label = "Asset"
         self.fields["date"].label = "Date of Record"
-        self.fields["total_value"].label = "Total Market Value (€)"
+        self.fields["total_value"].label = f"Total Market Value ({get_user_currency(user)})"
         self.fields["asset"].queryset = Asset.objects.filter(user=user).order_by("name")
         self.fields["asset"].label_from_instance = lambda obj: obj.name
         self.initial.setdefault("date", timezone.localdate())

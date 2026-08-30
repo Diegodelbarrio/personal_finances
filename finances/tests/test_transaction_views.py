@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from finances.models import Category, Location, SubCategory, Transaction
 
@@ -134,3 +135,27 @@ class TransactionViewsTest(TestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertTrue(Transaction.objects.filter(id=foreign_tx.id).exists())
+
+    def test_summary_handles_invalid_period_query_params(self):
+        self.client.login(username="diego", password="test1234")
+
+        response = self.client.get(reverse("summary"), {"year": "invalid", "month": "99"})
+
+        now = timezone.now()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["sel_year"], now.year)
+        self.assertEqual(response.context["sel_month"], now.month)
+        self.assertEqual(len(response.context["months"]), 12)
+        self.assertEqual(response.context["selected_month_name"], now.strftime("%B"))
+
+    def test_summary_includes_requested_empty_year_and_all_months(self):
+        self.client.login(username="diego", password="test1234")
+
+        response = self.client.get(reverse("summary"), {"year": "2035", "month": "1"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(2035, response.context["years"])
+        self.assertEqual(response.context["sel_year"], 2035)
+        self.assertEqual(response.context["sel_month"], 1)
+        self.assertEqual(response.context["selected_month_name"], "January")
+        self.assertEqual(len(response.context["months"]), 12)

@@ -44,17 +44,17 @@
                         {% for val in category.monthly_data %}
                             <td class="month-col num-align">
                                 <div class="{% if val > 0 %}text-dark{% else %}text-muted opacity-50{% endif %} ">
-                                    {% if val > 0 %}{{ val|floatformat:0 }}€{% else %}-{% endif %}
+                                    {% if val > 0 %}{{ val|floatformat:0 }}{{ request.user_currency_symbol }}{% else %}-{% endif %}
                                 </div>
                             </td>
                         {% endfor %}
                         <td class="total-col num-align">
                             <div class="fw-bold text-primary">
-                                {{ category.total_ytd|floatformat:2 }}€
+                                {{ category.total_ytd|floatformat:2 }}{{ request.user_currency_symbol }}
                             </div>
                             
                             <div class="roi-sub text-muted fw-bold">
-                                Avg: {{ category.monthly_avg|floatformat:2 }}€/m
+                                Avg: {{ category.monthly_avg|floatformat:2 }}{{ request.user_currency_symbol }}/m
                             </div>
                             <div class="roi-sub text-muted small opacity-75">
                                 {{ category.weight|floatformat:1 }}% of total
@@ -74,11 +74,11 @@
                             </td>
                             {% for val in sub.monthly_data %}
                                 <td class="month-col num-align">
-                                    <div class="text-muted small opacity-75">{% if val > 0 %}{{ val|floatformat:0 }}€{% else %}-{% endif %}</div>
+                                    <div class="text-muted small opacity-75">{% if val > 0 %}{{ val|floatformat:0 }}{{ request.user_currency_symbol }}{% else %}-{% endif %}</div>
                                 </td>
                             {% endfor %}
                             <td class="total-col num-align">
-                                <div class="text-dark small fw-semibold">{{ sub.total_ytd|floatformat:2 }}€</div>
+                                <div class="text-dark small fw-semibold">{{ sub.total_ytd|floatformat:2 }}{{ request.user_currency_symbol }}</div>
                             </td>
                         </tr>
                         {% if sub.trips %}
@@ -89,7 +89,7 @@
                                 </td>
                                 <td colspan="{{ report.month_names|length }}" class="text-center text-muted small bg-light opacity-25"></td>
                                 <td class="total-col num-align">
-                                    <div class="text-dark small">{{ trip.total|floatformat:2 }}€</div>
+                                    <div class="text-dark small">{{ trip.total|floatformat:2 }}{{ request.user_currency_symbol }}</div>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -105,16 +105,16 @@
                         </td>
                         {% for m in report.monthly_data %}
                             <td class="month-col num-align">
-                                <div class="fw-bold text-dark">{{ m.expenses|floatformat:0 }}€</div>
+                                <div class="fw-bold text-dark">{{ m.expenses|floatformat:0 }}{{ request.user_currency_symbol }}</div>
                                 <div class="roi-sub text-transparent"></div>
                             </td>
                         {% endfor %}
                         <td class="total-col num-align">
                             <div class="fw-bold text-danger" style="font-size: 1.1rem;">
-                                {{ report.annual_stats.expenses|floatformat:2 }}€
+                                {{ report.annual_stats.expenses|floatformat:2 }}{{ request.user_currency_symbol }}
                             </div>
                             <div class="roi-sub text-dark fw-bold">
-                                Avg: {{ report.annual_stats.avg_expenses|floatformat:2 }}€/m
+                                Avg: {{ report.annual_stats.avg_expenses|floatformat:2 }}{{ request.user_currency_symbol }}/m
                             </div>
                         </td>
                     </tr>

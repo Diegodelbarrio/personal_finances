@@ -153,3 +153,28 @@ class SettingsForm(forms.ModelForm):
             self.add_error("retirement_age", "Choose an age between 18 and 100.")
 
         return cleaned_data
+
+    def clean_main_currency(self):
+        currency = self.cleaned_data["main_currency"]
+        if not self.instance.pk or currency == self.instance.main_currency:
+            return currency
+
+        from finances.models import Transaction as FinanceTransaction
+        from holdings.models import BankAccount
+        from investments.models import AssetHistory
+        from investments.models import Transaction as InvestmentTransaction
+
+        user = self.instance.user
+        has_currency_records = (
+            FinanceTransaction.objects.filter(user=user).exists()
+            or InvestmentTransaction.objects.filter(user=user).exists()
+            or AssetHistory.objects.filter(user=user).exists()
+        )
+        has_incompatible_accounts = (
+            BankAccount.objects.filter(user=user).exclude(currency=currency).exists()
+        )
+        if has_currency_records or has_incompatible_accounts:
+            raise forms.ValidationError(
+                "The reporting currency cannot be changed while financial records use the current currency."
+            )
+        return currency

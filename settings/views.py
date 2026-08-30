@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.shortcuts import redirect, render
 
 from .forms import SettingsForm
+from core.currency import get_currency_display_suffix
 from settings.services.api import SettingsService
 
 
@@ -33,7 +34,7 @@ def settings_home(request):
         current_net_worth=phase3_data["simulator"]["current_net_worth"],
         current_annual_savings=phase3_data["snapshot"]["window_total_savings"],
     )
-    currency_symbol = "$" if user_settings.main_currency == "USD" else "€"
+    currency_symbol = get_currency_display_suffix(user_settings.main_currency)
 
     context = {
         'form': form,

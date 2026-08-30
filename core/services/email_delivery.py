@@ -170,7 +170,9 @@ def send_marketing_email(
             subject=_prefixed_subject(subject),
             body=text_body,
             from_email=from_email or settings.EMAIL_MARKETING_FROM_EMAIL,
-            to=batch,
+            # Never disclose campaign recipients to one another.
+            to=[],
+            bcc=batch,
             reply_to=reply_to or settings.EMAIL_MARKETING_REPLY_TO,
             headers=message_headers,
             connection=connection,

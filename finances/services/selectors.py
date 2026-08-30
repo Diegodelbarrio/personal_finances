@@ -1,7 +1,12 @@
 from calendar import month_name
+from datetime import date
+
 from django.utils import timezone
+
+from finances.models import Category
 from . import queries, metrics
 from holdings.services import api as holdings_api
+
 
 def get_summary_page_data(user, year, month):
     """
@@ -11,14 +16,16 @@ def get_summary_page_data(user, year, month):
     period_qs = base_qs.filter(date__year=year, date__month=month)
     
     # Search data
-    years = queries.get_available_years(user)
-    months_idx = queries.get_available_months_for_year(user, year)
-    months_list = [(m, month_name[m]) for m in months_idx]
+    years = list(queries.get_available_years(user))
+    if year not in years:
+        years.insert(0, year)
+    months_list = [(m, month_name[m]) for m in range(1, 13)]
     
     # Calculations
     stats = metrics.get_period_metrics(period_qs)
     prev_income = metrics.get_previous_month_income(base_qs, year, month)
     exp_chart = metrics.get_expense_distribution_chart(period_qs)
+    transactions = list(period_qs.order_by('-date'))
     
     # KPI structure (Presentation logic moved here)
     kpis = [
@@ -34,9 +41,11 @@ def get_summary_page_data(user, year, month):
     ]
 
     return {
-        'transactions': period_qs.order_by('-date'),
+        'transactions': transactions,
         'years': years,
         'months': months_list,
+        'selected_month_name': month_name[month],
+        'transaction_count': len(transactions),
         'sel_year': year,
         'sel_month': month,
         'prev_income': prev_income,
@@ -78,13 +87,29 @@ def get_emergency_fund_status(user):
     # 2. Get Liquid Assets (Cash)
     total_cash, _ = holdings_api.get_current_value(user)
 
-    # 3. Calculate Average Monthly Expenses (Year 2025)
-    calc_year = 2025
+    # 3. Calculate a rolling average from the current and previous 11 months.
+    # Divide by months that actually contain expense data so a partially
+    # onboarded user is not presented with an artificially low average.
+    today = timezone.localdate()
+    start_month_index = (today.year * 12 + today.month - 1) - 11
+    start_year, zero_based_month = divmod(start_month_index, 12)
+    start_date = date(start_year, zero_based_month + 1, 1)
+
     qs = queries.get_base_transaction_qs(user)
-    period_qs = qs.filter(date__year=calc_year)
-    
+    period_qs = qs.filter(date__gte=start_date, date__lte=today)
     stats = metrics.get_period_metrics(period_qs)
-    avg_expenses = abs(float(stats.get("expenses", 0))) / 12.0
+    expense_months = (
+        period_qs.filter(
+            subcategory__parent_category__transaction_type=Category.TransactionType.EXPENSE
+        )
+        .dates("date", "month")
+        .count()
+    )
+    avg_expenses = (
+        abs(float(stats.get("expenses", 0))) / expense_months
+        if expense_months
+        else 0.0
+    )
 
     months_covered = (total_cash / avg_expenses) if avg_expenses > 0 else 0
     progress = (months_covered / target_months * 100) if target_months > 0 else 0
@@ -98,5 +123,6 @@ def get_emergency_fund_status(user):
         "target_cash": target_cash,
         "avg_expenses": avg_expenses,
         "is_ready": months_covered >= target_months,
-        "calc_year": calc_year
+        "calc_period_label": f"{start_date:%b %Y}–{today:%b %Y}",
+        "months_used": expense_months,
     }

@@ -17,17 +17,17 @@
     </td>
 
     <td class="text-end num-align text-muted">
-        {{ m.invested|floatformat:2 }} €
+        {{ m.invested|floatformat:2 }} {{ request.user_currency_symbol }}
     </td>
 
     <td class="text-end num-align fw-bold">
-        {{ m.market_value|floatformat:2 }} €
+        {{ m.market_value|floatformat:2 }} {{ request.user_currency_symbol }}
     </td>
 
     <td class="text-end num-align">
         {% if m.contributions > 0 %}
             <span class="value-pill value-pill-primary">
-                +{{ m.contributions|floatformat:2 }} €
+                +{{ m.contributions|floatformat:2 }} {{ request.user_currency_symbol }}
             </span>
         {% else %}
             <span class="text-muted">—</span>
@@ -35,7 +35,7 @@
     </td>
 
     <td class="text-end num-align fw-bold {% if m.profit_loss > 0 %}text-success{% elif m.profit_loss < 0 %}text-danger{% else %}text-muted{% endif %}">
-        {{ m.profit_loss|floatformat:2 }} €
+        {{ m.profit_loss|floatformat:2 }} {{ request.user_currency_symbol }}
     </td>
 
     <td class="text-center">
@@ -54,19 +54,19 @@
     </td>
 
     <td class="text-end num-align text-muted fw-semibold">
-        {{ report.annual_stats.total_contributions|floatformat:2 }} €
+        {{ report.annual_stats.total_contributions|floatformat:2 }} {{ request.user_currency_symbol }}
     </td>
 
     <td class="text-end num-align fw-bold">
-        {{ report.annual_stats.final_market_value|floatformat:2 }} €
+        {{ report.annual_stats.final_market_value|floatformat:2 }} {{ request.user_currency_symbol }}
     </td>
 
     <td class="text-end num-align fw-semibold text-primary">
-        +{{ report.annual_stats.total_contributions|floatformat:2 }} €
+        +{{ report.annual_stats.total_contributions|floatformat:2 }} {{ request.user_currency_symbol }}
     </td>
 
     <td class="text-end num-align fw-bold {% if report.annual_stats.total_profit > 0 %}text-success{% elif report.annual_stats.total_profit < 0 %}text-danger{% else %}text-muted{% endif %}">
-        {{ report.annual_stats.total_profit|floatformat:2 }} €
+        {{ report.annual_stats.total_profit|floatformat:2 }} {{ request.user_currency_symbol }}
     </td>
 
     <td class="text-center">

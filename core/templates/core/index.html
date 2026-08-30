@@ -45,7 +45,7 @@
 
                 <div class="hero-balance-card">
                     <span class="hero-balance-label">Global net worth</span>
-                    <strong>{{ current_net_worth|floatformat:0 }}€</strong>
+                    <strong>{{ current_net_worth|floatformat:0 }}{{ request.user_currency_symbol }}</strong>
                     <span class="hero-balance-note">Cash and investments combined</span>
                 </div>
             </div>
@@ -53,7 +53,7 @@
             <div class="hero-snapshot-grid" aria-label="Financial snapshot">
                 <div class="hero-snapshot-item">
                     <span class="hero-snapshot-label">Annual savings</span>
-                    <strong>{{ total_annual_savings|floatformat:0 }}€</strong>
+                    <strong>{{ total_annual_savings|floatformat:0 }}{{ request.user_currency_symbol }}</strong>
                     <small>Current year result</small>
                 </div>
                 <div class="hero-snapshot-item">
@@ -63,12 +63,12 @@
                 </div>
                 <div class="hero-snapshot-item">
                     <span class="hero-snapshot-label">Income YTD</span>
-                    <strong>{{ total_income|floatformat:0 }}€</strong>
+                    <strong>{{ total_income|floatformat:0 }}{{ request.user_currency_symbol }}</strong>
                     <small>Recorded inflow</small>
                 </div>
                 <div class="hero-snapshot-item">
                     <span class="hero-snapshot-label">Expenses YTD</span>
-                    <strong>{{ total_expenses|floatformat:0 }}€</strong>
+                    <strong>{{ total_expenses|floatformat:0 }}{{ request.user_currency_symbol }}</strong>
                     <small>Recorded outflow</small>
                 </div>
             </div>
@@ -88,6 +88,17 @@
             </div>
         {% endif %}
     {% endfor %}
+{% endif %}
+
+{% if currency_mismatches %}
+    <div class="alert alert-warning border-0 shadow-sm mb-3" role="alert">
+        <strong>Currency review required.</strong>
+        The following accounts are excluded from totals because they do not use
+        {{ request.user_currency }}:
+        {% for account in currency_mismatches %}
+            {{ account.name }} ({{ account.currency }}){% if not forloop.last %}, {% endif %}
+        {% endfor %}.
+    </div>
 {% endif %}
 
 <section class="landing-section workspace-section">
@@ -164,7 +175,7 @@
                         <h6 class="fw-bold text-muted text-uppercase mb-1 nw-label">Global Net Worth</h6>
                         <div class="d-flex align-items-baseline">
                             <h1 class="fw-bold mb-0 text-dark display-amount">
-                                {{ current_net_worth|floatformat:0 }}<span class="ms-1 currency-symbol">€</span>
+                                {{ current_net_worth|floatformat:0 }}<span class="ms-1 currency-symbol">{{ request.user_currency_symbol }}</span>
                             </h1>
                         </div>
                     </div>
@@ -201,7 +212,7 @@
                 <div class="nw-breakdown-card">
                     <div class="nw-breakdown-head">
                         <span class="nw-breakdown-title"><i class="bi bi-pie-chart me-1"></i>Asset Mix</span>
-                        <span id="nw-total-value" class="nw-breakdown-total">-- €</span>
+                        <span id="nw-total-value" class="nw-breakdown-total">-- {{ request.user_currency_symbol }}</span>
                     </div>
                     <div class="progress mb-2 nw-progress-container">
                         <div id="cash-bar" class="progress-bar" role="progressbar" data-bs-toggle="tooltip" data-bs-placement="top" title="Cash"></div>
@@ -211,13 +222,13 @@
                         <div class="nw-legend-item nw-legend-cash">
                             <span class="nw-legend-dot"></span>
                             <span class="nw-legend-label">Cash</span>
-                            <span id="nw-cash-value" class="nw-legend-value">-- €</span>
+                            <span id="nw-cash-value" class="nw-legend-value">-- {{ request.user_currency_symbol }}</span>
                             <span id="cash-percentage" class="nw-legend-share">--%</span>
                         </div>
                         <div class="nw-legend-item nw-legend-investments">
                             <span class="nw-legend-dot"></span>
                             <span class="nw-legend-label">Investments</span>
-                            <span id="nw-investments-value" class="nw-legend-value">-- €</span>
+                            <span id="nw-investments-value" class="nw-legend-value">-- {{ request.user_currency_symbol }}</span>
                             <span id="investments-percentage" class="nw-legend-share">--%</span>
                         </div>
                     </div>
@@ -411,7 +422,7 @@
                             </div>
                             <div class="fund-pill-row">
                                 <span class="fund-pill"><i class="bi bi-bullseye"></i> Target {{ emergency_fund.target_months }}m</span>
-                                <span class="fund-pill"><i class="bi bi-calendar3"></i> {{ emergency_fund.calc_year }}</span>
+                                <span class="fund-pill"><i class="bi bi-calendar3"></i> {{ emergency_fund.calc_period_label }}</span>
                             </div>
                         </div>
                         <div class="rounded-circle d-flex align-items-center justify-content-center {% if emergency_fund.is_ready %}bg-success text-white{% else %}bg-primary text-white{% endif %} shadow-sm icon-box">
@@ -431,7 +442,7 @@
                             <span class="badge {% if emergency_fund.is_ready %}bg-success{% else %}bg-primary{% endif %} badge-status">
                                 {{ emergency_fund.progress|floatformat:0 }}% Ready
                             </span>
-                            <small class="text-muted text-target">Goal: {{ emergency_fund.target_cash|floatformat:0 }}€ ({{ emergency_fund.target_months }} months)</small>
+                            <small class="text-muted text-target">Goal: {{ emergency_fund.target_cash|floatformat:0 }}{{ request.user_currency_symbol }} ({{ emergency_fund.target_months }} months)</small>
                         </div>
 
                         <div class="progress mb-3 progress-custom">
@@ -444,11 +455,11 @@
                         <div class="row g-0 pt-2 border-top">
                             <div class="col-6 border-end">
                                 <div class="text-muted text-uppercase footer-label">Liquid Cash</div>
-                                <div class="fw-bold text-dark small">{{ emergency_fund.total_cash|floatformat:0 }}€</div>
+                                <div class="fw-bold text-dark small">{{ emergency_fund.total_cash|floatformat:0 }}{{ request.user_currency_symbol }}</div>
                             </div>
                             <div class="col-6 ps-3">
-                                <div class="text-muted text-uppercase footer-label">Avg. Exp ({{ emergency_fund.calc_year }})</div>
-                                <div class="fw-bold text-dark small">{{ emergency_fund.avg_expenses|floatformat:0 }}€</div>
+                                <div class="text-muted text-uppercase footer-label">Avg. Exp ({{ emergency_fund.months_used }} month{{ emergency_fund.months_used|pluralize }})</div>
+                                <div class="fw-bold text-dark small">{{ emergency_fund.avg_expenses|floatformat:0 }}{{ request.user_currency_symbol }}</div>
                             </div>
                         </div>
                     </div>

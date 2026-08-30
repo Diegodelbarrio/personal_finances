@@ -18,13 +18,14 @@ User = get_user_model()
 )
 class NewUserNotificationTest(TestCase):
     def test_new_user_creation_sends_welcome_and_admin_notification_emails(self):
-        user = User.objects.create_user(
-            username="new-investor",
-            email="investor@example.com",
-            password="testpass123",
-            first_name="New",
-            last_name="Investor",
-        )
+        with self.captureOnCommitCallbacks(execute=True):
+            user = User.objects.create_user(
+                username="new-investor",
+                email="investor@example.com",
+                password="testpass123",
+                first_name="New",
+                last_name="Investor",
+            )
 
         self.assertEqual(len(mail.outbox), 2)
 

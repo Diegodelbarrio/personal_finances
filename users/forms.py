@@ -1,10 +1,27 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from PIL import Image, UnidentifiedImageError
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from settings.models import UserSettings
 
 User = get_user_model()
+
+AVATAR_FORMAT_EXTENSIONS = {
+    "PNG": {".png"},
+    "JPEG": {".jpg", ".jpeg"},
+    # Some phones store an additional depth/alternate image in an otherwise
+    # browser-compatible JPEG. Pillow identifies those files as MPO.
+    "MPO": {".jpg", ".jpeg"},
+    "WEBP": {".webp"},
+    "GIF": {".gif"},
+}
+
+
+def is_supported_avatar_format(image_format, filename):
+    extensions = AVATAR_FORMAT_EXTENSIONS.get((image_format or "").upper())
+    lower_name = (filename or "").lower()
+    return bool(extensions and any(lower_name.endswith(ext) for ext in extensions))
 
 
 class ProfileForm(forms.ModelForm):
@@ -96,17 +113,6 @@ class ProfileForm(forms.ModelForm):
         if not avatar or not uploaded_avatar:
             return avatar
 
-        content_type = (getattr(avatar, "content_type", "") or "").lower()
-        allowed_content_types = {
-            "image/png",
-            "image/jpeg",
-            "image/jpg",
-            "image/webp",
-            "image/gif",
-        }
-        if content_type and content_type not in allowed_content_types:
-            raise forms.ValidationError("Avatar must be PNG, JPG, WEBP or GIF.")
-
         lower_name = (avatar.name or "").lower()
         allowed_extensions = (".png", ".jpg", ".jpeg", ".webp", ".gif")
         if not lower_name.endswith(allowed_extensions):
@@ -115,6 +121,22 @@ class ProfileForm(forms.ModelForm):
         max_size = 3 * 1024 * 1024
         if avatar.size > max_size:
             raise forms.ValidationError("Avatar size must be 3MB or less.")
+
+        try:
+            avatar.seek(0)
+            image = Image.open(avatar)
+            image.verify()
+            if not is_supported_avatar_format(image.format, avatar.name):
+                raise forms.ValidationError("Avatar must be PNG, JPG, WEBP or GIF.")
+
+            avatar.seek(0)
+            image = Image.open(avatar)
+            if image.width > 4096 or image.height > 4096:
+                raise forms.ValidationError("Avatar dimensions must not exceed 4096×4096 pixels.")
+        except (UnidentifiedImageError, OSError, ValueError) as exc:
+            raise forms.ValidationError("Avatar is not a valid image file.") from exc
+        finally:
+            avatar.seek(0)
 
         return avatar
 
@@ -190,3 +212,32 @@ class ProfilePreferencesForm(forms.ModelForm):
             raise forms.ValidationError("Choose a valid time zone.") from exc
 
         return timezone_name
+
+
+class AccountDeletionForm(forms.Form):
+    password = forms.CharField(
+        label="Current password",
+        strip=False,
+        widget=forms.PasswordInput(attrs={"class": "form-control", "autocomplete": "current-password"}),
+    )
+    confirmation = forms.CharField(
+        label="Type your username to confirm",
+        widget=forms.TextInput(attrs={"class": "form-control", "autocomplete": "off"}),
+    )
+
+    def __init__(self, *args, user, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+        self.fields["confirmation"].help_text = f"Enter {user.username} exactly."
+
+    def clean_password(self):
+        password = self.cleaned_data["password"]
+        if not self.user.check_password(password):
+            raise forms.ValidationError("The password is incorrect.")
+        return password
+
+    def clean_confirmation(self):
+        confirmation = self.cleaned_data["confirmation"].strip()
+        if confirmation != self.user.username:
+            raise forms.ValidationError("The username confirmation does not match.")
+        return confirmation

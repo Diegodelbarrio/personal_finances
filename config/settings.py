@@ -65,8 +65,18 @@ if not DEBUG and not ALLOWED_HOSTS:
 
 CSRF_TRUSTED_ORIGINS = env_list(
     "CSRF_TRUSTED_ORIGINS",
-    default="https://*.trycloudflare.com,http://localhost:8000,http://127.0.0.1:8000",
+    default="http://localhost:8000,http://127.0.0.1:8000" if DEBUG else "",
 )
+if not DEBUG:
+    unsafe_csrf_origins = [
+        origin
+        for origin in CSRF_TRUSTED_ORIGINS
+        if "*" in origin or "localhost" in origin or "127.0.0.1" in origin
+    ]
+    if unsafe_csrf_origins:
+        raise ImproperlyConfigured(
+            "Production CSRF_TRUSTED_ORIGINS must contain exact public origins only."
+        )
 
 IS_WHITENOISE_AVAILABLE = importlib.util.find_spec("whitenoise") is not None
 
@@ -94,6 +104,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "core.middleware.ResponseSecurityHeadersMiddleware",
 ]
 if IS_WHITENOISE_AVAILABLE:
     MIDDLEWARE.append("whitenoise.middleware.WhiteNoiseMiddleware")
@@ -121,6 +132,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "core.context_processors.feature_flags",
             ],
         },
     },
@@ -215,7 +227,22 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 if IS_WHITENOISE_AVAILABLE:
-    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+
+# Bound request memory usage before application-level CSV and image validation.
+DATA_UPLOAD_MAX_MEMORY_SIZE = env_int("DATA_UPLOAD_MAX_MEMORY_SIZE", 5 * 1024 * 1024)
+FILE_UPLOAD_MAX_MEMORY_SIZE = env_int("FILE_UPLOAD_MAX_MEMORY_SIZE", 3 * 1024 * 1024)
+DATA_UPLOAD_MAX_NUMBER_FIELDS = env_int("DATA_UPLOAD_MAX_NUMBER_FIELDS", 1000)
+CSV_IMPORT_MAX_BYTES = env_int("CSV_IMPORT_MAX_BYTES", 2 * 1024 * 1024)
+CSV_IMPORT_MAX_ROWS = env_int("CSV_IMPORT_MAX_ROWS", 10_000)
+CSV_IMPORT_MAX_FIELD_LENGTH = env_int("CSV_IMPORT_MAX_FIELD_LENGTH", 1_000)
 
 
 SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", default=not DEBUG)
@@ -231,6 +258,29 @@ SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", default=not DEBUG)
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 X_FRAME_OPTIONS = "DENY"
+CONTENT_SECURITY_POLICY = os.getenv(
+    "CONTENT_SECURITY_POLICY",
+    " ".join(
+        [
+            "default-src 'self';",
+            (
+                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net "
+                "https://code.jquery.com https://cdn.datatables.net;"
+            ),
+            (
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net "
+                "https://cdn.datatables.net https://fonts.googleapis.com;"
+            ),
+            "font-src 'self' data: https://cdn.jsdelivr.net https://fonts.gstatic.com;",
+            "img-src 'self' data: https:;",
+            "connect-src 'self';",
+            "object-src 'none';",
+            "base-uri 'self';",
+            "frame-ancestors 'none';",
+            "form-action 'self';",
+        ]
+    ),
+)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = env_bool("USE_X_FORWARDED_HOST", default=not DEBUG)
 
@@ -247,10 +297,15 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 ACCOUNT_LOGIN_METHODS = {"email", "username"}
-ACCOUNT_EMAIL_VERIFICATION = os.getenv("ACCOUNT_EMAIL_VERIFICATION", "none")
+ACCOUNT_EMAIL_VERIFICATION = os.getenv(
+    "ACCOUNT_EMAIL_VERIFICATION",
+    "optional" if DEBUG else "mandatory",
+)
 ACCOUNT_UNIQUE_EMAIL = env_bool("ACCOUNT_UNIQUE_EMAIL", default=True)
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https" if not DEBUG else "http"
 ACCOUNT_EMAIL_SUBJECT_PREFIX = os.getenv("ACCOUNT_EMAIL_SUBJECT_PREFIX", "[FinOrbit] ")
+ACCOUNT_ADAPTER = "users.adapters.AccountAdapter"
+ACCOUNT_ALLOW_REGISTRATION = env_bool("ACCOUNT_ALLOW_REGISTRATION", default=DEBUG)
 
 # Email delivery:
 # - In local development (DEBUG=True), default to console backend
@@ -344,12 +399,34 @@ if EMAIL_MARKETING_BACKEND.endswith("smtp.EmailBackend"):
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 
-SILENCED_SYSTEM_CHECKS = ["account.W001"]
 ACCOUNT_SIGNUP_FIELDS = [
     "username*",
-    "email",
+    "email*",
     "password1*",
     "password2*",
 ]
 
-SITE_URL = os.getenv("SITE_URL", "http://localhost:8000")
+SITE_URL = os.getenv("SITE_URL", "http://localhost:8000" if DEBUG else "")
+if not DEBUG and not SITE_URL:
+    raise ImproperlyConfigured("SITE_URL is required when DEBUG=False.")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "standard": {
+            "format": "{asctime} {levelname} {name} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "standard",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": os.getenv("LOG_LEVEL", "INFO"),
+    },
+}

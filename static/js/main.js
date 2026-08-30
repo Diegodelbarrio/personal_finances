@@ -5,14 +5,16 @@
 
 // 1. FORMATEADORES GLOBALES (Accesibles desde cualquier script)
 const FinancialFormatter = {
-    // Formatea números a moneda Euro: 1234.5 -> 1.234,50 €
-    currency: (val) => {
-        if (val === null || val === undefined) return '0,00 €';
-        return new Intl.NumberFormat('de-DE', { 
+    locale: document.documentElement.lang === 'es' ? 'es-ES' : 'en-GB',
+    currencyCode: document.documentElement.dataset.currency || 'EUR',
+    currency: (val, options = {}) => {
+        const numericValue = val === null || val === undefined ? 0 : Number(val);
+        return new Intl.NumberFormat(FinancialFormatter.locale, {
             style: 'currency', 
-            currency: 'EUR',
-            minimumFractionDigits: 2 
-        }).format(val);
+            currency: FinancialFormatter.currencyCode,
+            minimumFractionDigits: 2,
+            ...options
+        }).format(numericValue);
     },
     // Formatea a porcentaje: 0.1234 -> 12.3%
     percentage: (val) => {
@@ -21,7 +23,7 @@ const FinancialFormatter = {
     },
     // Formatea números simples con separador de miles
     number: (val) => {
-        return new Intl.NumberFormat('de-DE').format(val);
+        return new Intl.NumberFormat(FinancialFormatter.locale).format(val);
     }
 };
 
@@ -138,15 +140,36 @@ const ChartFactory = {
             const card = document.createElement('div');
             card.className = 'legend-card';
             card.style.cursor = 'pointer';
-            card.innerHTML = `
-                <div style="width:8px; height:8px; border-radius:50%; background:${item.color}; flex-shrink:0;"></div>
-                <div class="ms-2 flex-grow-1 d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="fw-bold" style="font-size:0.8rem;">${item.label}</div>
-                        <div class="text-muted" style="font-size:0.65rem;">${item.value.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</div>
-                    </div>
-                    <div class="fw-bold" style="font-size:0.85rem;">${percentage}%</div>
-                </div>`;
+
+            const colorDot = document.createElement('div');
+            colorDot.style.width = '8px';
+            colorDot.style.height = '8px';
+            colorDot.style.borderRadius = '50%';
+            colorDot.style.backgroundColor = item.color;
+            colorDot.style.flexShrink = '0';
+
+            const content = document.createElement('div');
+            content.className = 'ms-2 flex-grow-1 d-flex justify-content-between align-items-center';
+
+            const details = document.createElement('div');
+            const label = document.createElement('div');
+            label.className = 'fw-bold';
+            label.style.fontSize = '0.8rem';
+            label.textContent = String(item.label ?? '');
+
+            const value = document.createElement('div');
+            value.className = 'text-muted';
+            value.style.fontSize = '0.65rem';
+            value.textContent = FinancialFormatter.currency(Number(item.value || 0));
+
+            const percent = document.createElement('div');
+            percent.className = 'fw-bold';
+            percent.style.fontSize = '0.85rem';
+            percent.textContent = `${percentage}%`;
+
+            details.append(label, value);
+            content.append(details, percent);
+            card.append(colorDot, content);
 
             card.onmouseenter = () => {
                 chart.setActiveElements([{ datasetIndex: 0, index: i }]);

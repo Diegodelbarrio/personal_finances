@@ -75,6 +75,17 @@
                         {% endfor %}
                     </div>
 
+                    <div class="form-check mb-3">
+                        {{ form.exclude_from_totals }}
+                        <label for="{{ form.exclude_from_totals.id_for_label }}" class="form-check-label fw-semibold">
+                            {{ form.exclude_from_totals.label }}
+                        </label>
+                        <div class="form-text">Useful for assets tracked for reference but not owned personally.</div>
+                        {% for error in form.exclude_from_totals.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
                     {% for error in form.non_field_errors %}
                         <div class="invalid-feedback d-block mb-3">{{ error }}</div>
                     {% endfor %}

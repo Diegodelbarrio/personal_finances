@@ -1,17 +1,28 @@
+import json
+
 from allauth.account.models import EmailAddress
 from django.contrib import messages
+from django.contrib.auth import logout
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.db import transaction as db_transaction
 from django.db.models import Count
+from django.core.serializers.json import DjangoJSONEncoder
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone as django_timezone
 from django.utils.translation import activate as activate_language
+from django.utils.text import slugify
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from settings.services.api import SettingsService
 
-from .forms import ProfileForm, ProfilePreferencesForm
+from finances.models import Category, Location, SubCategory, Transaction as FinanceTransaction
+from holdings.models import AccountBalanceSnapshot, BankAccount
+from investments.models import Asset, AssetHistory, Transaction as InvestmentTransaction
+from settings.models import UserSettings
+
+from .forms import AccountDeletionForm, ProfileForm, ProfilePreferencesForm
 
 
 User = get_user_model()
@@ -183,3 +194,161 @@ def profile(request):
         },
     }
     return render(request, "users/profile.html", context)
+
+
+def _ordered_values(queryset, *fields):
+    return list(queryset.order_by("id").values(*fields))
+
+
+@login_required
+def export_account_data(request):
+    user = request.user
+    payload = {
+        "format": "finorbit-account-export-v1",
+        "exported_at": django_timezone.now(),
+        "profile": {
+            "username": user.username,
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "date_joined": user.date_joined,
+            "last_login": user.last_login,
+            "avatar_file": user.avatar.name if user.avatar else None,
+        },
+        "email_addresses": _ordered_values(
+            EmailAddress.objects.filter(user=user),
+            "email",
+            "verified",
+            "primary",
+        ),
+        "settings": _ordered_values(
+            UserSettings.objects.filter(user=user),
+            "annual_savings_target",
+            "monthly_budget",
+            "net_worth_target",
+            "savings_rate_target",
+            "target_date",
+            "retirement_age",
+            "main_currency",
+            "financial_profile",
+            "emergency_fund_months",
+            "language_code",
+            "timezone",
+            "updated_at",
+        ),
+        "finances": {
+            "categories": _ordered_values(
+                Category.objects.filter(user=user),
+                "id",
+                "name",
+                "transaction_type",
+                "expense_type",
+                "is_housing",
+            ),
+            "subcategories": _ordered_values(
+                SubCategory.objects.filter(user=user),
+                "id",
+                "parent_category_id",
+                "name",
+                "budget_group",
+                "expense_nature",
+                "is_essential",
+            ),
+            "locations": _ordered_values(
+                Location.objects.filter(user=user),
+                "id",
+                "name",
+            ),
+            "transactions": _ordered_values(
+                FinanceTransaction.objects.filter(user=user),
+                "id",
+                "date",
+                "amount",
+                "description",
+                "subcategory_id",
+                "location_id",
+            ),
+        },
+        "investments": {
+            "assets": _ordered_values(
+                Asset.objects.filter(user=user),
+                "id",
+                "name",
+                "isin",
+                "market_symbol",
+                "category",
+                "platform",
+                "exclude_from_totals",
+            ),
+            "transactions": _ordered_values(
+                InvestmentTransaction.objects.filter(user=user),
+                "id",
+                "asset_id",
+                "date",
+                "action",
+                "shares",
+                "price_per_share",
+                "amount",
+                "notes",
+            ),
+            "history": _ordered_values(
+                AssetHistory.objects.filter(user=user),
+                "id",
+                "asset_id",
+                "date",
+                "total_value",
+            ),
+        },
+        "holdings": {
+            "accounts": _ordered_values(
+                BankAccount.objects.filter(user=user),
+                "id",
+                "name",
+                "institution",
+                "account_type",
+                "currency",
+                "iban",
+                "notes",
+                "is_active",
+            ),
+            "snapshots": _ordered_values(
+                AccountBalanceSnapshot.objects.filter(user=user),
+                "id",
+                "account_id",
+                "date",
+                "balance",
+                "interest_earned",
+            ),
+        },
+    }
+    content = json.dumps(payload, cls=DjangoJSONEncoder, ensure_ascii=False, indent=2)
+    username_slug = slugify(user.username) or "account"
+    export_date = django_timezone.localdate().isoformat()
+    response = HttpResponse(content, content_type="application/json; charset=utf-8")
+    response["Content-Disposition"] = (
+        f'attachment; filename="finorbit-{username_slug}-{export_date}.json"'
+    )
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+@login_required
+def delete_account(request):
+    if request.method == "POST":
+        form = AccountDeletionForm(request.POST, user=request.user)
+        if form.is_valid():
+            user = request.user
+            avatar_storage = user.avatar.storage if user.avatar else None
+            avatar_name = user.avatar.name if user.avatar else None
+
+            logout(request)
+            user.delete()
+            if avatar_storage and avatar_name:
+                avatar_storage.delete(avatar_name)
+
+            messages.success(request, "Your FinOrbit account and stored data were deleted.")
+            return redirect("account_login")
+    else:
+        form = AccountDeletionForm(user=request.user)
+
+    return render(request, "users/account_delete.html", {"form": form})

@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: finorbit_test
+          POSTGRES_USER: finorbit
+          POSTGRES_PASSWORD: finorbit_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U finorbit -d finorbit_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      SECRET_KEY: ci-only-secret-key-with-more-than-fifty-characters-do-not-use-in-production
+      ALLOWED_HOSTS: testserver,localhost
+      CSRF_TRUSTED_ORIGINS: https://testserver
+      SITE_URL: https://testserver
+      DATABASE_URL: postgres://finorbit:finorbit_test_password@127.0.0.1:5432/finorbit_test
+      DB_SSL_REQUIRE: "False"
+      EMAIL_BACKEND: django.core.mail.backends.locmem.EmailBackend
+      ACCOUNT_ALLOW_REGISTRATION: "False"
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install -r requirements-dev.txt
+
+      - name: Check Python correctness
+        run: ruff check .
+
+      - name: Check production security settings
+        env:
+          DEBUG: "False"
+          SECURE_SSL_REDIRECT: "True"
+          SESSION_COOKIE_SECURE: "True"
+          CSRF_COOKIE_SECURE: "True"
+          SECURE_HSTS_SECONDS: "31536000"
+          SECURE_HSTS_INCLUDE_SUBDOMAINS: "True"
+          SECURE_HSTS_PRELOAD: "True"
+        run: python manage.py check --deploy --fail-level WARNING
+
+      - name: Check migrations are committed
+        env:
+          DEBUG: "True"
+          SECURE_SSL_REDIRECT: "False"
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Collect static assets
+        env:
+          DEBUG: "False"
+        run: python manage.py collectstatic --noinput
+
+      - name: Run tests with coverage
+        env:
+          DEBUG: "True"
+          SECURE_SSL_REDIRECT: "False"
+        run: |
+          coverage run manage.py test
+          coverage report
+
+      - name: Audit dependencies
+        run: pip-audit -r requirements.txt

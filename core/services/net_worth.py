@@ -1,6 +1,7 @@
 from datetime import timedelta
 from django.utils import timezone
 
+from holdings.services.api import get_currency_mismatches
 from holdings.services.api import get_current_value as get_holdings_value
 from investments.services.api import get_portfolio_overview
 
@@ -12,9 +13,12 @@ def calculate_net_worth(user):
 
     # A. Cash (holdings)
     holdings_value, holdings_dates = get_holdings_value(user, dates_only_active=True)
+    currency_mismatches = get_currency_mismatches(user)
 
     # B. Investments
     investments_data = get_portfolio_overview(user)
+    # Global net worth includes every asset owned by the user. The
+    # exclude_from_totals flag only controls personal investment analytics.
     investments_value = investments_data["global_current_value"]
     investments_min_date = investments_data.get("last_market_date")
     investments_max_date = investments_data.get("latest_market_date")
@@ -49,11 +53,15 @@ def calculate_net_worth(user):
         elif max_date.month == now.month and max_date.year == now.year:
             if min_date.month != now.month or min_date.year != now.year:
                 data_status = "warning"
+    if currency_mismatches and data_status == "ok":
+        data_status = "warning"
 
     return {
         "current_net_worth": current_net_worth,
         "holdings_value": holdings_value,
+        "investments_value": investments_value,
         "holdings_dates": holdings_dates,
         "last_market_date": last_market_date,
         "data_status": data_status,
+        "currency_mismatches": currency_mismatches,
     }

@@ -1,8 +1,10 @@
 from datetime import date
+import logging
 
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from django.http import Http404, HttpResponse
+from django.db import connection
+from django.http import Http404, HttpResponse, JsonResponse
 
 # Servicios de las diferentes Apps
 from core.services.live_market import get_live_market_context
@@ -13,6 +15,22 @@ from finances.services.api import get_annual_cashflow_summary
 from finances.services.selectors import get_emergency_fund_status
 from holdings.services.history import get_net_worth_evolution
 from settings.services.api import SettingsService
+
+
+logger = logging.getLogger(__name__)
+
+
+def health(request):
+    """Minimal liveness/readiness response without exposing internal details."""
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+    except Exception:
+        logger.exception("Health check failed")
+        return JsonResponse({"status": "unhealthy"}, status=503)
+
+    return JsonResponse({"status": "ok"})
 
 @login_required
 def home(request):

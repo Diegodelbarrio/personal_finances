@@ -3,7 +3,6 @@ import copy
 import json
 import logging
 import math
-import ssl
 import time
 import urllib.error
 import urllib.request
@@ -15,6 +14,7 @@ from django.core.cache import cache
 from django.db.models import Q
 from django.utils import timezone
 
+from core.currency import get_user_currency
 from investments.models import AssetHistory
 
 logger = logging.getLogger(__name__)
@@ -641,13 +641,14 @@ def _fetch_local_history_fallback(
     change_abs = last_value - first_value
     change_pct = (change_abs / first_value * 100) if first_value else 0
 
+    currency = get_user_currency(user)
     return {
         "id": _chart_id_for_symbol(asset["symbol"]),
         "name": f"{asset['name']} (Portfolio)",
         "symbol": asset["symbol"],
         "isin": asset["isin"],
-        "currency": "EUR",
-        "currency_symbol": "€",
+        "currency": currency,
+        "currency_symbol": CURRENCY_SYMBOLS.get(currency, currency),
         "current_price": round(last_value, 2),
         "change_abs": round(change_abs, 2),
         "change_pct": round(change_pct, 2),
@@ -747,19 +748,10 @@ def _open_json_url(url: str, timeout: int = 6) -> Dict:
                 time.sleep(0.35 * (attempt + 1))
                 continue
             raise
-        except urllib.error.URLError as exc:
-            if isinstance(exc.reason, ssl.SSLError):
-                insecure_context = ssl._create_unverified_context()
-                try:
-                    with urllib.request.urlopen(
-                        request, timeout=timeout, context=insecure_context
-                    ) as response:
-                        return json.loads(response.read())
-                except urllib.error.HTTPError as http_exc:
-                    if http_exc.code in retryable_codes and attempt < 2:
-                        time.sleep(0.35 * (attempt + 1))
-                        continue
-                    raise
+        except urllib.error.URLError:
+            # Financial data must never be accepted through an unverified TLS
+            # connection. Certificate errors are surfaced to the caller so the
+            # normal fallback/cache path can take over safely.
             raise
 
     raise urllib.error.URLError("Failed to fetch market data after retries")
@@ -775,17 +767,8 @@ def _open_text_url(url: str, timeout: int = 8) -> str:
             ),
         },
     )
-    try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            return response.read().decode("utf-8", "ignore")
-    except urllib.error.URLError as exc:
-        if isinstance(exc.reason, ssl.SSLError):
-            insecure_context = ssl._create_unverified_context()
-            with urllib.request.urlopen(
-                request, timeout=timeout, context=insecure_context
-            ) as response:
-                return response.read().decode("utf-8", "ignore")
-        raise
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return response.read().decode("utf-8", "ignore")
 
 
 def _downsample_series(
